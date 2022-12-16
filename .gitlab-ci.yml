@@ -1,0 +1,14 @@
+variables:
+  CONTAINER_PROJECT_PATH: /miracum-etl/fhir-to-omop
+
+include:
+  - project: "devops/ci-templates"
+    file: "/standard/.container-build.yml"
+
+build:
+  coverage: '/\d+.\d+ \% covered/'
+
+create gitlab release:
+  only:
+    - master
+    - codex-pre-release

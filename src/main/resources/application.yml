@@ -1,0 +1,176 @@
+batch:
+  chunkSize: 5000
+  throttleLimit: 4
+  pagingSize: 100000
+
+logging:
+  level:
+    org:
+      miracum: INFO
+
+spring:
+  main:
+    banner-mode: false
+    allow-bean-definition-overriding: true
+    web-application-type: none
+  #profiles:
+  #  active: dev
+  application:
+    name: "fhir-to-omop"
+  jpa:
+    hibernate.ddl-auto: none
+    generate-ddl: false
+  cache.caffeine.spec.maximumSize: 5000
+
+data:
+  fhirGateway:
+    jdbcUrl: ""
+    username: ""
+    password: ""
+    tableName: "resources"
+  fhirServer:
+    baseUrl: ""
+    username: ""
+    password: ""
+    connectionTimeout: 3000
+    socketTimeout: 3000
+  omopCdm:
+    jdbcUrl: ""
+    username: ""
+    password: ""
+    schema: "cds_cdm"
+  beginDate: "" # for example 2020-01-01
+  endDate: ""
+
+management:
+  #  endpoints:
+  #    web:
+  #      exposure:
+  #        include: "health,metrics,prometheus,info"
+  metrics:
+    export:
+      prometheus:
+        pushgateway:
+          enabled: false
+          base-url: "http://localhost:9091"
+          push-rate: 10s
+          job: "fhirtoomop"
+
+
+thread:
+  pool:
+    size: 8
+
+fhir:
+  systems:
+    #patient-id: "https://miracum.org/fhir/NamingSystem/identifier/PatientId"
+    #encounter-supply-id: "https://miracum.org/fhir/NamingSystem/identifier/EncounterId"
+    #encounter-department-id: "https://miracum.org/fhir/NamingSystem/identifier/EncounterId"
+    #procedure-id: "https://diz.uniklinikum-dresden.de/fhir/core/NamingSystem/ProzedurId"
+    #procedure-id: "https://miracum.org/fhir/NamingSystem/identifier/P21SurrogateProcedureId"
+    #medication-administration-id: "https://diz.uniklinikum-dresden.de/fhir/core/NamingSystem/MedicationAdministrationId"
+    #medication-id: "https://diz.uniklinikum-dresden.de/fhir/core/NamingSystem/MedicationId"
+    #medication-statement-id: "https://diz.uniklinikum-dresden.de/fhir/core/NamingSystem/MedicationStatementId"
+    #observation-id: "https://miracum.org/fhir/NamingSystem/identifier/P21SurrogateObservationId"
+    #condition-id: "https://miracum.org/fhir/NamingSystem/identifier/P21SurrogateConditionId"
+    loinc: "http://loinc.org"
+    diagnostic-confidence: "http://fhir.de/StructureDefinition/icd-10-gm-diagnosesicherheit"
+    diagnosis-use: "http://terminology.hl7.org/CodeSystem/diagnosis-role"
+    interpretation: "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation"
+    gender-amtlich-de-extension: "http://fhir.de/StructureDefinition/gender-amtlich-de"
+    edqm: "http://standardterms.edqm.eu"
+    identifier-type: "http://terminology.hl7.org/CodeSystem/v2-0203"
+    snomed: "http://snomed.info/sct"
+    ucum: "http://unitsofmeasure.org"
+    #department: "https://fhir.miracum.org/core/CodeSystem/fachabteilungen"
+    department: "https://www.medizininformatik-initiative.de/fhir/core/modul-fall/CodeSystem/Fachabteilungsschluessel"
+    data-absent-reason: "http://hl7.org/fhir/StructureDefinition/data-absent-reason"
+    discharge-reason-structure: "https://www.medizininformatik-initiative.de/fhir/core/StructureDefinition/Entlassungsgrund"
+    site-localization-extension: "http://fhir.de/StructureDefinition/seitenlokalisation"
+    age-extension: "https://www.netzwerk-universitaetsmedizin.de/fhir/StructureDefinition/age"
+    ethnic-group-extension: "https://www.netzwerk-universitaetsmedizin.de/fhir/StructureDefinition/ethnic-group"
+    procedure-dicom: "http://dicom.nema.org/resources/ontology/DCM"
+    vaccine-status-unknown: "http://hl7.org/fhir/uv/ips/CodeSystem/absent-unknown-uv-ips"
+    clinical-status: "http://terminology.hl7.org/CodeSystem/condition-clinical"
+    gecco-sofa-score: "https://www.netzwerk-universitaetsmedizin.de/fhir/CodeSystem/sofa-score"
+    gecco-frailty-score: "https://www.netzwerk-universitaetsmedizin.de/fhir/CodeSystem/frailty-score"
+    gecco-biological-sex:
+      - "http://hl7.org/fhir/administrative-gender"
+      - "http://fhir.de/CodeSystem/gender-amtlich-de"
+    verification-status:
+      #- "http://snomed.info/sct"
+      - "http://terminology.hl7.org/CodeSystem/condition-ver-status"
+    gecco-ecrf-parameter: "https://www.netzwerk-universitaetsmedizin.de/fhir/CodeSystem/ecrf-parameter-codes"
+    gecco-components:
+      - "http://loinc.org"
+      - "https://www.netzwerk-universitaetsmedizin.de/fhir/CodeSystem/sofa-score"
+      - "http://snomed.info/sct"
+    lab-observation-category:
+      - "http://terminology.hl7.org/CodeSystem/observation-category"
+      - "http://snomed.info/sct"
+    observation-code:
+      - "http://loinc.org"
+      - "https://miracum.org/fhir/CodeSystem/p21/observations"
+      - "http://snomed.info/sct"
+      - "https://www.netzwerk-universitaetsmedizin.de/fhir/CodeSystem/ecrf-parameter-codes"
+    admission-reason:
+      - "https://www.medizininformatik-initiative.de/fhir/core/CodeSystem/Aufnahmegrund"
+      - "https://www.medizininformatik-initiative.de/fhir/modul-fall/core/CodeSystem/Aufnahmegrund"
+    discharge-reason:
+      - "https://www.medizininformatik-initiative.de/fhir/core/CodeSystem/Entlassungsgrund"
+      - "https://www.medizininformatik-initiative.de/fhir/core/modul-fall/CodeSystem/Entlassungsgrund"
+    admission-occasion:
+      - "https://www.medizininformatik-initiative.de/fhir/core/CodeSystem/Aufnahmeanlass"
+      - "https://www.medizininformatik-initiative.de/fhir/core/modul-fall/CodeSystem/Aufnahmeanlass"
+    icd10gm:
+      - "http://fhir.de/CodeSystem/dimdi/icd-10-gm"
+      - "http://fhir.de/CodeSystem/bfarm/icd-10-gm"
+      - "http://hl7.org/fhir/sid/icd-10"
+    ops:
+      - "http://fhir.de/CodeSystem/dimdi/ops"
+      - "http://fhir.de/CodeSystem/bfarm/ops"
+    atc:
+      - "http://fhir.de/CodeSystem/dimdi/atc"
+      - "http://fhir.de/CodeSystem/bfarm/atc"
+    medication-codes:
+      - "http://fhir.de/CodeSystem/dimdi/atc"
+      - "http://fhir.de/CodeSystem/bfarm/atc"
+      - "http://snomed.info/sct"
+    procedure-site-localization:
+      - "https://fhir.kbv.de/CodeSystem/KBV_CS_SFHIR_ICD_SEITENLOKALISATION"
+      - "https://applications.kbv.de/S_ICD_SEITENLOKALISATION_V1.00.xhtml"
+      - "http://snomed.info/sct"
+    medication-route:
+      - "http://snomed.info/sct"
+      - "http://standardterms.edqm.eu"
+    diagnose-code:
+      - "http://fhir.de/CodeSystem/dimdi/icd-10-gm"
+      - "http://fhir.de/CodeSystem/bfarm/icd-10-gm"
+      - "http://snomed.info/sct"
+    vaccine-code:
+      - "http://fhir.de/CodeSystem/dimdi/atc"
+      - "http://fhir.de/CodeSystem/bfarm/atc"
+      - "http://snomed.info/sct"
+    diagnostic-report-category:
+      - "http://loinc.org"
+      - "http://terminology.hl7.org/CodeSystem/v2-0074"
+
+opentracing:
+  jaeger:
+    enabled: false
+    log-spans: false
+    enable-b3-propagation: true
+    # Doesn't work yet. Waiting for upstream opentracing lib to include
+    # https://github.com/opentracing-contrib/java-spring-jaeger/commit/0b95db499ea57b9c43d7cfcb05dc74e01f67e287
+    enable-w3c-propagation: true
+    probabilistic-sampler:
+      sampling-rate: 0.1
+app:
+  version: 0.0.0-dev
+  bulkload:
+    enabled: true
+  dictionaryLoadInRam:
+    enabled: true
+  writeMedicationStatement:
+    enabled: true
+  startSingleStep: "" # Observation, Immunization, DiagnosticReport, Condition, MedicationAdministration, MedicationStatement, DepartmentCase or Procedure

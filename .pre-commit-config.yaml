@@ -1,0 +1,21 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-byte-order-marker
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+  - repo: https://github.com/jorisroovers/gitlint
+    rev: 7d6d5bc9b3a2c5ad4a890865a4f8765dc9293dff
+    hooks:
+      - id: gitlint
+        stages: [commit-msg]
+        entry: gitlint
+        args: [--contrib=CT1, --ignore=body-is-missing, --msg-filename]

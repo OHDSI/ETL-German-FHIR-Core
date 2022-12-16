@@ -1,0 +1,39 @@
+logging:
+  level:
+    org:
+      miracum: DEBUG
+      miracum.etl.fhirtoomop.FhirServerItemReader: INFO
+  file: {}
+
+data:
+  fhirGateway:
+    jdbcUrl: "jdbc:postgresql://localhost:15432/fhir"
+    username: "postgres"
+    password: "postgres"
+  fhirServer:
+    baseUrl: ""
+    username: ""
+    password: ""
+  omopCdm:
+    jdbcUrl: "jdbc:postgresql://localhost:5310/ohdsi"
+    username: "ohdsi_admin_user"
+    password: "admin1"
+    schema: "cds_cdm"
+  beginDate: "1800-01-01" # for example 2020-01-01
+  endDate: "2099-12-31"
+
+prometheus:
+  pushgateway:
+    url: ""
+
+opentracing:
+  jaeger:
+    log-spans: true
+    probabilistic-sampler:
+      sampling-rate: 1.0
+app:
+  bulkload:
+    enabled: false
+  dictionaryLoadInRam:
+    enabled: true
+  startSingleStep: "" # Observation, Immunization, DiagnosticReport, Condition, MedicationAdministration, MedicationStatement, DepartmentCase or Procedure
