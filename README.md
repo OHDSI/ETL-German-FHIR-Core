@@ -6,8 +6,6 @@ This repository is currently dependent on the following repositories, for testin
 
 <https://gitlab.miracum.org/miracum/etl/ohdsi-omop-v5> (test omop db)
 
-[FHIR-TO-OMOP WIKI](https://gitlab.miracum.org/miracum/etl/fhir-to-omop/-/wikis/home)
-
 ## Run it
 
 ### Hardware Requirements
