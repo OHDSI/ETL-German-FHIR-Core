@@ -102,8 +102,8 @@ public class PostProcessTask implements Tasklet {
       // executeSqlScripts.executeSQLScript(visitDetailInOtherTable);
       executeSqlScripts.executeSQLScript(death);
       executeSqlScripts.executeSQLScript(deviceProcedure);
-      //      executeSqlScripts.executeSQLScript(diagnoseUse);
-      //      executeSqlScripts.executeSQLScript(diagnosisRank);
+      executeSqlScripts.executeSQLScript(diagnoseUse);
+      executeSqlScripts.executeSQLScript(diagnosisRank);
       executeSqlScripts.executeSQLScript(primarySecondaryIcd);
       executeSqlScripts.executeSQLScript(cleanUpFactRelationship);
       executeSqlScripts.executeSQLScript(setCalculatedBirthOfYear);
@@ -120,8 +120,8 @@ public class PostProcessTask implements Tasklet {
           executeSqlScripts.executeSQLScript(severity);
           executeSqlScripts.executeSQLScript(stage);
           //          executeSqlScripts.executeSQLScript(visitDetailInOtherTable);
-          //          executeSqlScripts.executeSQLScript(diagnoseUse);
-          //          executeSqlScripts.executeSQLScript(diagnosisRank);
+          executeSqlScripts.executeSQLScript(diagnoseUse);
+          executeSqlScripts.executeSQLScript(diagnosisRank);
           executeSqlScripts.executeSQLScript(primarySecondaryIcd);
           executeSqlScripts.executeSQLScript(cleanUpFactRelationship);
 
@@ -154,8 +154,8 @@ public class PostProcessTask implements Tasklet {
           //          executeSqlScripts.executeSQLScript(visitDetailInOtherTable);
           executeSqlScripts.executeSQLScript(death);
           executeSqlScripts.executeSQLScript(deviceProcedure);
-          //          executeSqlScripts.executeSQLScript(diagnoseUse);
-          //          executeSqlScripts.executeSQLScript(diagnosisRank);
+          executeSqlScripts.executeSQLScript(diagnoseUse);
+          executeSqlScripts.executeSQLScript(diagnosisRank);
           executeSqlScripts.executeSQLScript(primarySecondaryIcd);
           executeSqlScripts.executeSQLScript(setCalculatedBirthOfYear);
           executeSqlScripts.executeSQLScript(datesOfHistoryOfTravel);
