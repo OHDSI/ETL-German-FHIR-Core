@@ -68,6 +68,19 @@ $$;
 Do
 $$
 BEGIN
+IF NOT EXISTS (SELECT constraint_name FROM information_schema.constraint_column_usage WHERE constraint_name = 'fpk_v_detail_preceding')
+THEN
 ALTER TABLE visit_detail ADD CONSTRAINT fpk_v_detail_preceding FOREIGN KEY (preceding_visit_detail_id) REFERENCES visit_detail (visit_detail_id);
+END IF;
+END;
+$$;
+
+Do
+$$
+BEGIN
+IF NOT EXISTS (SELECT constraint_name FROM information_schema.constraint_column_usage WHERE constraint_name = 'fpk_v_detail_parent')
+THEN
+ALTER TABLE visit_detail ADD CONSTRAINT fpk_v_detail_parent FOREIGN KEY (visit_detail_parent_id) REFERENCES visit_detail (visit_detail_id);
+END IF;
 END;
 $$;

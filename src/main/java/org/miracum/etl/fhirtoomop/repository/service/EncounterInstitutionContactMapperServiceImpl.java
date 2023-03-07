@@ -2,6 +2,7 @@ package org.miracum.etl.fhirtoomop.repository.service;
 
 import java.util.List;
 import org.miracum.etl.fhirtoomop.repository.FactRelationshipRepository;
+import org.miracum.etl.fhirtoomop.repository.ObservationRepository;
 import org.miracum.etl.fhirtoomop.repository.PostProcessMapRepository;
 import org.miracum.etl.fhirtoomop.repository.VisitOccRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,7 @@ public class EncounterInstitutionContactMapperServiceImpl {
   @Autowired VisitOccRepository visitOccRepository;
   @Autowired PostProcessMapRepository ppmRepository;
   @Autowired FactRelationshipRepository frRepository;
+  @Autowired ObservationRepository obsRepository;
 
   /**
    * Searches if a FHIR Encounter resource already exists in visit_occurrence table in OMOP CDM
@@ -66,6 +68,7 @@ public class EncounterInstitutionContactMapperServiceImpl {
    */
   public void deleteVisitOccByLogicalId(String fhirLogicalId) {
     visitOccRepository.deleteByFhirLogicalId(fhirLogicalId);
+    obsRepository.deleteByFhirLogicalId(fhirLogicalId);
   }
 
   /**
@@ -75,6 +78,7 @@ public class EncounterInstitutionContactMapperServiceImpl {
    */
   public void deleteVisitOccByIdentifier(String fhirIdentifier) {
     visitOccRepository.deleteByFhirIdentifier(fhirIdentifier);
+    obsRepository.deleteByFhirIdentifier(fhirIdentifier);
   }
 
   /**

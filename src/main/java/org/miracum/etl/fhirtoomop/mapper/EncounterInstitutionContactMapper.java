@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.Encounter.DiagnosisComponent;
 import org.hl7.fhir.r4.model.Enumerations.ResourceType;
@@ -34,7 +35,6 @@ import org.miracum.etl.fhirtoomop.DbMappings;
 import org.miracum.etl.fhirtoomop.config.FhirSystems;
 import org.miracum.etl.fhirtoomop.mapper.helpers.FindOmopConcepts;
 import org.miracum.etl.fhirtoomop.mapper.helpers.MapperMetrics;
-import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceCheckDataAbsentReason;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceFhirReferenceUtils;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceOmopReferenceUtils;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceOnset;
@@ -68,7 +68,6 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
   @Autowired ResourceFhirReferenceUtils fhirReferenceUtils;
   @Autowired FindOmopConcepts findOmopConcepts;
   @Autowired EncounterInstitutionContactMapperServiceImpl institutionContactService;
-  @Autowired ResourceCheckDataAbsentReason checkDataAbsentReason;
 
   private static final Counter noStartDateCounter =
       MapperMetrics.setNoStartDateCounter("EncounterInstitutionContact");
@@ -326,7 +325,7 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
 
       var sourceToConceptMap =
           findOmopConcepts.getCustomConcepts(
-              visitStatus, SOURCE_VOCABULARY_ID_VISIT_STATUS, dbMappings);
+              new Coding(null, visitStatus, null), SOURCE_VOCABULARY_ID_VISIT_STATUS, dbMappings);
       var visitTypeConceptId = sourceToConceptMap.getTargetConceptId();
       if (!visitTypeConceptId.equals(CONCEPT_NO_MATCHING_CONCEPT)) {
         return visitTypeConceptId;
@@ -348,16 +347,13 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
       log.debug("No class found for Encounter {}.", srcEncounter.getIdElement().getIdPart());
       return CONCEPT_NO_MATCHING_CONCEPT;
     }
-    var encounterClass = checkDataAbsentReason.getValue(srcEncounter.getClass_());
-    if (encounterClass == null) {
-      return CONCEPT_NO_MATCHING_CONCEPT;
-    }
-    var visitType = encounterClass.getCode();
+    var visitType = srcEncounter.getClass_().getCode();
     if (visitType.equalsIgnoreCase("station") || visitType.equalsIgnoreCase("stationaer")) {
       return CONCEPT_INPATIENT;
     }
     var sourceToConceptMap =
-        findOmopConcepts.getCustomConcepts(visitType, SOURCE_VOCABULARY_ID_VISIT_TYPE, dbMappings);
+        findOmopConcepts.getCustomConcepts(
+            new Coding(null, visitType, null), SOURCE_VOCABULARY_ID_VISIT_TYPE, dbMappings);
     return sourceToConceptMap.getTargetConceptId();
   }
 
@@ -672,7 +668,7 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
 
         var typeConceptId =
             findOmopConcepts
-                .getCustomConcepts(type, SOURCE_VOCABULARY_ID_DIAGNOSIS_TYPE, dbMappings)
+                .getCustomConcepts(useCoding, SOURCE_VOCABULARY_ID_DIAGNOSIS_TYPE, dbMappings)
                 .getTargetConceptId();
         if (typeConceptId != null) {
 

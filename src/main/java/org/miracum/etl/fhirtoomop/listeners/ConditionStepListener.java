@@ -97,19 +97,17 @@ public class ConditionStepListener implements StepExecutionListener {
             "Cleaned up all diagnosis data in [{}s]",
             String.format("%.3f", stopWatch.getTotalTimeSeconds()));
       }
+    }
+    if (dictionaryLoadInRam.equals(Boolean.TRUE)) {
+      dbMappings.setFindPersonIdByLogicalId(
+          repositories.getPersonRepository().getFhirLogicalIdAndPersonId());
+      dbMappings.setFindPersonIdByIdentifier(
+          repositories.getPersonRepository().getFhirIdentifierAndPersonId());
 
-      if (dictionaryLoadInRam.equals(Boolean.TRUE)) {
-        dbMappings.setFindPersonIdByLogicalId(
-            repositories.getPersonRepository().getFhirLogicalIdAndPersonId());
-        dbMappings.setFindPersonIdByIdentifier(
-            repositories.getPersonRepository().getFhirIdentifierAndPersonId());
-
-        dbMappings.setFindVisitOccIdByLogicalId(
-            repositories.getVisitOccRepository().getFhirLogicalIdAndVisitOccId());
-        dbMappings.setFindVisitOccIdByIdentifier(
-            repositories.getVisitOccRepository().getFhirIdentifierAndVisitOccId());
-      }
-
+      dbMappings.setFindVisitOccIdByLogicalId(
+          repositories.getVisitOccRepository().getFhirLogicalIdAndVisitOccId());
+      dbMappings.setFindVisitOccIdByIdentifier(
+          repositories.getVisitOccRepository().getFhirIdentifierAndVisitOccId());
       dbMappings.setFindIcdSnomedMapping(repositories.getIcdSnomedRepository().getIcdSnomedMap());
       dbMappings
           .getOmopConceptMapWrapper()
@@ -120,6 +118,7 @@ public class ConditionStepListener implements StepExecutionListener {
           .setFindValidIcd10GmConcept(
               repositories.getConceptRepository().findValidConceptId(VOCABULARY_ICD10GM));
     }
+
     dbMappings.setFindHardCodeConcept(
         repositories.getSourceToConceptRepository().sourceToConceptMap());
   }

@@ -9,7 +9,6 @@ import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_OBSERVATION;
 import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_PROCEDURE;
 import static org.miracum.etl.fhirtoomop.Constants.SOURCE_VOCABULARY_ID_DIAGNOSTIC_CONFIDENCE;
 import static org.miracum.etl.fhirtoomop.Constants.SOURCE_VOCABULARY_ID_ICD_LOCALIZATION;
-import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_ICD10GM;
 
 import com.google.common.base.Strings;
 import io.micrometer.core.instrument.Counter;
@@ -25,7 +24,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Condition;
 import org.hl7.fhir.r4.model.Enumerations.ResourceType;
-import org.hl7.fhir.r4.model.StringType;
+import org.hl7.fhir.r4.model.Extension;
 import org.miracum.etl.fhirtoomop.DbMappings;
 import org.miracum.etl.fhirtoomop.config.FhirSystems;
 import org.miracum.etl.fhirtoomop.mapper.helpers.FindOmopConcepts;
@@ -46,7 +45,6 @@ import org.miracum.etl.fhirtoomop.model.omop.SourceToConceptMap;
 import org.miracum.etl.fhirtoomop.repository.service.ConditionMapperServiceImpl;
 import org.miracum.etl.fhirtoomop.repository.service.OmopConceptServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
 /**
@@ -145,8 +143,8 @@ public class ConditionMapper implements FhirMapper<Condition> {
       updateExistingPostProcessMapEntry(conditionLogicId, conditionSourceIdentifier);
     }
 
-    var diagnoseCodingList = getDiagnoseCoding(srcCondition);
-    if (diagnoseCodingList.isEmpty()) {
+    var uncheckedDiagnoseCodingList = getDiagnoseCoding(srcCondition);
+    if (uncheckedDiagnoseCodingList.isEmpty()) {
       log.warn("No Diagnose Code found for [Condition]: {}. Skip resource.", conditionLogicId);
       noCodeCounter.increment();
       return null;
@@ -167,369 +165,56 @@ public class ConditionMapper implements FhirMapper<Condition> {
       noStartDateCounter.increment();
       return null;
     }
+
+    //    List<Coding> uncheckedDiagnoseCodings = new ArrayList<>();
+    //    for (var diagnoseCoding : diagnoseCodingList) {
+    //      var uncheckedDiagnoseCoding = splitDiagnoseCodes(diagnoseCoding, null);
+    //      if (uncheckedDiagnoseCoding.isEmpty() || uncheckedDiagnoseCoding == null) {
+    //        log.warn("No Diagnose Code found for [Condition]: {}. Skip resource.",
+    // conditionLogicId);
+    //        noCodeCounter.increment();
+    //        return null;
+    //      }
+    //      uncheckedDiagnoseCodings.addAll(uncheckedDiagnoseCoding);
+    //    }
+
+    var validIcdSnomedConceptMaps =
+        getValidIcdSnomedCodes(
+            uncheckedDiagnoseCodingList,
+            diagnoseOnset.getStartDateTime().toLocalDate(),
+            conditionLogicId);
+
+    if (validIcdSnomedConceptMaps.isEmpty()) {
+      log.warn("No Diagnose Code in [Condition]: {} is invalid. Skip resource.", conditionLogicId);
+      noCodeCounter.increment();
+      return null;
+    }
+
+    if (validIcdSnomedConceptMaps.size() == 2) {
+      var primarySecondaryIcdCodesPair =
+          setIcdPairs(validIcdSnomedConceptMaps, conditionLogicId, conditionSourceIdentifier);
+      wrapper.setPostProcessMap(primarySecondaryIcdCodesPair);
+    }
+
+    var icdCodingList =
+        getCodingBySystemUrl(uncheckedDiagnoseCodingList, fhirSystems.getDiagnoseCode());
+    Coding icdCoding = null;
+    if (!icdCodingList.isEmpty()) {
+      icdCoding = icdCodingList.get(0);
+    }
+
+    Pair<String, Integer> icdBodyLocalizationConcepts =
+        getBodySiteLocalizationConcepts(
+            icdCoding, srcCondition, diagnoseOnset.getStartDateTime().toLocalDate());
+    Coding diagnosticConfidence = getDiagnosticConfidence(icdCoding, conditionLogicId);
+
     var severityCoding = getSeverity(srcCondition);
     var stageCoding = getStage(srcCondition);
-
-    if (diagnoseCodingList.size() == 1) {
-      var diagnoseCoding = diagnoseCodingList.get(0);
-      var icdBodyLocalizationConcepts =
-          getBodySiteLocalizationConcepts(
-              diagnoseCoding, srcCondition, diagnoseOnset.getStartDateTime().toLocalDate());
-      var diagnosticConfidence = getDiagnosticConfidence(diagnoseCoding, conditionLogicId);
-      var diagnosticConfidenceConcept = getDiagnosticConfidenceConcept(diagnosticConfidence);
-      setDiagnoseCodesUsingSingleCoding(
-          wrapper,
-          conditionLogicId,
-          conditionSourceIdentifier,
-          personId,
-          visitOccId,
-          diagnoseOnset,
-          diagnoseCoding,
-          icdBodyLocalizationConcepts,
-          severityCoding,
-          stageCoding,
-          diagnosticConfidenceConcept);
-    } else {
-      setDiagnoseCodesUsingMultipleCodings(
-          wrapper,
-          conditionLogicId,
-          conditionSourceIdentifier,
-          personId,
-          visitOccId,
-          diagnoseOnset,
-          diagnoseCodingList,
-          severityCoding,
-          stageCoding,
-          srcCondition);
-    }
-
-    return wrapper;
-  }
-
-  /**
-   * @param clinicalStatusValue
-   * @param verificationStatusValue
-   */
-  private boolean diagnoseStatusProvement(
-      Coding clinicalStatusValue, Coding verificationStatusValue) {
-    if (clinicalStatusValue == null && verificationStatusValue == null) {
-      return false;
-    }
-    if (clinicalStatusValue != null
-        && clinicalStatusValue.getCode().equals("active")
-        && verificationStatusValue == null) {
-      return true;
-    }
-
-    if (clinicalStatusValue != null
-        && clinicalStatusValue.getCode().equals("active")
-        && verificationStatusValue != null
-        && verificationStatusValue.getCode().equals("confirmed")) {
-      return true;
-    }
-    return false;
-  }
-
-  private Coding getVerificationStatusValue(Condition srcCondition) {
-    var verificationStatusElement =
-        checkDataAbsentReason.getValue(srcCondition.getVerificationStatus());
-    if (verificationStatusElement == null) {
-      return null;
-    }
-    var verificationStatusValue =
-        verificationStatusElement.getCoding().stream()
-            .filter(status -> fhirSystems.getVerificationStatus().contains(status.getSystem()))
-            .findFirst();
-    if (verificationStatusValue.isPresent()) {
-      return verificationStatusValue.get();
-    }
-    return null;
-  }
-
-  /**
-   * @param srcCondition
-   * @return
-   */
-  private Coding getClinicalStatus(Condition srcCondition) {
-    var statusElement = checkDataAbsentReason.getValue(srcCondition.getClinicalStatus());
-    if (statusElement == null) {
-      return null;
-    }
-    var statusValue =
-        statusElement.getCoding().stream()
-            .filter(status -> status.getSystem().equals(fhirSystems.getClinicalStatus()))
-            .findFirst();
-    if (statusValue.isPresent()) {
-      return statusValue.get();
-    }
-    return null;
-  }
-
-  private void setDiagnoseCodesUsingMultipleCodings(
-      OmopModelWrapper wrapper,
-      String conditionLogicId,
-      String conditionSourceIdentifier,
-      Long personId,
-      Long visitOccId,
-      ResourceOnset diagnoseOnset,
-      List<Coding> diagnoseCodings,
-      Coding severityCoding,
-      Coding stageCoding,
-      Condition srcCondition) {
-
-    Coding uncheckedIcdCoding = null;
-    Coding uncheckedSnomedCoding = null;
-
-    for (var uncheckedCoding : diagnoseCodings) {
-      var system = uncheckedCoding.getSystem();
-      if (fhirSystems.getIcd10gm().contains(system)) {
-        uncheckedIcdCoding = uncheckedCoding;
-      }
-      if (fhirSystems.getSnomed().equals(system)) {
-        uncheckedSnomedCoding = uncheckedCoding;
-      }
-    }
-    if (uncheckedIcdCoding == null && uncheckedSnomedCoding == null) {
-      return;
-    }
-    var diagnosticConfidence = getDiagnosticConfidence(uncheckedIcdCoding, conditionLogicId);
     var diagnosticConfidenceConcept = getDiagnosticConfidenceConcept(diagnosticConfidence);
-    var icdBodyLocalizationConcepts =
-        getBodySiteLocalizationConcepts(
-            uncheckedIcdCoding, srcCondition, diagnoseOnset.getStartDateTime().toLocalDate());
-    var snomedConcept =
-        findOmopConcepts.getConcepts(
-            uncheckedSnomedCoding,
-            diagnoseOnset.getStartDateTime().toLocalDate(),
-            bulkload,
-            dbMappings);
 
-    List<Coding> uncheckedIcdCodings =
-        splitDiagnoseCodes(uncheckedIcdCoding, uncheckedIcdCoding.getVersionElement());
-    var icdSnomedMapPairList =
-        getValidIcdCodes(
-            uncheckedIcdCodings, diagnoseOnset.getStartDateTime().toLocalDate(), conditionLogicId);
-    if (icdSnomedMapPairList.isEmpty() && snomedConcept == null) {
-      return;
-    } else if (snomedConcept == null) {
-      // if a Snomed code does not exist in Concept, the ICD code will be written to OMOP CDM
-      setDiagnoseCodesUsingSingleCoding(
-          wrapper,
-          conditionLogicId,
-          conditionSourceIdentifier,
-          personId,
-          visitOccId,
-          diagnoseOnset,
-          uncheckedIcdCoding,
-          icdBodyLocalizationConcepts,
-          severityCoding,
-          stageCoding,
-          diagnosticConfidenceConcept);
-      return;
-    } else if (icdSnomedMapPairList.isEmpty()) {
-      // if a ICD code does not exist in Concept, the Snomed Code will be written to OMOP CDM
-      setDiagnoseCodesUsingSingleCoding(
-          wrapper,
-          conditionLogicId,
-          conditionSourceIdentifier,
-          personId,
-          visitOccId,
-          diagnoseOnset,
-          uncheckedSnomedCoding,
-          icdBodyLocalizationConcepts,
-          severityCoding,
-          stageCoding,
-          diagnosticConfidenceConcept);
-      return;
-    } else {
-      for (var singlePair : icdSnomedMapPairList) {
-        // if both ICD and SnomedCode exist, the ICD-SnomedMapping from OMOP CDM will be ignored.
-        // The ICD-Snomed Pair from FHIR resource will be used.
-        var customIcdSnomedLookUp = singlePair.getRight().get(0);
-        customIcdSnomedLookUp.setSnomedConceptId(snomedConcept.getConceptId());
-        customIcdSnomedLookUp.setSnomedDomainId(snomedConcept.getDomainId());
-        var customSinglePair = Pair.of(singlePair.getLeft(), List.of(customIcdSnomedLookUp));
-        icdProcessor(
-            customSinglePair,
-            null,
-            wrapper,
-            diagnoseOnset,
-            diagnosticConfidenceConcept,
-            conditionLogicId,
-            conditionSourceIdentifier,
-            personId,
-            visitOccId);
-      }
-    }
-
-    //    if (icdSnomedMapPairList.isEmpty()) {
-    //      // if a ICD code does not exist in Concept, the SnomedCode will be written to OMOP CDM
-    //      setDiagnoseCodesUsingSingleCoding(
-    //          wrapper,
-    //          conditionLogicId,
-    //          conditionSourceIdentifier,
-    //          personId,
-    //          visitOccId,
-    //          diagnoseOnset,
-    //          uncheckedSnomedCoding,
-    //          icdBodyLocalizationConcepts,
-    //          severityCoding,
-    //          stageCoding,
-    //          diagnosticConfidenceConcept);
-    //      return;
-    //    }
-
-    //    for (var singlePair : icdSnomedMapPairList) {
-    //    for (var uncheckedCoding : uncheckedIcdCodings) {
-    //      var icdOmopConcept =
-    //          findOmopConcepts.getConcepts(
-    //              uncheckedCoding,
-    //              diagnoseOnset.getStartDateTime().toLocalDate(),
-    //              bulkload,
-    //              dbMappings);
-
-    // if a ICD code does not exist in Concept, the SnomedCode will be written to OMOP CDM
-    //      if (icdOmopConcept == null) {
-    //        setDiagnoseCodesUsingSingleCoding(
-    //            wrapper,
-    //            conditionLogicId,
-    //            conditionSourceIdentifier,
-    //            personId,
-    //            visitOccId,
-    //            diagnoseOnset,
-    //            uncheckedSnomedCoding,
-    //            icdBodyLocalizationConcepts,
-    //            severityCoding,
-    //            stageCoding,
-    //            diagnosticConfidenceConcept);
-    //        return;
-    //      }
-    //      var customIcdSnomedLookup =
-    //          IcdSnomedDomainLookup.builder()
-    //              .icdGmCode(icdOmopConcept.getConceptCode())
-    //              .icdGmConceptId(icdOmopConcept.getConceptId())
-    //              .icdGmValidEndDate(icdOmopConcept.getValidEndDate())
-    //              .icdGmValidStartDate(icdOmopConcept.getValidStartDate())
-    //              .snomedConceptId(snomedConcept.getConceptId())
-    //              //              .snomedDomainId(OMOP_DOMAIN_CONDITION)
-    //              .snomedDomainId(snomedConcept.getDomainId())
-    //              .build();
-    //      icdProcessor(
-    //          //          Pair.of(icdOmopConcept.getConceptCode(),
-    // List.of(customIcdSnomedLookup)),
-    //          singlePair,
-    //          null,
-    //          wrapper,
-    //          diagnoseOnset,
-    //          diagnosticConfidenceConcept,
-    //          conditionLogicId,
-    //          conditionSourceIdentifier,
-    //          personId,
-    //          visitOccId);
-    //    }
-    if (icdSnomedMapPairList.size() == 2) {
-      var icdPairs = setIcdPairs(icdSnomedMapPairList, conditionLogicId, conditionSourceIdentifier);
-      wrapper.setPostProcessMap(icdPairs);
-    }
-
-    setBodySiteLocalization(
-        wrapper,
-        icdSnomedMapPairList,
-        snomedConcept,
-        conditionLogicId,
-        conditionSourceIdentifier,
-        personId,
-        visitOccId,
-        diagnoseOnset,
-        icdBodyLocalizationConcepts);
-
-    setDiagnoseMetaInfo(
-        wrapper,
-        icdSnomedMapPairList,
-        snomedConcept,
-        conditionLogicId,
-        conditionSourceIdentifier,
-        personId,
-        visitOccId,
-        diagnoseOnset,
-        severityCoding,
-        "severity");
-
-    setDiagnoseMetaInfo(
-        wrapper,
-        icdSnomedMapPairList,
-        snomedConcept,
-        conditionLogicId,
-        conditionSourceIdentifier,
-        personId,
-        visitOccId,
-        diagnoseOnset,
-        stageCoding,
-        "stage");
-  }
-
-  private void setDiagnoseCodesUsingSingleCoding(
-      OmopModelWrapper wrapper,
-      String conditionLogicId,
-      String conditionSourceIdentifier,
-      Long personId,
-      Long visitOccId,
-      ResourceOnset diagnoseOnset,
-      Coding diagnoseCoding,
-      Pair<String, Integer> icdBodyLocalizationConcepts,
-      Coding severityCoding,
-      Coding stageCoding,
-      SourceToConceptMap diagnosticConfidenceConcept) {
-
-    List<Coding> uncheckedDiagnoseCodes =
-        splitDiagnoseCodes(diagnoseCoding, diagnoseCoding.getVersionElement());
-    List<Pair<String, List<IcdSnomedDomainLookup>>> icdSnomedMapPairList = null;
-    Concept snomedConcept = null;
-
-    if (fhirSystems.getIcd10gm().contains(diagnoseCoding.getSystem())) {
-      // for ICD codes
-
-      icdSnomedMapPairList =
-          getValidIcdCodes(
-              uncheckedDiagnoseCodes,
-              diagnoseOnset.getStartDateTime().toLocalDate(),
-              conditionLogicId);
-
-      if (icdSnomedMapPairList.isEmpty()) {
-        return;
-      }
-      for (var singlePair : icdSnomedMapPairList) {
-        icdProcessor(
-            singlePair,
-            null,
-            wrapper,
-            diagnoseOnset,
-            diagnosticConfidenceConcept,
-            conditionLogicId,
-            conditionSourceIdentifier,
-            personId,
-            visitOccId);
-      }
-
-      if (icdSnomedMapPairList.size() == 2) {
-        var icdPairs =
-            setIcdPairs(icdSnomedMapPairList, conditionLogicId, conditionSourceIdentifier);
-        wrapper.setPostProcessMap(icdPairs);
-      }
-    } else if (fhirSystems.getSnomed().equals(diagnoseCoding.getSystem())) {
-      // for Snomed Codes
-
-      snomedConcept =
-          findOmopConcepts.getConcepts(
-              diagnoseCoding, diagnoseOnset.getStartDateTime().toLocalDate(), bulkload, dbMappings);
-
-      if (snomedConcept == null) {
-        return;
-      }
-
+    for (var validDiagnoseConcept : validIcdSnomedConceptMaps) {
       icdProcessor(
-          null,
-          snomedConcept,
+          validDiagnoseConcept,
           wrapper,
           diagnoseOnset,
           diagnosticConfidenceConcept,
@@ -537,95 +222,38 @@ public class ConditionMapper implements FhirMapper<Condition> {
           conditionSourceIdentifier,
           personId,
           visitOccId);
-    } else {
-      return;
+      setBodySiteLocalization(
+          wrapper,
+          validDiagnoseConcept,
+          conditionLogicId,
+          conditionSourceIdentifier,
+          personId,
+          visitOccId,
+          diagnoseOnset,
+          icdBodyLocalizationConcepts);
+      setDiagnoseMetaInfo(
+          wrapper,
+          validDiagnoseConcept,
+          conditionLogicId,
+          conditionSourceIdentifier,
+          personId,
+          visitOccId,
+          diagnoseOnset,
+          severityCoding,
+          "severity");
+
+      setDiagnoseMetaInfo(
+          wrapper,
+          validDiagnoseConcept,
+          conditionLogicId,
+          conditionSourceIdentifier,
+          personId,
+          visitOccId,
+          diagnoseOnset,
+          stageCoding,
+          "stage");
     }
-
-    setBodySiteLocalization(
-        wrapper,
-        icdSnomedMapPairList,
-        snomedConcept,
-        conditionLogicId,
-        conditionSourceIdentifier,
-        personId,
-        visitOccId,
-        diagnoseOnset,
-        icdBodyLocalizationConcepts);
-
-    setDiagnoseMetaInfo(
-        wrapper,
-        icdSnomedMapPairList,
-        snomedConcept,
-        conditionLogicId,
-        conditionSourceIdentifier,
-        personId,
-        visitOccId,
-        diagnoseOnset,
-        severityCoding,
-        "severity");
-
-    setDiagnoseMetaInfo(
-        wrapper,
-        icdSnomedMapPairList,
-        snomedConcept,
-        conditionLogicId,
-        conditionSourceIdentifier,
-        personId,
-        visitOccId,
-        diagnoseOnset,
-        stageCoding,
-        "stage");
-  }
-
-  /**
-   * Create new entry in Observation for bodySite or site localization of a diagnosis, and create
-   * new entry in POST_PROCESS_MAP for referencing later.
-   *
-   * @param wrapper the OMOP model wrapper
-   * @param icdSnomedMapList a List of pairs of ICD-Snomed mapping
-   * @param omopConcept extracted Concept from OMOP
-   * @param conditionLogicId logical id of the FHIR Condition resource
-   * @param conditionSourceIdentifier identifier of the FHIR Condition resource
-   * @param personId person_id of the referenced FHIR Patient resource
-   * @param visitOccId the visit_occurrence_id of the referenced FHIR Encounter resource from
-   *     VISIT_OCCURRENCE table in OMOP CDM
-   * @param diagnoseOnset start date time and end date time of the FHIR Condition resource
-   * @param icdBodyLocalizationConcept a pair of the body site or site localization name and OMOP
-   *     concept_id
-   */
-  private void setBodySiteLocalization(
-      OmopModelWrapper wrapper,
-      @Nullable List<Pair<String, List<IcdSnomedDomainLookup>>> icdSnomedMapList,
-      @Nullable Concept omopConcept,
-      String conditionLogicId,
-      String conditionSourceIdentifier,
-      Long personId,
-      Long visitOccId,
-      ResourceOnset diagnoseOnset,
-      Pair<String, Integer> icdBodyLocalizationConcept) {
-    var siteLocalization =
-        createSiteLocalization(
-            icdBodyLocalizationConcept,
-            conditionLogicId,
-            conditionSourceIdentifier,
-            personId,
-            visitOccId,
-            diagnoseOnset);
-    if (siteLocalization != null) {
-      wrapper.getObservation().add(siteLocalization);
-
-      var icdSiteLocalizations =
-          setBodySiteLocalizationReference(
-              icdSnomedMapList,
-              omopConcept,
-              personId,
-              siteLocalization.getObservationSourceValue(),
-              conditionLogicId,
-              conditionSourceIdentifier);
-      if (!icdSiteLocalizations.isEmpty()) {
-        wrapper.getPostProcessMap().addAll(icdSiteLocalizations);
-      }
-    }
+    return wrapper;
   }
 
   /**
@@ -645,8 +273,7 @@ public class ConditionMapper implements FhirMapper<Condition> {
    */
   private void setDiagnoseMetaInfo(
       OmopModelWrapper wrapper,
-      @Nullable List<Pair<String, List<IcdSnomedDomainLookup>>> icdSnomedMapList,
-      @Nullable Concept omopConcept,
+      Pair<String, List<IcdSnomedDomainLookup>> diagnoseCodePair,
       String conditionLogicId,
       String conditionSourceIdentifier,
       Long personId,
@@ -675,21 +302,222 @@ public class ConditionMapper implements FhirMapper<Condition> {
     if (diagnoseMetaInfo == null) {
       return;
     }
-    wrapper.getObservation().add(diagnoseMetaInfo);
+    //    wrapper.getObservation().add(diagnoseMetaInfo);
+    addToObservationList(wrapper.getObservation(), diagnoseMetaInfo);
+    ArrayList<PostProcessMap> diagnoseMetaInfoReference = new ArrayList<>();
+    var icdCode = diagnoseCodePair.getLeft();
+    var icdSnomedMap = diagnoseCodePair.getRight();
 
-    var diagnoseMetaInfoReference =
-        setDiagnoseMetaInfoReference(
-            icdSnomedMapList,
-            omopConcept,
-            personId,
-            diagnoseMetaInfo.getObservationSourceValue(),
-            conditionLogicId,
-            conditionSourceIdentifier,
-            metaInfoType);
+    for (var icdSnomed : icdSnomedMap) {
+
+      diagnoseMetaInfoReference.add(
+          PostProcessMap.builder()
+              .type(ResourceType.CONDITION.name())
+              .dataOne(diagnoseMetaInfo.getObservationSourceValue() + ":Observation")
+              .dataTwo(icdCode + ":" + icdSnomed.getSnomedDomainId())
+              .omopId(personId)
+              .omopTable(metaInfoType)
+              .fhirLogicalId(conditionLogicId)
+              .fhirIdentifier(conditionSourceIdentifier)
+              .build());
+    }
+
     if (diagnoseMetaInfoReference.isEmpty()) {
       return;
     }
     wrapper.getPostProcessMap().addAll(diagnoseMetaInfoReference);
+  }
+
+  /**
+   * Create new entry in Observation for bodySite or site localization of a diagnosis, and create
+   * new entry in POST_PROCESS_MAP for referencing later.
+   *
+   * @param wrapper the OMOP model wrapper
+   * @param icdSnomedMapList a List of pairs of ICD-Snomed mapping
+   * @param omopConcept extracted Concept from OMOP
+   * @param conditionLogicId logical id of the FHIR Condition resource
+   * @param conditionSourceIdentifier identifier of the FHIR Condition resource
+   * @param personId person_id of the referenced FHIR Patient resource
+   * @param visitOccId the visit_occurrence_id of the referenced FHIR Encounter resource from
+   *     VISIT_OCCURRENCE table in OMOP CDM
+   * @param diagnoseOnset start date time and end date time of the FHIR Condition resource
+   * @param icdBodyLocalizationConcept a pair of the body site or site localization name and OMOP
+   *     concept_id
+   */
+  private void setBodySiteLocalization(
+      OmopModelWrapper wrapper,
+      Pair<String, List<IcdSnomedDomainLookup>> diagnoseCodePair,
+      String conditionLogicId,
+      String conditionSourceIdentifier,
+      Long personId,
+      Long visitOccId,
+      ResourceOnset diagnoseOnset,
+      Pair<String, Integer> icdBodyLocalizationConcept) {
+    if (diagnoseCodePair == null) {
+      return;
+    }
+
+    var siteLocalization =
+        createSiteLocalization(
+            icdBodyLocalizationConcept,
+            conditionLogicId,
+            conditionSourceIdentifier,
+            personId,
+            visitOccId,
+            diagnoseOnset);
+    if (siteLocalization == null) {
+      return;
+    }
+    addToObservationList(wrapper.getObservation(), siteLocalization);
+    var icdCode = diagnoseCodePair.getLeft();
+    var icdSnomedMap = diagnoseCodePair.getRight();
+
+    for (var icdSnomed : icdSnomedMap) {
+
+      var icdSiteLocalization =
+          PostProcessMap.builder()
+              .type(ResourceType.CONDITION.name())
+              .dataOne(siteLocalization.getObservationSourceValue() + ":Observation")
+              .dataTwo(icdCode + ":" + icdSnomed.getSnomedDomainId())
+              .omopId(personId)
+              .omopTable("site_localization")
+              .fhirLogicalId(conditionLogicId)
+              .fhirIdentifier(conditionSourceIdentifier)
+              .build();
+      addToPostProcessMap(wrapper.getPostProcessMap(), icdSiteLocalization);
+    }
+  }
+  /**
+   * Processes information from FHIR Condition resource and transforms them into records OMOP CDM
+   * tables.
+   *
+   * @param singlePair one pair of ICD code and its OMOP concept_id and domain information
+   * @param omopConcept extracted Concept from OMOP
+   * @param wrapper the OMOP model wrapper
+   * @param diagnoseOnset start date time and end date time of the FHIR Condition resource
+   * @param diagnosticConfidenceConcept
+   * @param conditionLogicId logical id of the FHIR Condition resource
+   * @param conditionSourceIdentifier identifier of the FHIR Condition resource
+   * @param personId person_id of the referenced FHIR Patient resource
+   * @param visiOccId visit_occurrence_id of the referenced FHIR Encounter resource
+   */
+  private void icdProcessor(
+      Pair<String, List<IcdSnomedDomainLookup>> diagnoseCodePair,
+      OmopModelWrapper wrapper,
+      ResourceOnset diagnoseOnset,
+      SourceToConceptMap diagnosticConfidenceConcept,
+      String conditionLogicId,
+      String conditionSourceIdentifier,
+      Long personId,
+      Long visiOccId) {
+    if (diagnoseCodePair == null) {
+      return;
+    }
+
+    var rawIcdCode = diagnoseCodePair.getLeft();
+    var icdSnomedMaps = diagnoseCodePair.getRight();
+
+    for (var icdCodeCheck : icdSnomedMaps) {
+      var domain = icdCodeCheck.getSnomedDomainId();
+      setDiagnoses(
+          diagnosticConfidenceConcept,
+          wrapper,
+          diagnoseOnset,
+          conditionLogicId,
+          conditionSourceIdentifier,
+          personId,
+          visiOccId,
+          rawIcdCode,
+          icdCodeCheck.getSnomedConceptId(),
+          icdCodeCheck.getIcdGmConceptId(),
+          domain);
+    }
+  }
+
+  /**
+   * @param codingList
+   * @param codingSystemUrl
+   * @return
+   */
+  private List<Coding> getCodingBySystemUrl(List<Coding> codingList, List<String> codingSystemUrl) {
+    List<Coding> diagnoseCodingList = new ArrayList<>();
+    for (var coding : codingList) {
+      var systemUrl = coding.getSystem();
+      if (codingSystemUrl.contains(systemUrl)) {
+        diagnoseCodingList.add(coding);
+      }
+    }
+    return diagnoseCodingList;
+  }
+
+  /**
+   * Retrieve diagnose status from Condition FHIR resource based on its clinical and verification
+   * status.
+   *
+   * @param clinicalStatusValue
+   * @param verificationStatusValue
+   */
+  private boolean diagnoseStatusProvement(
+      Coding clinicalStatusValue, Coding verificationStatusValue) {
+    if (clinicalStatusValue == null && verificationStatusValue == null) {
+      return false;
+    }
+    if (clinicalStatusValue != null
+        && clinicalStatusValue.getCode().equals("active")
+        && verificationStatusValue == null) {
+      return true;
+    }
+
+    if (clinicalStatusValue != null
+        && clinicalStatusValue.getCode().equals("active")
+        && verificationStatusValue != null
+        && verificationStatusValue.getCode().equals("confirmed")) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Retrieve verification status from Condition FHIR resource.
+   *
+   * @param srcCondition
+   * @return
+   */
+  private Coding getVerificationStatusValue(Condition srcCondition) {
+    var verificationStatusElement =
+        checkDataAbsentReason.getValue(srcCondition.getVerificationStatus());
+    if (verificationStatusElement == null) {
+      return null;
+    }
+    var verificationStatusValue =
+        verificationStatusElement.getCoding().stream()
+            .filter(status -> fhirSystems.getVerificationStatus().contains(status.getSystem()))
+            .findFirst();
+    if (verificationStatusValue.isPresent()) {
+      return verificationStatusValue.get();
+    }
+    return null;
+  }
+
+  /**
+   * Retrive clinical status from Condition FHIR resource.
+   *
+   * @param srcCondition
+   * @return
+   */
+  private Coding getClinicalStatus(Condition srcCondition) {
+    var statusElement = checkDataAbsentReason.getValue(srcCondition.getClinicalStatus());
+    if (statusElement == null) {
+      return null;
+    }
+    var statusValue =
+        statusElement.getCoding().stream()
+            .filter(status -> status.getSystem().equals(fhirSystems.getClinicalStatus()))
+            .findFirst();
+    if (statusValue.isPresent()) {
+      return statusValue.get();
+    }
+    return null;
   }
 
   /**
@@ -700,26 +528,65 @@ public class ConditionMapper implements FhirMapper<Condition> {
    * @param conditionLogicId logical id of the FHIR Condition resource
    * @return a list of valid pairs of ICD code and its OMOP concept_id and domain information
    */
-  private List<Pair<String, List<IcdSnomedDomainLookup>>> getValidIcdCodes(
-      List<Coding> uncheckedIcds, LocalDate diagnoseDate, String conditionLogicId) {
-    if (uncheckedIcds.isEmpty()) {
+  private List<Pair<String, List<IcdSnomedDomainLookup>>> getValidIcdSnomedCodes(
+      List<Coding> uncheckedCodings, LocalDate diagnoseDate, String conditionLogicId) {
+    if (uncheckedCodings.isEmpty()) {
       return Collections.emptyList();
     }
 
+    var uncheckedSnomedCodings =
+        getCodingBySystemUrl(uncheckedCodings, List.of(fhirSystems.getSnomed()));
+
+    var uncheckedIcdCodings = getCodingBySystemUrl(uncheckedCodings, fhirSystems.getDiagnoseCode());
+    if (uncheckedIcdCodings.isEmpty() && uncheckedSnomedCodings.isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    var uncheckedSnomedCoding =
+        uncheckedSnomedCodings.isEmpty() ? null : uncheckedSnomedCodings.get(0);
+    var snomedConcept =
+        findOmopConcepts.getConcepts(uncheckedSnomedCoding, diagnoseDate, bulkload, dbMappings);
+
     List<Pair<String, List<IcdSnomedDomainLookup>>> validIcdSnomedConceptMaps = new ArrayList<>();
-    for (var uncheckedCode : uncheckedIcds) {
-      List<IcdSnomedDomainLookup> icdSnomedMap =
-          findOmopConcepts.getIcdSnomedConcepts(uncheckedCode, diagnoseDate, bulkload, dbMappings);
-      if (icdSnomedMap.isEmpty()) {
-        log.warn(
-            "ICD Code [{}] in [{}] is not valid in OMOP.",
-            uncheckedCode.getCode(),
-            conditionLogicId);
+
+    for (var uncheckedIcdCoding : uncheckedIcdCodings) {
+      var icdSnomedConcept =
+          findOmopConcepts.getIcdSnomedConcepts(
+              uncheckedIcdCoding, diagnoseDate, bulkload, dbMappings);
+      if (icdSnomedConcept.isEmpty() && snomedConcept == null) {
         return Collections.emptyList();
       }
 
-      validIcdSnomedConceptMaps.add(Pair.of(uncheckedCode.getCode(), icdSnomedMap));
+      if (uncheckedIcdCoding != null
+          && uncheckedSnomedCoding != null
+          && !icdSnomedConcept.isEmpty()
+          && snomedConcept != null) {
+        // ICD code and SnomedCode exist at the same time
+        for (var icdSnomedMap : icdSnomedConcept) {
+          icdSnomedMap.setSnomedConceptId(snomedConcept.getConceptId());
+          icdSnomedMap.setSnomedDomainId(snomedConcept.getDomainId());
+          validIcdSnomedConceptMaps.add(
+              Pair.of(uncheckedIcdCoding.getCode(), List.of(icdSnomedMap)));
+        }
+      } else if (uncheckedIcdCoding != null && !icdSnomedConcept.isEmpty()) {
+
+        validIcdSnomedConceptMaps.add(Pair.of(uncheckedIcdCoding.getCode(), icdSnomedConcept));
+
+      } else if (uncheckedSnomedCoding != null && snomedConcept != null) {
+        var snomedFormatedConcept =
+            IcdSnomedDomainLookup.builder()
+                .icdGmCode(snomedConcept.getConceptCode())
+                .icdGmConceptId(snomedConcept.getConceptId())
+                .snomedConceptId(snomedConcept.getConceptId())
+                .snomedDomainId(snomedConcept.getDomainId())
+                .build();
+        validIcdSnomedConceptMaps.add(
+            Pair.of(uncheckedSnomedCoding.getCode(), List.of(snomedFormatedConcept)));
+      } else {
+        return Collections.emptyList();
+      }
     }
+
     return validIcdSnomedConceptMaps;
   }
 
@@ -742,11 +609,30 @@ public class ConditionMapper implements FhirMapper<Condition> {
     List<Coding> diagnoseCodingList = new ArrayList<>();
 
     for (var diagnoseCoding : diagnoseCodings) {
-
-      if (fhirSystems.getDiagnoseCode().contains(diagnoseCoding.getSystem())) {
-        diagnoseCodingList.add(diagnoseCoding);
+      if (diagnoseCodeExists(diagnoseCoding)) {
+        if (!fhirSystems.getIcd10gm().contains(diagnoseCoding.getSystem())) {
+          diagnoseCodingList.add(diagnoseCoding);
+        } else {
+          var sourceCodes = diagnoseCoding.getCode().strip();
+          if (!sourceCodes.contains(" ")) {
+            diagnoseCodingList.add(diagnoseCoding);
+          } else {
+            var codeArr = Arrays.asList(sourceCodes.split(" ", 2));
+            for (var code : codeArr) {
+              var element =
+                  new Coding()
+                      .setCode(code)
+                      .setSystem(diagnoseCoding.getSystem())
+                      .setVersionElement(diagnoseCoding.getVersionElement())
+                      .setExtension(diagnoseCoding.getExtension());
+              var singleCoding = element.castToCoding(element);
+              diagnoseCodingList.add(singleCoding);
+            }
+          }
+        }
       }
     }
+
     return diagnoseCodingList;
   }
 
@@ -855,104 +741,6 @@ public class ConditionMapper implements FhirMapper<Condition> {
   }
 
   /**
-   * Separates primary and secondary ICD codes.
-   *
-   * @param icdSourceCodes string which contains both primary and secondary ICD codes
-   * @return list of primary and secondary ICD codes as FHIR Coding-Type
-   */
-  private List<Coding> splitDiagnoseCodes(Coding diagnoseSourceCoding, StringType version) {
-    List<Coding> uncheckedDiagnoseCodes = new ArrayList<>();
-    var vocabularyId = findOmopConcepts.getOmopVocabularyId(diagnoseSourceCoding.getSystem());
-    if (vocabularyId.equals(VOCABULARY_ICD10GM)) {
-      var sourceCodes = diagnoseSourceCoding.getCode().strip();
-
-      if (sourceCodes.contains(" ")) {
-        var codeArr = Arrays.asList(sourceCodes.split(" ", 2));
-        for (var code : codeArr) {
-          var element =
-              new Coding()
-                  .setCode(code)
-                  .setSystem(diagnoseSourceCoding.getSystem())
-                  .setVersionElement(version)
-                  .setExtension(diagnoseSourceCoding.getExtension());
-          var singleCoding = element.castToCoding(element);
-          uncheckedDiagnoseCodes.add(singleCoding);
-        }
-
-      } else {
-        uncheckedDiagnoseCodes.add(diagnoseSourceCoding);
-      }
-    } else {
-      uncheckedDiagnoseCodes.add(diagnoseSourceCoding);
-    }
-    return uncheckedDiagnoseCodes;
-  }
-
-  /**
-   * Processes information from FHIR Condition resource and transforms them into records OMOP CDM
-   * tables.
-   *
-   * @param singlePair one pair of ICD code and its OMOP concept_id and domain information
-   * @param omopConcept extracted Concept from OMOP
-   * @param wrapper the OMOP model wrapper
-   * @param diagnoseOnset start date time and end date time of the FHIR Condition resource
-   * @param diagnosticConfidenceConcept
-   * @param conditionLogicId logical id of the FHIR Condition resource
-   * @param conditionSourceIdentifier identifier of the FHIR Condition resource
-   * @param personId person_id of the referenced FHIR Patient resource
-   * @param visiOccId visit_occurrence_id of the referenced FHIR Encounter resource
-   */
-  private void icdProcessor(
-      @Nullable Pair<String, List<IcdSnomedDomainLookup>> singlePair,
-      @Nullable Concept omopConcept,
-      OmopModelWrapper wrapper,
-      ResourceOnset diagnoseOnset,
-      SourceToConceptMap diagnosticConfidenceConcept,
-      String conditionLogicId,
-      String conditionSourceIdentifier,
-      Long personId,
-      Long visiOccId) {
-
-    if (singlePair == null && omopConcept == null) {
-      return;
-    }
-
-    if (singlePair != null) {
-      var rawIcdCode = singlePair.getLeft();
-      var icdSnomedMaps = singlePair.getRight();
-
-      for (var icdCodeCheck : icdSnomedMaps) {
-        var domain = icdCodeCheck.getSnomedDomainId();
-        setDiagnoses(
-            diagnosticConfidenceConcept,
-            wrapper,
-            diagnoseOnset,
-            conditionLogicId,
-            conditionSourceIdentifier,
-            personId,
-            visiOccId,
-            rawIcdCode,
-            icdCodeCheck.getSnomedConceptId(),
-            icdCodeCheck.getIcdGmConceptId(),
-            domain);
-      }
-    } else {
-      setDiagnoses(
-          diagnosticConfidenceConcept,
-          wrapper,
-          diagnoseOnset,
-          conditionLogicId,
-          conditionSourceIdentifier,
-          personId,
-          visiOccId,
-          omopConcept.getConceptCode(),
-          omopConcept.getConceptId(),
-          omopConcept.getConceptId(),
-          omopConcept.getDomainId());
-    }
-  }
-
-  /**
    * Write diagnose information into corrected OMOP tables based on their domains.
    *
    * @param diagnosticConfidenceConcept OMOP concept for diagnostic confidence
@@ -1057,13 +845,20 @@ public class ConditionMapper implements FhirMapper<Condition> {
    * @return diagnostic confidence from FHIR Condition resource
    */
   private Coding getDiagnosticConfidence(Coding icdCoding, String conditionId) {
+
     if (!icdCoding.hasExtension(fhirSystems.getDiagnosticConfidence())) {
-      log.debug("No [Diagnostic confidence] found for Condition [{}].", conditionId);
+      //      log.debug("No [Diagnostic confidence] found for Condition [{}].", conditionId);
+      return null;
+    }
+    var diagnosticConfidenceType =
+        icdCoding.getExtensionByUrl(fhirSystems.getDiagnosticConfidence()).getValue();
+
+    if (diagnosticConfidenceType == null) {
       return null;
     }
 
-    var diagnosticConfidenceType =
-        icdCoding.getExtensionByUrl(fhirSystems.getDiagnosticConfidence()).getValue();
+    //        var diagnosticConfidenceType =
+    //            icdCoding.getExtensionByUrl(fhirSystems.getDiagnosticConfidence()).getValue();
     var diagnosticConfidence = diagnosticConfidenceType.castToCoding(diagnosticConfidenceType);
     if (!diagnosticConfidence.hasCode() || Strings.isNullOrEmpty(diagnosticConfidence.getCode())) {
       log.debug("No [Diagnostic confidence] found for Condition [{}].", conditionId);
@@ -1187,9 +982,7 @@ public class ConditionMapper implements FhirMapper<Condition> {
     }
 
     return findOmopConcepts.getCustomConcepts(
-        diagnosticConfidenceCoding.getCode(),
-        SOURCE_VOCABULARY_ID_DIAGNOSTIC_CONFIDENCE,
-        dbMappings);
+        diagnosticConfidenceCoding, SOURCE_VOCABULARY_ID_DIAGNOSTIC_CONFIDENCE, dbMappings);
   }
 
   /**
@@ -1395,69 +1188,6 @@ public class ConditionMapper implements FhirMapper<Condition> {
   }
 
   /**
-   * * Creates new records of the post_process_map table in OMOP CDM for extracted site localization
-   * information from the processed FHIR Condition resource.
-   *
-   * @param icdSnomedMapList a list of valid pairs of ICD code and its OMOP concept_id and domain
-   *     information
-   * @param omopConcept extracted Concept from OMOP
-   * @param personId person_id of the referenced FHIR Patient resource
-   * @param siteLocalization site localization information from the processed FHIR Condition
-   *     resource
-   * @param conditionLogicId logical id of the FHIR Condition resource
-   * @param conditionSourceIdentifier identifier of the FHIR Condition resource
-   * @return list of new records of the post_process_map table in OMOP CDM for the processed FHIR
-   *     Condition resource
-   */
-  private List<PostProcessMap> setBodySiteLocalizationReference(
-      @Nullable List<Pair<String, List<IcdSnomedDomainLookup>>> icdSnomedMapList,
-      @Nullable Concept omopConcept,
-      Long personId,
-      String siteLocalization,
-      String conditionLogicId,
-      String conditionSourceIdentifier) {
-
-    if (icdSnomedMapList == null && omopConcept == null) {
-      return Collections.emptyList();
-    }
-
-    ArrayList<PostProcessMap> icdSiteLocalizations = new ArrayList<>();
-    if (icdSnomedMapList != null) {
-      for (var singlePair : icdSnomedMapList) {
-        var icdCode = singlePair.getLeft();
-        var icdSnomedMap = singlePair.getRight();
-
-        for (var icdSnomed : icdSnomedMap) {
-
-          icdSiteLocalizations.add(
-              PostProcessMap.builder()
-                  .type(ResourceType.CONDITION.name())
-                  .dataOne(siteLocalization + ":Observation")
-                  .dataTwo(icdCode + ":" + icdSnomed.getSnomedDomainId())
-                  .omopId(personId)
-                  .omopTable("site_localization")
-                  .fhirLogicalId(conditionLogicId)
-                  .fhirIdentifier(conditionSourceIdentifier)
-                  .build());
-        }
-      }
-    } else {
-      icdSiteLocalizations.add(
-          PostProcessMap.builder()
-              .type(ResourceType.CONDITION.name())
-              .dataOne(siteLocalization + ":Observation")
-              .dataTwo(omopConcept.getConceptCode() + ":" + omopConcept.getDomainId())
-              .omopId(personId)
-              .omopTable("site_localization")
-              .fhirLogicalId(conditionLogicId)
-              .fhirIdentifier(conditionSourceIdentifier)
-              .build());
-    }
-
-    return icdSiteLocalizations;
-  }
-
-  /**
    * Creates new records of the post_process_map table in OMOP CDM for extracted severity
    * information from the processed FHIR Condition resource.
    *
@@ -1471,54 +1201,6 @@ public class ConditionMapper implements FhirMapper<Condition> {
    * @return list of new records of the post_process_map table in OMOP CDM for the processed FHIR
    *     Condition resource
    */
-  private List<PostProcessMap> setDiagnoseMetaInfoReference(
-      @Nullable List<Pair<String, List<IcdSnomedDomainLookup>>> icdSnomedMapList,
-      @Nullable Concept omopConcept,
-      Long personId,
-      String diagnoseMetaInfo,
-      String conditionLogicId,
-      String conditionSourceIdentifier,
-      String metaInfoType) {
-
-    if (icdSnomedMapList == null && omopConcept == null) {
-      return Collections.emptyList();
-    }
-
-    ArrayList<PostProcessMap> metaInfos = new ArrayList<>();
-    if (icdSnomedMapList != null) {
-      for (var singlePair : icdSnomedMapList) {
-        var icdCode = singlePair.getLeft();
-        var icdSnomedMap = singlePair.getRight();
-
-        for (var icdSnomed : icdSnomedMap) {
-
-          metaInfos.add(
-              PostProcessMap.builder()
-                  .type(ResourceType.CONDITION.name())
-                  .dataOne(diagnoseMetaInfo + ":Observation")
-                  .dataTwo(icdCode + ":" + icdSnomed.getSnomedDomainId())
-                  .omopId(personId)
-                  .omopTable(metaInfoType)
-                  .fhirLogicalId(conditionLogicId)
-                  .fhirIdentifier(conditionSourceIdentifier)
-                  .build());
-        }
-      }
-    } else {
-      metaInfos.add(
-          PostProcessMap.builder()
-              .type(ResourceType.CONDITION.name())
-              .dataOne(diagnoseMetaInfo + ":Observation")
-              .dataTwo(omopConcept.getConceptCode() + ":" + omopConcept.getDomainId())
-              .omopId(personId)
-              .omopTable(metaInfoType)
-              .fhirLogicalId(conditionLogicId)
-              .fhirIdentifier(conditionSourceIdentifier)
-              .build());
-    }
-
-    return metaInfos;
-  }
 
   /**
    * Creates a new record of the observation table in OMOP CDM for extracted site localization
@@ -1621,7 +1303,7 @@ public class ConditionMapper implements FhirMapper<Condition> {
     } else if (icdSiteLocalization != null) {
       var icdSiteLocalizationConcept =
           findOmopConcepts.getCustomConcepts(
-              icdSiteLocalization.getCode(), SOURCE_VOCABULARY_ID_ICD_LOCALIZATION, dbMappings);
+              icdSiteLocalization, SOURCE_VOCABULARY_ID_ICD_LOCALIZATION, dbMappings);
       return Pair.of(
           icdSiteLocalization.getCode(), icdSiteLocalizationConcept.getTargetConceptId());
     } else {
@@ -1641,8 +1323,10 @@ public class ConditionMapper implements FhirMapper<Condition> {
    * @return site localization from FHIR Condition resource
    */
   private Coding getSiteLocalization(Coding icdCoding) {
-    var siteLocalizationCodingExtension =
+
+    Extension siteLocalizationCodingExtension =
         icdCoding.getExtensionByUrl(fhirSystems.getSiteLocalizationExtension());
+
     if (siteLocalizationCodingExtension == null) {
       return null;
     }
@@ -1665,10 +1349,10 @@ public class ConditionMapper implements FhirMapper<Condition> {
    * @return body site from FHIR Condition resource
    */
   private Coding getBodySite(Condition srcCondition) {
-    var bodySiteCodeable = srcCondition.getBodySite();
-    if (bodySiteCodeable.isEmpty()) {
+    if (!srcCondition.hasBodySite() || srcCondition.getBodySite().isEmpty()) {
       return null;
     }
+    var bodySiteCodeable = srcCondition.getBodySite();
 
     var bodySiteCoding =
         bodySiteCodeable.stream().filter(codeable -> !codeable.getCoding().isEmpty()).findFirst();

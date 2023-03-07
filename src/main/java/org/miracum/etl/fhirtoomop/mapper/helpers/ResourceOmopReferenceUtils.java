@@ -1,7 +1,6 @@
 package org.miracum.etl.fhirtoomop.mapper.helpers;
 
 import com.google.common.base.Strings;
-import java.time.LocalDateTime;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -289,16 +288,17 @@ public class ResourceOmopReferenceUtils {
       String sourceId) {
     var existingVisitOccId =
         getExistingVisitOccId(encounterReferenceLogicalId, encounterReferenceIdentifier);
-    if (existingVisitOccId == null && bulkload.equals(Boolean.FALSE)) {
-      // TODO: use JPA instead of JDBCTemplate
-      readerTemplate.update(
-          String.format("UPDATE %s SET last_updated_at=? WHERE fhir_id=?", inputTableName),
-          LocalDateTime.now().plusDays(1),
-          sourceId.substring(4));
-      log.warn(
-          "No visit found for [{}]. This resource will be processed again tomorrow.", sourceId);
-      return null;
-    }
+    //    if (existingVisitOccId == null && bulkload.equals(Boolean.FALSE)) {
+    //      // TODO: use JPA instead of JDBCTemplate
+    //      readerTemplate.update(
+    //          String.format("UPDATE %s SET last_updated_at=? WHERE fhir_id=?", inputTableName),
+    //          LocalDateTime.now().plusDays(1),
+    //          sourceId.substring(4));
+    //      log.warn(
+    //          "No visit found for [{}]. This resource will be processed again tomorrow.",
+    // sourceId);
+    //      return null;
+    //    }
 
     return existingVisitOccId;
   }

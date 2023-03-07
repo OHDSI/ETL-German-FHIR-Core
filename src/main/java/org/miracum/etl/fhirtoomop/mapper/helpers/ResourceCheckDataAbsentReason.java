@@ -9,7 +9,6 @@ import org.hl7.fhir.r4.model.Consent.provisionComponent;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.Enumeration;
 import org.hl7.fhir.r4.model.Extension;
-import org.hl7.fhir.r4.model.Observation.ObservationComponentComponent;
 import org.hl7.fhir.r4.model.Period;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.Type;
@@ -136,17 +135,6 @@ public class ResourceCheckDataAbsentReason {
 
     return provisionComponent.getExtensionByUrl(fhirSystems.getDataAbsentReason());
   }
-  /**
-   * Extract DataAbsentReason from observationComponentComponent
-   *
-   * @param observationComponentComponent observationComponentComponent from FHIR resource
-   * @return DataAbsentReason from observationComponentComponent or NULL if not exists
-   */
-  private Extension getDataAbsentReasonExtension(
-      ObservationComponentComponent observationComponentComponent) {
-
-    return observationComponentComponent.getExtensionByUrl(fhirSystems.getDataAbsentReason());
-  }
 
   /**
    * Extract value of stringElement
@@ -255,21 +243,6 @@ public class ResourceCheckDataAbsentReason {
     var dataAbsentReason = getDataAbsentReasonExtension(provisionComponent);
     if (dataAbsentReason == null) {
       return provisionComponent;
-    }
-    return null;
-  }
-
-  /**
-   * Extract value of observationComponentComponent
-   *
-   * @param observationComponentComponent observationComponentComponent from FHIR resource
-   * @return value of observationComponentComponent or NULL if not exists
-   */
-  public ObservationComponentComponent getValue(
-      ObservationComponentComponent observationComponentComponent) {
-    var dataAbsentReason = getDataAbsentReasonExtension(observationComponentComponent);
-    if (dataAbsentReason == null) {
-      return observationComponentComponent;
     }
     return null;
   }

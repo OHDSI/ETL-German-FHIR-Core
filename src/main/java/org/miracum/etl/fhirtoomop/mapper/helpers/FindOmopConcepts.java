@@ -55,6 +55,7 @@ public class FindOmopConcepts {
 
   @Autowired OmopConceptServiceImpl omopConceptService;
   @Autowired ResourceCheckDataAbsentReason checkDataAbsentReason;
+  @Autowired Boolean dictionaryLoadInRam;
 
   /**
    * Search for OMOP concept in CONCEPT table for FHIR code
@@ -89,7 +90,7 @@ public class FindOmopConcepts {
     }
 
     Map<String, List<Concept>> allConcepts;
-    if (bulkLoad.equals(Boolean.TRUE)) {
+    if (bulkLoad.equals(Boolean.TRUE) && dictionaryLoadInRam.equals(Boolean.TRUE)) {
       allConcepts = dbMappings.getOmopConceptMapWrapper().getValidConcepts(vocabularyId);
     } else {
       allConcepts = omopConceptService.findValidConceptIdFromConceptCode(vocabularyId, fhirCode);
@@ -104,12 +105,11 @@ public class FindOmopConcepts {
 
     if (codeValidDate == null) {
       return omopConcepts.get(0);
-    } else {
-      for (var concept : omopConcepts) {
-        if (!concept.getValidStartDate().isAfter(codeValidDate)
-            && !concept.getValidEndDate().isBefore(codeValidDate)) {
-          return concept;
-        }
+    }
+    for (var concept : omopConcepts) {
+      if (!concept.getValidStartDate().isAfter(codeValidDate)
+          && !concept.getValidEndDate().isBefore(codeValidDate)) {
+        return concept;
       }
     }
 
@@ -126,8 +126,11 @@ public class FindOmopConcepts {
    * @return a OMOP SOURCE_TO_CONCEPT_MAP model
    */
   public SourceToConceptMap getCustomConcepts(
-      String fhirCode, String sourceVocabularyId, DbMappings dbMappings) {
-
+      Coding fhirCoding, String sourceVocabularyId, DbMappings dbMappings) {
+    if (fhirCoding == null) {
+      return null;
+    }
+    var fhirCode = fhirCoding.getCode();
     var sourceToConceptMap = dbMappings.getFindHardCodeConcept();
 
     var omopCustomConcepts = sourceToConceptMap.get(sourceVocabularyId);
@@ -163,12 +166,21 @@ public class FindOmopConcepts {
 
     Map<String, List<IcdSnomedDomainLookup>> icdSnomedMap;
 
-    if (bulkLoad.equals(Boolean.TRUE)) {
+    if (bulkLoad.equals(Boolean.TRUE) && dictionaryLoadInRam.equals(Boolean.TRUE)) {
       icdSnomedMap = dbMappings.getFindIcdSnomedMapping();
     } else {
       icdSnomedMap = omopConceptService.getIcdSnomedMap(cleanIcdCode);
     }
 
+    var keySet = icdSnomedMap.keySet();
+    if (!keySet.contains(cleanIcdCode)) {
+      var defaultIcdSnomedDomainLookup =
+          defaultIcdSnomedDomainLookup(icdCoding, codeValidDate, bulkLoad, dbMappings);
+      if (defaultIcdSnomedDomainLookup == null) {
+        return Collections.emptyList();
+      }
+      return List.of(defaultIcdSnomedDomainLookup);
+    }
     for (var entry : icdSnomedMap.entrySet()) {
       var key = entry.getKey();
       if (key.equalsIgnoreCase(cleanIcdCode)) {
@@ -180,12 +192,7 @@ public class FindOmopConcepts {
             .collect(Collectors.toCollection(ArrayList::new));
       }
     }
-    var defaultIcdSnomedDomainLookup =
-        defaultIcdSnomedDomainLookup(icdCoding, codeValidDate, bulkLoad, dbMappings);
-    if (defaultIcdSnomedDomainLookup == null) {
-      return Collections.emptyList();
-    }
-    return List.of(defaultIcdSnomedDomainLookup);
+    return Collections.emptyList();
   }
 
   public List<SnomedVaccineStandardLookup> getSnomedVaccineConcepts(
@@ -345,16 +352,20 @@ public class FindOmopConcepts {
    * @return the default OMOP SOURCE_TO_CONCEPT_MAP model
    */
   private SourceToConceptMap defaultSourceToConceptMap(String fhirCode, String vocabularyId) {
-    var defaultSourceToConceptMap =
-        SourceToConceptMap.builder()
-            .sourceCode(fhirCode)
-            .targetConceptId(CONCEPT_NO_MATCHING_CONCEPT)
-            .build();
-    if (SOURCE_VOCABULARY_ID_OBSERVATION_CATEGORY.equals(vocabularyId)
-        || SOURCE_VOCABULARY_ID_DIAGNOSTIC_REPORT_CATEGORY.equals(vocabularyId)) {
-      defaultSourceToConceptMap.setTargetConceptId(CONCEPT_EHR);
+
+    if (!Strings.isNullOrEmpty(vocabularyId)) {
+      var defaultSourceToConceptMap = SourceToConceptMap.builder().sourceCode(fhirCode).build();
+      if (vocabularyId.equals(SOURCE_VOCABULARY_ID_OBSERVATION_CATEGORY)
+          || vocabularyId.equals(SOURCE_VOCABULARY_ID_DIAGNOSTIC_REPORT_CATEGORY)) {
+        defaultSourceToConceptMap.setTargetConceptId(CONCEPT_EHR);
+      }
+      return defaultSourceToConceptMap;
+    } else {
+      return SourceToConceptMap.builder()
+          .sourceCode(fhirCode)
+          .targetConceptId(CONCEPT_NO_MATCHING_CONCEPT)
+          .build();
     }
-    return defaultSourceToConceptMap;
   }
 
   /**

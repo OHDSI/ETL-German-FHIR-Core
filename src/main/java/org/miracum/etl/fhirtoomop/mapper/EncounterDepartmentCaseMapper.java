@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.Encounter.EncounterLocationComponent;
 import org.hl7.fhir.r4.model.Reference;
@@ -510,7 +511,8 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
       LocalDateTime endDateTime,
       String departmentCaseLogicId) {
     if (srcDepartmentCaseEncounter.hasStatus() && srcDepartmentCaseEncounter.getStatus() != null) {
-      var departmentCaseStatus = srcDepartmentCaseEncounter.getStatus().toString();
+      var departmentCaseStatus =
+          new Coding(null, srcDepartmentCaseEncounter.getStatus().toString(), null);
       var sourceToConceptMap =
           findOmopConcepts.getCustomConcepts(
               departmentCaseStatus, SOURCE_VOCABULARY_ID_VISIT_STATUS, dbMappings);
@@ -540,7 +542,7 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
   private Integer getLocationStatus(
       EncounterLocationComponent station, LocalDateTime endDateTime, String departmentCaseLogicId) {
     if (station.hasStatus() && station.getStatus() != null) {
-      var locationStatus = station.getStatus().toString();
+      var locationStatus = new Coding(null, station.getStatus().toString(), null);
 
       var sourceToConceptMap =
           findOmopConcepts.getCustomConcepts(
@@ -626,7 +628,8 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
       return CONCEPT_INPATIENT;
     }
     var sourceToConceptMap =
-        findOmopConcepts.getCustomConcepts(visitType, SOURCE_VOCABULARY_ID_VISIT_TYPE, dbMappings);
+        findOmopConcepts.getCustomConcepts(
+            new Coding(null, visitType, null), SOURCE_VOCABULARY_ID_VISIT_TYPE, dbMappings);
     return sourceToConceptMap.getTargetConceptId();
   }
 

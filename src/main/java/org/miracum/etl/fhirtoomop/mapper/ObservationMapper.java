@@ -573,7 +573,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
       Coding observationCoding, String vocabularyId, String domainId) {
     Concept observationCodeConcept;
     var geccoCustomConcept =
-        findOmopConcepts.getCustomConcepts(observationCoding.getCode(), vocabularyId, dbMappings);
+        findOmopConcepts.getCustomConcepts(observationCoding, vocabularyId, dbMappings);
     observationCodeConcept =
         Concept.builder()
             .conceptCode(observationCoding.getCode())
@@ -703,7 +703,9 @@ public class ObservationMapper implements FhirMapper<Observation> {
 
       var valueConcept =
           findOmopConcepts.getCustomConcepts(
-              valueCodeableConcept.getText(), SOURCE_VOCABULARY_ID_LAB_RESULT, dbMappings);
+              new Coding(null, valueCodeableConcept.getText(), null),
+              SOURCE_VOCABULARY_ID_LAB_RESULT,
+              dbMappings);
 
       basisObservation.setValueAsConceptId(valueConcept.getTargetConceptId());
       basisObservation.setValueAsString(valueConcept.getSourceCode());
@@ -764,11 +766,11 @@ public class ObservationMapper implements FhirMapper<Observation> {
       String observationSourceIdentifier) {
     String interpretation = getInterpretation(srcObservation, observationLogicId);
     var categoryCoding = getCategoryCoding(srcObservation, observationLogicId);
-    var categoryCode = categoryCoding == null ? null : categoryCoding.getCode();
+    //    var categoryCode = categoryCoding == null ? null : categoryCoding.getCode();
 
     SourceToConceptMap categoryConcept =
         findOmopConcepts.getCustomConcepts(
-            categoryCode, SOURCE_VOCABULARY_ID_OBSERVATION_CATEGORY, dbMappings);
+            categoryCoding, SOURCE_VOCABULARY_ID_OBSERVATION_CATEGORY, dbMappings);
 
     var newLabObservation =
         OmopObservation.builder()
@@ -786,7 +788,9 @@ public class ObservationMapper implements FhirMapper<Observation> {
     if (StringUtils.isNotBlank(interpretation)) {
       var interpretationConcept =
           findOmopConcepts.getCustomConcepts(
-              interpretation, SOURCE_VOCABULARY_ID_LAB_INTERPRETATION, dbMappings);
+              new Coding(null, interpretation, null),
+              SOURCE_VOCABULARY_ID_LAB_INTERPRETATION,
+              dbMappings);
 
       newLabObservation.setQualifierConceptId(interpretationConcept.getTargetConceptId());
       newLabObservation.setQualifierSourceValue(
@@ -933,11 +937,11 @@ public class ObservationMapper implements FhirMapper<Observation> {
       return;
     }
     var categoryCoding = getCategoryCoding(srcObservation, observationLogicId);
-    var categoryCode = categoryCoding == null ? null : categoryCoding.getCode();
+    //    var categoryCode = categoryCoding == null ? null : categoryCoding.getCode();
 
     SourceToConceptMap categoryConcept =
         findOmopConcepts.getCustomConcepts(
-            categoryCode, SOURCE_VOCABULARY_ID_OBSERVATION_CATEGORY, dbMappings);
+            categoryCoding, SOURCE_VOCABULARY_ID_OBSERVATION_CATEGORY, dbMappings);
     if (categoryConcept == null) {
       return;
     }
@@ -958,10 +962,6 @@ public class ObservationMapper implements FhirMapper<Observation> {
     }
 
     for (var component : componentList) {
-      var componentAfterCheckedDataAbsentReason = checkDataAbsentReason.getValue(component);
-      if (componentAfterCheckedDataAbsentReason == null) {
-        return;
-      }
       var componentCoding = getComponentCoding(component);
       if (componentCoding == null) {
         continue;
@@ -1039,7 +1039,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
       String observationSourceIdentifier) {
     var componentCodingConcept =
         findOmopConcepts.getCustomConcepts(
-            componentCoding.getCode(), SOURCE_VOCABULARY_SOFA_CATEGORY, dbMappings);
+            componentCoding, SOURCE_VOCABULARY_SOFA_CATEGORY, dbMappings);
     if (componentCodingConcept == null) {
       return null;
     }
@@ -1085,7 +1085,6 @@ public class ObservationMapper implements FhirMapper<Observation> {
       LocalDateTime effectiveDateTime,
       String observationLogicId,
       String observationSourceIdentifier) {
-
     var componentCodingConcept =
         findOmopConcepts.getConcepts(
             componentCoding, effectiveDateTime.toLocalDate(), bulkload, dbMappings);
@@ -1094,9 +1093,6 @@ public class ObservationMapper implements FhirMapper<Observation> {
     }
     var componentValueQuantity = component.getValueQuantity();
     if (componentValueQuantity == null) {
-      return null;
-    }
-    if (componentValueQuantity.getValue() == null) {
       return null;
     }
     var componentValueQuantityUnitCoding =
@@ -1168,7 +1164,9 @@ public class ObservationMapper implements FhirMapper<Observation> {
 
       var valueConcept =
           findOmopConcepts.getCustomConcepts(
-              valueCodeableConcept.getText(), SOURCE_VOCABULARY_ID_LAB_RESULT, dbMappings);
+              new Coding(null, valueCodeableConcept.getText(), null),
+              SOURCE_VOCABULARY_ID_LAB_RESULT,
+              dbMappings);
 
       basisMeasurement.setValueAsConceptId(valueConcept.getTargetConceptId());
       basisMeasurement.setValueSourceValue(valueConcept.getSourceCode());
@@ -1183,7 +1181,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
         if (codingSystemUrl.equals(fhirSystems.getGeccoFrailtyScore())) {
           var valueCodingConcept =
               findOmopConcepts.getCustomConcepts(
-                  codingCode, SOURCE_VOCABULARY_FRAILTY_SCORE, dbMappings);
+                  coding, SOURCE_VOCABULARY_FRAILTY_SCORE, dbMappings);
           if (valueCodingConcept != null) {
             basisMeasurement.setValueAsConceptId(valueCodingConcept.getTargetConceptId());
             basisMeasurement.setValueSourceValue(codingCode);
@@ -1267,11 +1265,11 @@ public class ObservationMapper implements FhirMapper<Observation> {
       String observationLogicId,
       String observationSourceIdentifier) {
     var categoryCoding = getCategoryCoding(srcObservation, observationLogicId);
-    var categoryCode = categoryCoding == null ? null : categoryCoding.getCode();
+    //    var categoryCode = categoryCoding == null ? null : categoryCoding.getCode();
 
     SourceToConceptMap categoryConcept =
         findOmopConcepts.getCustomConcepts(
-            categoryCode, SOURCE_VOCABULARY_ID_OBSERVATION_CATEGORY, dbMappings);
+            categoryCoding, SOURCE_VOCABULARY_ID_OBSERVATION_CATEGORY, dbMappings);
 
     String interpretation = getInterpretation(srcObservation, observationLogicId);
 
@@ -1292,7 +1290,9 @@ public class ObservationMapper implements FhirMapper<Observation> {
     if (!Strings.isNullOrEmpty(interpretation)) {
       var interpretationConcept =
           findOmopConcepts.getCustomConcepts(
-              interpretation, SOURCE_VOCABULARY_ID_LAB_INTERPRETATION, dbMappings);
+              new Coding(null, interpretation, null),
+              SOURCE_VOCABULARY_ID_LAB_INTERPRETATION,
+              dbMappings);
       newLabMeasurement.setOperatorConceptId(interpretationConcept.getTargetConceptId());
     }
     setReferenceRange(srcObservation, newLabMeasurement, observationLogicId);

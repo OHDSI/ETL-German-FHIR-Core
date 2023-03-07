@@ -628,7 +628,8 @@ public class PatientMapper implements FhirMapper<Patient> {
       return CONCEPT_GENDER_UNKNOWN;
     }
     var sourceToConcepMap =
-        findOmopConcepts.getCustomConcepts(gender, SOURCE_VOCABULARY_ID_GENDER, dbMappings);
+        findOmopConcepts.getCustomConcepts(
+            new Coding(null, gender, null), SOURCE_VOCABULARY_ID_GENDER, dbMappings);
     return sourceToConcepMap.getTargetConceptId();
   }
 

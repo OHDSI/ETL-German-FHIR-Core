@@ -178,7 +178,7 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
     }
     var categoryCodingConcept =
         findOmopConcepts.getCustomConcepts(
-            diagnosticReportCategoryLoincCoding.getCode(),
+            diagnosticReportCategoryLoincCoding,
             SOURCE_VOCABULARY_ID_DIAGNOSTIC_REPORT_CATEGORY,
             dbMappings);
     var domainId = loincCodingConcept.getDomainId();
