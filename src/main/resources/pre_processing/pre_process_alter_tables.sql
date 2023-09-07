@@ -33,6 +33,14 @@ ALTER TABLE visit_detail ALTER COLUMN visit_detail_id SET DEFAULT nextval('visit
 CREATE SEQUENCE IF NOT EXISTS device_exposure_id_seq INCREMENT BY 1 START WITH 1;
 ALTER TABLE device_exposure ALTER COLUMN device_exposure_id SET DEFAULT nextval('device_exposure_id_seq');
 
+--Alter condition_era table to automatically increment condition_era_id
+CREATE SEQUENCE IF NOT EXISTS condition_era_id_seq INCREMENT BY 1 START WITH 1;
+ALTER TABLE condition_era ALTER COLUMN condition_era_id SET DEFAULT nextval('condition_era_id_seq');
+
+--Alter drug_era table to automatically increment drug_era_id
+CREATE SEQUENCE IF NOT EXISTS drug_era_id_seq INCREMENT BY 1 START WITH 1;
+ALTER TABLE drug_era ALTER COLUMN drug_era_id SET DEFAULT nextval('drug_era_id_seq');
+
 --Rename cds_etl_helper.data_persistant_map to cds_etl_helper.post_process_map
 ALTER TABLE IF EXISTS cds_etl_helper.data_persistant_map RENAME TO post_process_map;
 
