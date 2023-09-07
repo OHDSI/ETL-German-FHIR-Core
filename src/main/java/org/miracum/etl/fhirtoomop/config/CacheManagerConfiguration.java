@@ -36,7 +36,11 @@ public class CacheManagerConfiguration {
             "visits-identifier",
             "max-id",
             "snomed-vaccine",
-            "snomed-race"));
+            "snomed-race",
+            "ops-standard",
+            "orpha-snomed",
+            "atc-standard",
+            "loinc-standard"));
     cacheManager.setCaffeine(caffeineCacheBuilder());
     return cacheManager;
   }
