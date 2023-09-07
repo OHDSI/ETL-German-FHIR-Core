@@ -2,12 +2,14 @@ package org.miracum.etl.fhirtoomop.repository.service;
 
 import java.util.List;
 import java.util.Map;
+import org.miracum.etl.fhirtoomop.model.AtcStandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.IcdSnomedDomainLookup;
 import org.miracum.etl.fhirtoomop.model.MedicationIdMap;
 import org.miracum.etl.fhirtoomop.model.OpsStandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.SnomedRaceStandardLookup;
 import org.miracum.etl.fhirtoomop.model.SnomedVaccineStandardLookup;
 import org.miracum.etl.fhirtoomop.model.omop.Concept;
+import org.miracum.etl.fhirtoomop.repository.AtcStandardRepository;
 import org.miracum.etl.fhirtoomop.repository.ConceptRepository;
 import org.miracum.etl.fhirtoomop.repository.IcdSnomedRepository;
 import org.miracum.etl.fhirtoomop.repository.MedicationIdRepository;
@@ -32,6 +34,7 @@ public class OmopConceptServiceImpl {
   @Autowired private SnomedVaccineRepository snomedVaccineRepository;
   @Autowired private SnomedRaceRepository snomedRaceRepository;
   @Autowired private OpsStandardRepository opsStandardRepository;
+  @Autowired private AtcStandardRepository atcStandardRepository;
   /**
    * Returns a map of all concepts based on a specific vocabulary and concept_code.
    *
@@ -90,6 +93,18 @@ public class OmopConceptServiceImpl {
   public Map<String, List<OpsStandardDomainLookup>> getOpsStandardMap(String sourceCode) {
     return opsStandardRepository.getOpsStandardMapBySourceCode(sourceCode);
   }
+
+  /**
+   * Returns a map of all ATC-to-Standard mappings based on a specific ATC code.
+   *
+   * @param sourceCode ATC code
+   * @return map of all ATC-to-Standard mappings based on a specific ATC code
+   */
+  @Cacheable(cacheNames = "atc-standard", sync = true)
+  public Map<String, List<AtcStandardDomainLookup>> getAtcStandardMap(String sourceCode) {
+    return atcStandardRepository.getAtcStandardMapBySourceCode(sourceCode);
+  }
+
   /**
    * Writes the medicationIdMap immediately to medication_id_map table in OMOP CDM.
    *

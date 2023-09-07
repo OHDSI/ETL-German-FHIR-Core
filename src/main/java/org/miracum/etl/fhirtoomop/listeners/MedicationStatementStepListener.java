@@ -2,6 +2,7 @@ package org.miracum.etl.fhirtoomop.listeners;
 
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_ATC;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_SNOMED;
+import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_UCUM;
 
 import com.google.common.base.Strings;
 import java.io.IOException;
@@ -86,7 +87,7 @@ public class MedicationStatementStepListener implements StepExecutionListener {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         try {
-          deleteAllDrugExposureData(stepExecution.createStepContribution());
+          deleteAllMedicationStatementData(stepExecution.createStepContribution());
         } catch (SQLException | IOException e) {
           e.printStackTrace();
           stepExecution.setTerminateOnly();
@@ -117,6 +118,12 @@ public class MedicationStatementStepListener implements StepExecutionListener {
           .getOmopConceptMapWrapper()
           .setFindValidAtcConcept(
               repositories.getConceptRepository().findValidConceptId(VOCABULARY_ATC));
+      dbMappings
+          .getOmopConceptMapWrapper()
+          .setFindValidUcumConcept(
+              repositories.getConceptRepository().findValidConceptId(VOCABULARY_UCUM));
+      dbMappings.setFindAtcStandardMapping(
+          repositories.getAtcStandardRepository().getAtcStandardMap());
     }
     dbMappings.setFindMedication(repositories.getMedicationIdRepository().getMedications());
   }
@@ -128,7 +135,7 @@ public class MedicationStatementStepListener implements StepExecutionListener {
    * @throws IOException
    * @throws SQLException
    */
-  private void deleteAllDrugExposureData(StepContribution contribution)
+  private void deleteAllMedicationStatementData(StepContribution contribution)
       throws SQLException, IOException {
 
     ExecuteSqlScripts executeSqlScripts = new ExecuteSqlScripts(dataSource, contribution);
@@ -151,6 +158,7 @@ public class MedicationStatementStepListener implements StepExecutionListener {
     if (bulkload.equals(Boolean.TRUE)) {
       dbMappings.getOmopConceptMapWrapper().getFindValidAtcConcept().clear();
       dbMappings.getOmopConceptMapWrapper().getFindValidSnomedConcept().clear();
+      dbMappings.getFindAtcStandardMapping().clear();
       if (dictionaryLoadInRam.equals(Boolean.TRUE)) {
         dbMappings.getFindPersonIdByIdentifier().clear();
         dbMappings.getFindPersonIdByLogicalId().clear();

@@ -2,15 +2,22 @@ package org.miracum.etl.fhirtoomop.mapper;
 
 import static org.miracum.etl.fhirtoomop.Constants.CONCEPT_EHR_MEDICATION_LIST;
 import static org.miracum.etl.fhirtoomop.Constants.CONCEPT_NO_MATCHING_CONCEPT;
+import static org.miracum.etl.fhirtoomop.Constants.FHIR_RESOURCE_MEDICATION_ADMINISTRATION_ACCEPTABLE_STATUS_LIST;
+import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_DRUG;
+import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_OBSERVATION;
 
 import ca.uhn.fhir.fhirpath.IFhirPath;
 import com.google.common.base.Strings;
 import io.micrometer.core.instrument.Counter;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.MedicationAdministration;
 import org.hl7.fhir.r4.model.MedicationAdministration.MedicationAdministrationDosageComponent;
@@ -25,12 +32,16 @@ import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceCheckDataAbsentReason;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceFhirReferenceUtils;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceOmopReferenceUtils;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceOnset;
+import org.miracum.etl.fhirtoomop.model.AtcStandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.MedicationIdMap;
 import org.miracum.etl.fhirtoomop.model.OmopModelWrapper;
 import org.miracum.etl.fhirtoomop.model.omop.DrugExposure;
+import org.miracum.etl.fhirtoomop.model.omop.OmopObservation;
 import org.miracum.etl.fhirtoomop.repository.service.DrugExposureMapperServiceImpl;
+import org.miracum.etl.fhirtoomop.repository.service.MedicationAdministrationMapperServiceImpl;
 import org.miracum.etl.fhirtoomop.repository.service.OmopConceptServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
 /**
@@ -52,6 +63,7 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
   @Autowired OmopConceptServiceImpl omopConceptService;
   @Autowired ResourceOmopReferenceUtils omopReferenceUtils;
   @Autowired ResourceFhirReferenceUtils fhirReferenceUtils;
+  @Autowired MedicationAdministrationMapperServiceImpl medicationAdministrationService;
   @Autowired DrugExposureMapperServiceImpl drugExposureMapperService;
   @Autowired ResourceCheckDataAbsentReason checkDataAbsentReason;
   @Autowired FindOmopConcepts findOmopConcepts;
@@ -105,7 +117,6 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
     var wrapper = new OmopModelWrapper();
 
     var medicationAdministrationLogicId = fhirReferenceUtils.extractId(srcMedicationAdministration);
-
     var medicationAdministrationSourceIdentifier =
         fhirReferenceUtils.extractResourceFirstIdentifier(srcMedicationAdministration);
 
@@ -114,24 +125,45 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
       log.warn(
           "No [Identifier] or [Id] found. [MedicationAdministration] resource is invalid. Skip resource.");
       noFhirReferenceCounter.increment();
-
       return null;
     }
+    String medicationAdministrationId = "";
+    if (!Strings.isNullOrEmpty(medicationAdministrationLogicId)) {
+      medicationAdministrationId = srcMedicationAdministration.getId();
+    }
+
     if (bulkload.equals(Boolean.FALSE)) {
-      deleteExisingDrugExposures(
+      deleteExistingMedicationAdministrationEntry(
           medicationAdministrationLogicId, medicationAdministrationSourceIdentifier);
       if (isDeleted) {
         deletedFhirReferenceCounter.increment();
         log.info(
-            "Found a deleted resource [{}]. Deleting from OMOP DB.",
-            medicationAdministrationLogicId);
+            "Found a deleted [MedicationAdministration] resource {}. Deleting from OMOP DB.",
+            medicationAdministrationId);
         return null;
       }
     }
 
-    var personId = getPersonId(srcMedicationAdministration, medicationAdministrationLogicId);
+    var statusElement = srcMedicationAdministration.getStatusElement();
+    var statusValue = checkDataAbsentReason.getValue(statusElement);
+    if (Strings.isNullOrEmpty(statusValue)
+        || !FHIR_RESOURCE_MEDICATION_ADMINISTRATION_ACCEPTABLE_STATUS_LIST.contains(statusValue)) {
+      log.error(
+          "The [status]: {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
+          statusValue,
+          medicationAdministrationId);
+      return null;
+    }
+
+    var personId =
+        getPersonId(
+            srcMedicationAdministration,
+            medicationAdministrationLogicId,
+            medicationAdministrationId);
     if (personId == null) {
-      log.warn("No matching [Person] found for {}. Skip resource", medicationAdministrationLogicId);
+      log.warn(
+          "No matching [Person] found for [MedicationAdministration]: {}. Skip resource",
+          medicationAdministrationId);
 
       noPersonIdCounter.increment();
       return null;
@@ -140,8 +172,8 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
     var onset = getMedicationAdministrationOnset(srcMedicationAdministration);
     if (onset.getStartDateTime() == null) {
       log.warn(
-          "Unable to determine the [datetime] for {}. Skip resource",
-          medicationAdministrationLogicId);
+          "Unable to determine the [datetime] for [MedicationAdministration]: {}. Skip resource",
+          medicationAdministrationId);
 
       noStartDateCounter.increment();
       return null;
@@ -151,34 +183,33 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
     var medicationReferenceIdentifier =
         getMedicationReferenceIdentifier(srcMedicationAdministration);
 
-    var medCoding =
+    var atcCoding =
         getMedCoding(
             medicationReferenceLogicalId,
             medicationReferenceIdentifier,
             srcMedicationAdministration);
-    if (medCoding == null) {
+    if (atcCoding == null) {
       log.warn(
-          "Unable to determine the [referenced medication code] for {}. Skip resource",
-          medicationAdministrationLogicId);
+          "Unable to determine the [medication code] for [MedicationAdministration]: {}. Skip resource",
+          medicationAdministrationId);
       noCodeCounter.increment();
       return null;
     }
 
     var visitOccId =
-        getVisitOccId(srcMedicationAdministration, personId, medicationAdministrationLogicId);
-    var medDosage = getDosage(srcMedicationAdministration, medicationAdministrationLogicId);
+        getVisitOccId(srcMedicationAdministration, personId, medicationAdministrationId);
+    var medDosage = getDosage(srcMedicationAdministration, medicationAdministrationId);
 
-    var newDrugExposure =
-        createNewDrugExposure(
-            medDosage,
-            onset,
-            personId,
-            visitOccId,
-            medCoding,
-            medicationAdministrationLogicId,
-            medicationAdministrationSourceIdentifier);
-
-    wrapper.getDrugExposure().add(newDrugExposure);
+    createMedicationMapping(
+        wrapper,
+        medDosage,
+        onset,
+        personId,
+        visitOccId,
+        atcCoding,
+        medicationAdministrationLogicId,
+        medicationAdministrationSourceIdentifier,
+        medicationAdministrationId);
 
     return wrapper;
   }
@@ -192,14 +223,18 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
    */
   private Long getPersonId(
       MedicationAdministration srcMedicationAdministration,
-      String medicationAdministrationLogicId) {
+      String medicationAdministrationLogicId,
+      String medicationAdministrationId) {
     var patientReferenceIdentifier =
         referenceUtils.getSubjectReferenceIdentifier(srcMedicationAdministration);
     var patientReferenceLogicalId =
         referenceUtils.getSubjectReferenceLogicalId(srcMedicationAdministration);
 
     return omopReferenceUtils.getPersonId(
-        patientReferenceIdentifier, patientReferenceLogicalId, medicationAdministrationLogicId);
+        patientReferenceIdentifier,
+        patientReferenceLogicalId,
+        medicationAdministrationLogicId,
+        medicationAdministrationId);
   }
 
   /**
@@ -298,15 +333,13 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
    *
    * @param srcMedicationAdministration FHIR MedicationAdministration resource
    * @param personId person_id of the referenced FHIR Patient resource
-   * @param medicationAdministrationLogicId logical id of the referenced FHIR
-   *     MedicationAdministration resource
    * @return visit_occurrence_id of the referenced FHIR Encounter resource from visit_occurrence
    *     table in OMOP CDM
    */
   private Long getVisitOccId(
       MedicationAdministration srcMedicationAdministration,
       Long personId,
-      String medicationAdministrationLogicId) {
+      String medicationAdministrationId) {
     var encounterReferenceIdentifier = getVisitReferenceIdentifier(srcMedicationAdministration);
     var encounterReferenceLogicalId = getVisitReferenceLogicalId(srcMedicationAdministration);
     var visitOccId =
@@ -314,9 +347,11 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
             encounterReferenceIdentifier,
             encounterReferenceLogicalId,
             personId,
-            medicationAdministrationLogicId);
+            medicationAdministrationId);
     if (visitOccId == null) {
-      log.debug("No matching [Encounter] found for {}.", medicationAdministrationLogicId);
+      log.debug(
+          "No matching [Encounter] found for [MedicationAdministration]: {}.",
+          medicationAdministrationId);
     }
     return visitOccId;
   }
@@ -365,40 +400,203 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
     return null;
   }
 
+  public void createMedicationMapping(
+      OmopModelWrapper wrapper,
+      MedicationAdministrationDosageComponent medDosage,
+      ResourceOnset onset,
+      Long personId,
+      Long visitOccId,
+      Coding atcCoding,
+      String medicationAdministrationLogicId,
+      String medicationAdministrationSourceIdentifier,
+      String medicationAdministrationId) {
+
+    var atcStandardMapPairList =
+        getValidAtcCodes(
+            atcCoding, onset.getStartDateTime().toLocalDate(), medicationAdministrationId);
+
+    if (atcStandardMapPairList.isEmpty()) {
+      return;
+    }
+    for (var singlePair : atcStandardMapPairList) {
+      medicationProcessor(
+          singlePair,
+          wrapper,
+          medDosage,
+          onset,
+          personId,
+          visitOccId,
+          medicationAdministrationLogicId,
+          medicationAdministrationSourceIdentifier,
+          medicationAdministrationId);
+    }
+  }
+
+  /**
+   * Extract valid pairs of Atc code and its OMOP concept_id and domain information as a list
+   *
+   * @param atcCoding
+   * @param startDate the start date of the MedicationAdministration
+   * @return a list of valid pairs of ATC code and its OMOP concept_id and domain information
+   */
+  private List<Pair<String, List<AtcStandardDomainLookup>>> getValidAtcCodes(
+      Coding atcCoding, LocalDate startDate, String medicationAdministrationId) {
+    if (atcCoding == null) {
+      return Collections.emptyList();
+    }
+
+    List<Pair<String, List<AtcStandardDomainLookup>>> validAtcStandardConceptMaps =
+        new ArrayList<>();
+    List<AtcStandardDomainLookup> atcStandardMap =
+        findOmopConcepts.getAtcStandardConcepts(
+            atcCoding, startDate, bulkload, dbMappings, medicationAdministrationId);
+    if (atcStandardMap.isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    validAtcStandardConceptMaps.add(Pair.of(atcCoding.getCode(), atcStandardMap));
+
+    return validAtcStandardConceptMaps;
+  }
+
+  /**
+   * Processes information from FHIR MedicationAdministration resource and transforms them into
+   * records OMOP CDM tables.
+   *
+   * @param atcStandardPair one pair of ATC code and its OMOP standard concept_id and domain
+   *     information
+   * @param wrapper the OMOP model wrapper
+   * @param medDosage dosage information form the FHIR MedicationAdministration resource
+   * @param onset start date time and end date time of the FHIR MedicationAdministration resource
+   * @param personId person_id of the referenced FHIR Patient resource
+   * @param visiOccId visit_occurrence_id of the referenced FHIR Encounter resource
+   * @param medicationAdministrationLogicId logical id of the FHIR MedicationAdministration resource
+   * @param medicationAdministrationSourceIdentifier identifier of the FHIR MedicationAdministration
+   *     resource
+   */
+  private void medicationProcessor(
+      @Nullable Pair<String, List<AtcStandardDomainLookup>> atcStandardPair,
+      OmopModelWrapper wrapper,
+      MedicationAdministrationDosageComponent medDosage,
+      ResourceOnset onset,
+      Long personId,
+      Long visitOccId,
+      String medicationAdministrationLogicId,
+      String medicationAdministrationSourceIdentifier,
+      String medicationAdministrationId) {
+
+    if (atcStandardPair == null) {
+      return;
+    }
+
+    var atcCode = atcStandardPair.getLeft();
+    var atcStandardMaps = atcStandardPair.getRight();
+
+    for (var atcStandardMap : atcStandardMaps) {
+      setMedication(
+          wrapper,
+          medDosage,
+          onset,
+          personId,
+          visitOccId,
+          medicationAdministrationLogicId,
+          medicationAdministrationSourceIdentifier,
+          atcCode,
+          atcStandardMap.getStandardConceptId(),
+          atcStandardMap.getSourceConceptId(),
+          atcStandardMap.getStandardDomainId(),
+          medicationAdministrationId);
+    }
+  }
+
+  /** Write MedicationAdministration information into correct OMOP tables based on their domains. */
+  private void setMedication(
+      OmopModelWrapper wrapper,
+      MedicationAdministrationDosageComponent medDosage,
+      ResourceOnset onset,
+      Long personId,
+      Long visitOccId,
+      String medicationAdministrationLogicId,
+      String medicationAdministrationSourceIdentifier,
+      String medicationCode,
+      Integer medicationConceptId,
+      Integer medicationSourceConceptId,
+      String domain,
+      String medicationAdministrationId) {
+    switch (domain) {
+      case OMOP_DOMAIN_DRUG:
+        var drug =
+            setUpDrugExposure(
+                onset,
+                medDosage,
+                medicationConceptId,
+                medicationSourceConceptId,
+                medicationCode,
+                personId,
+                visitOccId,
+                medicationAdministrationLogicId,
+                medicationAdministrationSourceIdentifier,
+                medicationAdministrationId);
+
+        wrapper.getDrugExposure().add(drug);
+
+        break;
+      case OMOP_DOMAIN_OBSERVATION:
+        var observation =
+            setUpObservation(
+                onset,
+                medDosage,
+                medicationConceptId,
+                medicationSourceConceptId,
+                medicationCode,
+                personId,
+                visitOccId,
+                medicationAdministrationLogicId,
+                medicationAdministrationSourceIdentifier,
+                medicationAdministrationId);
+
+        wrapper.getObservation().add(observation);
+
+        break;
+      default:
+        throw new UnsupportedOperationException(String.format("Unsupported domain %s", domain));
+    }
+  }
+
   /**
    * Creates a new record of the drug_exposure table in OMOP CDM for the processed FHIR
    * MedicationAdministration resource.
    *
-   * @param medDosage Dosage information from MedicationAdministration resource
    * @param onset start date time and end date time of the FHIR MedicationAdministration resource
+   * @param medDosage Dosage information from MedicationAdministration resource
+   * @param medicationConceptId concept id of the standard concept
+   * @param medicationSourceConceptId concept id of the ATC code
+   * @param medicationCode ATC code
    * @param personId person_id of the referenced FHIR Patient resource
    * @param visitOccId visit_occurrence_id of the referenced FHIR Encounter resource
-   * @param medCoding the Coding element of medication code
    * @param medicationAdministrationLogicId logical id of the FHIR MedicationAdministration resource
    * @param medicationAdministrationSourceIdentifier identifier of the FHIR MedicationAdministration
    *     resource
    * @return new record of the drug_exposure table in OMOP CDM for the processed FHIR
    *     MedicationAdministration resource
    */
-  private DrugExposure createNewDrugExposure(
-      MedicationAdministrationDosageComponent medDosage,
+  private DrugExposure setUpDrugExposure(
       ResourceOnset onset,
+      MedicationAdministrationDosageComponent medDosage,
+      Integer medicationConceptId,
+      Integer medicationSourceConceptId,
+      String medicationCode,
       Long personId,
       Long visitOccId,
-      Coding medCoding,
       String medicationAdministrationLogicId,
-      String medicationAdministrationSourceIdentifier) {
+      String medicationAdministrationSourceIdentifier,
+      String medicationAdministrationId) {
 
     var startDateTime = onset.getStartDateTime();
     var endDateTime = onset.getEndDateTime();
 
-    var medCodeConcept =
-        findOmopConcepts.getConcepts(medCoding, startDateTime.toLocalDate(), bulkload, dbMappings);
-    if (medCodeConcept == null) {
-      return null;
-    }
-    var dose = getDose(medDosage, medicationAdministrationLogicId);
-    var route = getRouteCoding(medDosage, medicationAdministrationLogicId);
+    var dose = getDose(medDosage, medicationAdministrationId);
+    var route = getRouteCoding(medDosage, medicationAdministrationId);
 
     var drugExposure =
         DrugExposure.builder()
@@ -408,11 +606,11 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
             .drugExposureEndDate(
                 endDateTime == null ? startDateTime.toLocalDate() : endDateTime.toLocalDate())
             .personId(personId)
-            .drugSourceConceptId(medCodeConcept.getConceptId())
-            .drugConceptId(medCodeConcept.getConceptId())
+            .drugSourceConceptId(medicationSourceConceptId)
+            .drugConceptId(medicationConceptId)
             .visitOccurrenceId(visitOccId)
             .drugTypeConceptId(CONCEPT_EHR_MEDICATION_LIST)
-            .drugSourceValue(medCodeConcept.getConceptCode())
+            .drugSourceValue(medicationCode)
             .fhirLogicalId(medicationAdministrationLogicId)
             .fhirIdentifier(medicationAdministrationSourceIdentifier)
             .build();
@@ -424,7 +622,8 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
 
     if (route != null) {
       var routeConcept =
-          findOmopConcepts.getConcepts(route, startDateTime.toLocalDate(), bulkload, dbMappings);
+          findOmopConcepts.getConcepts(
+              route, startDateTime.toLocalDate(), bulkload, dbMappings, medicationAdministrationId);
       drugExposure.setRouteSourceValue(routeConcept.getConceptCode());
       drugExposure.setRouteConceptId(
           routeConcept.getConceptId() == CONCEPT_NO_MATCHING_CONCEPT
@@ -433,6 +632,70 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
     }
 
     return drugExposure;
+  }
+
+  private OmopObservation setUpObservation(
+      ResourceOnset onset,
+      MedicationAdministrationDosageComponent medDosage,
+      Integer medicationConceptId,
+      Integer medicationSourceConceptId,
+      String medicationCode,
+      Long personId,
+      Long visitOccId,
+      String medicationAdministrationLogicId,
+      String medicationAdministrationSourceIdentifier,
+      String medicationAdministrationId) {
+
+    var startDateTime = onset.getStartDateTime();
+
+    var dose = getDose(medDosage, medicationAdministrationId);
+    var route = getRouteCoding(medDosage, medicationAdministrationId);
+
+    var newObservation =
+        OmopObservation.builder()
+            .personId(personId)
+            .observationDate(startDateTime.toLocalDate())
+            .observationDatetime(startDateTime)
+            .visitOccurrenceId(visitOccId)
+            .observationSourceConceptId(medicationSourceConceptId)
+            .observationConceptId(medicationConceptId)
+            .observationTypeConceptId(CONCEPT_EHR_MEDICATION_LIST)
+            .observationSourceValue(medicationCode)
+            .fhirLogicalId(medicationAdministrationLogicId)
+            .fhirIdentifier(medicationAdministrationSourceIdentifier)
+            .build();
+
+    if (dose != null) {
+      var doseCoding = new Coding().setCode(dose.getUnit()).setSystem(fhirSystems.getUcum());
+
+      var unitConcept =
+          findOmopConcepts.getConcepts(
+              doseCoding,
+              startDateTime.toLocalDate(),
+              bulkload,
+              dbMappings,
+              medicationAdministrationId);
+
+      newObservation.setUnitSourceValue(dose.getUnit());
+      newObservation.setValueAsNumber(dose.getValue());
+      newObservation.setUnitConceptId(
+          unitConcept.getConceptId() == CONCEPT_NO_MATCHING_CONCEPT
+              ? null
+              : unitConcept.getConceptId());
+    }
+
+    if (route != null) {
+      var routeConcept =
+          findOmopConcepts.getConcepts(
+              route, startDateTime.toLocalDate(), bulkload, dbMappings, medicationAdministrationId);
+      newObservation.setQualifierSourceValue(routeConcept.getConceptCode());
+      newObservation.setQualifierConceptId(
+          routeConcept.getConceptId() == CONCEPT_NO_MATCHING_CONCEPT
+              ? null
+              : routeConcept.getConceptId());
+    }
+
+    return newObservation;
   }
 
   /**
@@ -480,13 +743,6 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
       }
     }
 
-    // return the medication reference logical id if no ATC code was found
-    if (bulkload.equals(Boolean.FALSE)) {
-      return new Coding()
-          .setCode(medicationReferenceLogicalId)
-          .setSystem("http://no-medication-code-found");
-    }
-
     return null;
   }
 
@@ -494,16 +750,17 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
    * Extract dose quantity from dosage
    *
    * @param medDosage Dosage information from MedicationAdministration resource
-   * @param medicationAdministrationLogicId logical id of the FHIR MedicationAdministration resource
    * @return the quantity of dose
    */
   private Quantity getDose(
-      MedicationAdministrationDosageComponent medDosage, String medicationAdministrationLogicId) {
+      MedicationAdministrationDosageComponent medDosage, String medicationAdministrationId) {
     if (medDosage != null && medDosage.hasDose()) {
       return medDosage.getDose();
     }
     // No dose unit available
-    log.debug("Unable to determine the [dose] for {}.", medicationAdministrationLogicId);
+    log.debug(
+        "Unable to determine the [dose] for [MedicationAdministration]: {}.",
+        medicationAdministrationId);
 
     return null;
   }
@@ -512,15 +769,15 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
    * Extract dosage information from MedicationAdministration resource
    *
    * @param srcMedicationAdministration FHIR MedicationAdministration resource
-   * @param medicationAdministrationLogicId logical id of the FHIR MedicationAdministration resource
    * @return the dosage information from MedicationAdministration resource
    */
   private MedicationAdministrationDosageComponent getDosage(
-      MedicationAdministration srcMedicationAdministration,
-      String medicationAdministrationLogicId) {
+      MedicationAdministration srcMedicationAdministration, String medicationAdministrationId) {
     var dosage = srcMedicationAdministration.getDosage();
     if (dosage == null) {
-      log.debug("Unable to determine the [dosage] for {}.", medicationAdministrationLogicId);
+      log.debug(
+          "Unable to determine the [dosage] for [MedicationAdministration]: {}.",
+          medicationAdministrationId);
       return null;
     }
     return dosage;
@@ -530,11 +787,10 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
    * Extracts route information from FHIR MedicationAdministration resource.
    *
    * @param medDosage Dosage information from MedicationAdministration resource
-   * @param medicationAdministrationLogicId logical id of the FHIR MedicationAdministration resource
    * @return route from FHIR MedicationAdministration resource
    */
   private Coding getRouteCoding(
-      MedicationAdministrationDosageComponent medDosage, String medicationAdministrationLogicId) {
+      MedicationAdministrationDosageComponent medDosage, String medicationAdministrationId) {
 
     if (medDosage != null) {
       var routeCoding =
@@ -547,26 +803,28 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
     }
 
     // No route available
-    log.debug("Unable to determine the [route value] for {}.", medicationAdministrationLogicId);
+    log.debug(
+        "Unable to determine the [route value] for [MedicationAdministration]: {}.",
+        medicationAdministrationId);
 
     return null;
   }
 
   /**
-   * Delete FHIR MedicationAdministration resources from OMOP CDM tables using fhir_logical_id and
+   * Deletes FHIR MedicationAdministration resources from OMOP CDM tables using fhir_logical_id and
    * fhir_identifier
    *
    * @param medicationAdministrationLogicId logical id of the FHIR MedicationAdministration resource
    * @param medicationAdministrationSourceIdentifier identifier of the FHIR MedicationAdministration
    *     resource
    */
-  private void deleteExisingDrugExposures(
+  private void deleteExistingMedicationAdministrationEntry(
       String medicationAdministrationLogicId, String medicationAdministrationSourceIdentifier) {
     if (!Strings.isNullOrEmpty(medicationAdministrationLogicId)) {
-      drugExposureMapperService.deleteExistingDrugExposureByFhirLogicalId(
+      medicationAdministrationService.deleteExistingMedAdsByFhirLogicalId(
           medicationAdministrationLogicId);
     } else {
-      drugExposureMapperService.deleteExistingDrugExposureByFhirIdentifier(
+      medicationAdministrationService.deleteExistingMedAdsByFhirIdentifier(
           medicationAdministrationSourceIdentifier);
     }
   }

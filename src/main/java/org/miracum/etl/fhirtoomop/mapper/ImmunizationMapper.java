@@ -1,16 +1,22 @@
 package org.miracum.etl.fhirtoomop.mapper;
 
 import static org.miracum.etl.fhirtoomop.Constants.CONCEPT_EHR;
+import static org.miracum.etl.fhirtoomop.Constants.CONCEPT_NO_MATCHING_CONCEPT;
 import static org.miracum.etl.fhirtoomop.Constants.FHIR_RESOURCE_ACCEPTABLE_EVENT_STATUS_LIST;
+import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_DRUG;
+import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_OBSERVATION;
+import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_ATC;
+import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_SNOMED;
 
 import com.google.common.base.Strings;
 import io.micrometer.core.instrument.Counter;
-import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.Quantity;
@@ -22,11 +28,16 @@ import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceCheckDataAbsentReason;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceFhirReferenceUtils;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceOmopReferenceUtils;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceOnset;
+import org.miracum.etl.fhirtoomop.model.AtcStandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.OmopModelWrapper;
+import org.miracum.etl.fhirtoomop.model.SnomedVaccineStandardLookup;
 import org.miracum.etl.fhirtoomop.model.omop.DrugExposure;
+import org.miracum.etl.fhirtoomop.model.omop.OmopObservation;
 import org.miracum.etl.fhirtoomop.repository.service.DrugExposureMapperServiceImpl;
+import org.miracum.etl.fhirtoomop.repository.service.ImmunizationMapperServiceImpl;
 import org.miracum.etl.fhirtoomop.repository.service.OmopConceptServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -35,9 +46,12 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
   private static final FhirSystems fhirSystems = new FhirSystems();
   private final DbMappings dbMappings;
   private final Boolean bulkload;
+  private final List<String> listOfImmunizationVocabularyId =
+      Arrays.asList(VOCABULARY_ATC, VOCABULARY_SNOMED);
 
   @Autowired OmopConceptServiceImpl omopConceptService;
   @Autowired ResourceFhirReferenceUtils fhirReferenceUtils;
+  @Autowired ImmunizationMapperServiceImpl immunizationService;
   @Autowired ResourceOmopReferenceUtils omopReferenceUtils;
   @Autowired ResourceCheckDataAbsentReason checkDataAbsentReason;
   @Autowired FindOmopConcepts findOmopConcepts;
@@ -67,7 +81,6 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
     var wrapper = new OmopModelWrapper();
 
     var immunizationLogicId = fhirReferenceUtils.extractId(srcImmunization);
-
     var immunizationSourceIdentifier =
         fhirReferenceUtils.extractResourceFirstIdentifier(srcImmunization);
     if (Strings.isNullOrEmpty(immunizationLogicId)
@@ -77,11 +90,17 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
       return null;
     }
 
+    String immunizationId = "";
+    if (!Strings.isNullOrEmpty(immunizationLogicId)) {
+      immunizationId = srcImmunization.getId();
+    }
+
     if (Boolean.FALSE.equals(bulkload)) {
       deleteExistingImmunization(immunizationLogicId, immunizationSourceIdentifier);
       if (isDeleted) {
         deletedFhirReferenceCounter.increment();
-        log.info("Found a deleted resource [{}]. Deleting from OMOP DB.", immunizationLogicId);
+        log.info(
+            "Found a deleted [Immunization] resource {}. Deleting from OMOP DB.", immunizationId);
         return null;
       }
     }
@@ -89,21 +108,22 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
     var status = getStatus(srcImmunization);
     if (status == null || !FHIR_RESOURCE_ACCEPTABLE_EVENT_STATUS_LIST.contains(status)) {
       log.error(
-          "[status] {} from {} is not acceptable. Skip resource.", status, immunizationLogicId);
+          "The [status]: {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
+          status,
+          immunizationId);
       return null;
     }
 
-    var personId = getPersonId(srcImmunization, immunizationLogicId);
+    var personId = getPersonId(srcImmunization, immunizationLogicId, immunizationId);
     if (personId == null) {
-      log.warn(
-          "No matching [Person] found for [Immunization]: {}. Skip resource", immunizationLogicId);
+      log.warn("No matching [Person] found for [Immunization]: {}. Skip resource", immunizationId);
       noPersonIdCounter.increment();
       return null;
     }
 
     var immunizationOnset = getImmunizationOnset(srcImmunization);
     if (immunizationOnset.getStartDateTime() == null) {
-      log.warn("No [Date] found for [Immunization]: {}. Skip resource", immunizationLogicId);
+      log.warn("No [Date] found for [Immunization]: {}. Skip resource", immunizationId);
       noStartDateCounter.increment();
       return null;
     }
@@ -115,27 +135,26 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
                 .get(0)
                 .getSystem()
                 .equals(fhirSystems.getVaccineStatusUnknown()))) {
-      log.error("No [vaccine code] found for {}. Skip resource.", immunizationLogicId);
+      log.error("No [vaccine code] found for [Immunization]: {}. Skip resource.", immunizationId);
       noCodeCounter.increment();
       return null;
     }
 
-    var visitOccId = getVisitOccId(srcImmunization, immunizationLogicId, personId);
+    var visitOccId = getVisitOccId(srcImmunization, personId, immunizationId);
     var route = getRoute(srcImmunization);
     var dose = getDose(srcImmunization);
 
-    var newDrugExposure =
-        createDrugExposure(
-            dose,
-            route,
-            vaccineCodingList,
-            personId,
-            visitOccId,
-            immunizationOnset,
-            immunizationLogicId,
-            immunizationSourceIdentifier);
-
-    wrapper.setDrugExposure(newDrugExposure);
+    createImmunizationMapping(
+        wrapper,
+        dose,
+        route,
+        vaccineCodingList,
+        personId,
+        visitOccId,
+        immunizationOnset,
+        immunizationLogicId,
+        immunizationSourceIdentifier,
+        immunizationId);
 
     return wrapper;
   }
@@ -147,173 +166,479 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
   private void deleteExistingImmunization(
       String immunizationLogicId, String immunizationSourceIdentifier) {
     if (!Strings.isNullOrEmpty(immunizationLogicId)) {
-      drugExposureService.deleteExistingDrugExposureByFhirLogicalId(immunizationLogicId);
+      immunizationService.deleteExistingImmunizationByFhirLogicalId(immunizationLogicId);
     } else {
-      drugExposureService.deleteExistingDrugExposureByFhirIdentifier(immunizationSourceIdentifier);
+      immunizationService.deleteExistingImmunizationByFhirIdentifier(immunizationSourceIdentifier);
     }
   }
 
-  private DrugExposure setBasisDrugExposure(
+  private void createImmunizationMapping(
+      OmopModelWrapper wrapper,
       Quantity dose,
-      String route,
-      Long personId,
-      Long visitOccId,
-      ResourceOnset immunizationOnset,
-      String immunizationLogicId,
-      String immunizationSourceIdentifier) {
-
-    var startDateTime = immunizationOnset.getStartDateTime();
-    var endDateTime = immunizationOnset.getEndDateTime();
-    String doseUnit = null;
-    BigDecimal doseQuantity = null;
-
-    if (dose != null) {
-      doseUnit = dose.getUnit();
-      doseQuantity = dose.getValue();
-    }
-
-    return DrugExposure.builder()
-        .personId(personId)
-        .visitOccurrenceId(visitOccId)
-        .drugExposureStartDate(startDateTime.toLocalDate())
-        .drugExposureStartDatetime(startDateTime)
-        .drugExposureEndDate(endDateTime.toLocalDate())
-        .routeSourceValue(route)
-        .doseUnitSourceValue(doseUnit)
-        .quantity(doseQuantity)
-        .fhirLogicalId(immunizationLogicId)
-        .fhirIdentifier(immunizationSourceIdentifier)
-        .drugTypeConceptId(CONCEPT_EHR)
-        .build();
-  }
-
-  private List<DrugExposure> createDrugExposure(
-      Quantity dose,
-      String route,
+      Coding route,
       List<Coding> vaccineCodingList,
       Long personId,
       Long visitOccId,
       ResourceOnset immunizationOnset,
       String immunizationLogicId,
-      String immunizationSourceIdentifier) {
-    List<DrugExposure> vaccineDrugExposure = new ArrayList<>();
-    var snomedCoding = getCoding(vaccineCodingList, Arrays.asList(fhirSystems.getSnomed()));
-    var atcCoding = getCoding(vaccineCodingList, fhirSystems.getAtc());
-    var snomedCodeExists = checkIfCodeExists(snomedCoding);
-    var atcCodeExists = checkIfCodeExists(atcCoding);
-
-    if (snomedCodeExists) {
-      vaccineDrugExposure =
-          setSnomedVaccineCode(
-              dose,
-              route,
-              personId,
-              visitOccId,
-              immunizationOnset,
-              immunizationLogicId,
-              immunizationSourceIdentifier,
-              snomedCoding);
+      String immunizationSourceIdentifier,
+      String immunizationId) {
+    var codingSize = vaccineCodingList.size();
+    if (codingSize == 1) {
+      setImmunizationConceptsUsingSingleCoding(
+          wrapper,
+          dose,
+          route,
+          vaccineCodingList.get(0),
+          personId,
+          visitOccId,
+          immunizationOnset,
+          immunizationLogicId,
+          immunizationSourceIdentifier,
+          immunizationId);
+    } else {
+      setImmunizationConceptsUsingMultipleCodings(
+          wrapper,
+          dose,
+          route,
+          vaccineCodingList,
+          personId,
+          visitOccId,
+          immunizationOnset,
+          immunizationLogicId,
+          immunizationSourceIdentifier,
+          immunizationId);
     }
-    if (atcCodeExists) {
-      var atcDrugExposure =
-          setAtcVaccineCode(
-              dose,
-              route,
-              personId,
-              visitOccId,
-              immunizationOnset,
-              immunizationLogicId,
-              immunizationSourceIdentifier,
-              atcCoding);
-      vaccineDrugExposure.add(atcDrugExposure);
-    }
-
-    return vaccineDrugExposure;
   }
 
-  /**
-   * @param newDrugExposure
-   * @param vaccineDrugExposure
-   * @param atcCoding
-   */
-  private DrugExposure setAtcVaccineCode(
+  private void setImmunizationConceptsUsingSingleCoding(
+      OmopModelWrapper wrapper,
       Quantity dose,
-      String route,
+      Coding route,
+      Coding vaccineCoding,
       Long personId,
       Long visitOccId,
       ResourceOnset immunizationOnset,
       String immunizationLogicId,
       String immunizationSourceIdentifier,
-      Coding atcCoding) {
-    var basisDrugExposure =
-        setBasisDrugExposure(
+      String immunizationId) {
+
+    List<Pair<String, List<AtcStandardDomainLookup>>> atcStandardMapPairList = null;
+
+    var immunizationCodeExist =
+        checkIfAnyImmunizationCodesExist(vaccineCoding, listOfImmunizationVocabularyId);
+    if (!immunizationCodeExist) {
+      return;
+    }
+
+    var immunizationVocabularyId = findOmopConcepts.getOmopVocabularyId(vaccineCoding.getSystem());
+
+    if (immunizationVocabularyId.equals(VOCABULARY_ATC)) {
+      // for ATC codes
+
+      atcStandardMapPairList =
+          getValidAtcCodes(
+              vaccineCoding, immunizationOnset.getStartDateTime().toLocalDate(), immunizationId);
+
+      if (atcStandardMapPairList.isEmpty()) {
+        return;
+      }
+      for (var singlePair : atcStandardMapPairList) {
+        immunizationProcessor(
+            singlePair,
+            Collections.emptyList(),
+            wrapper,
             dose,
             route,
-            personId,
-            visitOccId,
             immunizationOnset,
             immunizationLogicId,
-            immunizationSourceIdentifier);
-    var atcConcept =
-        findOmopConcepts.getConcepts(
-            atcCoding, basisDrugExposure.getDrugExposureStartDate(), bulkload, dbMappings);
-    if (atcConcept == null) {
-      return null;
+            immunizationSourceIdentifier,
+            personId,
+            visitOccId,
+            immunizationId);
+      }
+    } else if (immunizationVocabularyId.equals(VOCABULARY_SNOMED)) {
+      // for SNOMED codes
+
+      var snomedCodingList = getSnomedCodingList(vaccineCoding);
+      var snomedStandardConcepts =
+          getSnomedConceptList(
+              snomedCodingList, immunizationOnset, immunizationLogicId, immunizationId);
+
+      immunizationProcessor(
+          null,
+          snomedStandardConcepts,
+          wrapper,
+          dose,
+          route,
+          immunizationOnset,
+          immunizationLogicId,
+          immunizationSourceIdentifier,
+          personId,
+          visitOccId,
+          immunizationId);
     }
-    basisDrugExposure.setDrugConceptId(atcConcept.getConceptId());
-    basisDrugExposure.setDrugSourceConceptId(atcConcept.getConceptId());
-    basisDrugExposure.setDrugSourceValue(atcCoding.getCode());
-    return basisDrugExposure;
   }
 
-  /**
-   * @param newDrugExposure
-   * @param vaccineDrugExposure
-   * @param snomedCoding
-   */
-  private List<DrugExposure> setSnomedVaccineCode(
+  private void setImmunizationConceptsUsingMultipleCodings(
+      OmopModelWrapper wrapper,
       Quantity dose,
-      String route,
+      Coding route,
+      List<Coding> vaccineCodings,
       Long personId,
       Long visitOccId,
       ResourceOnset immunizationOnset,
       String immunizationLogicId,
       String immunizationSourceIdentifier,
-      Coding snomedCoding) {
+      String immunizationId) {
 
-    List<DrugExposure> vaccineDrugExposure = new ArrayList<>();
-    var snomedCodingList = getSnomedCodingList(snomedCoding);
+    Coding uncheckedAtcCoding = null;
+    Coding uncheckedSnomedCoding = null;
+    Coding immunizationCoding = null;
+
+    for (var uncheckedCoding : vaccineCodings) {
+      var immunizationVocabularyId =
+          findOmopConcepts.getOmopVocabularyId(uncheckedCoding.getSystem());
+      if (immunizationVocabularyId.equals(VOCABULARY_ATC)) {
+        uncheckedAtcCoding = uncheckedCoding;
+      }
+      if (immunizationVocabularyId.equals(VOCABULARY_SNOMED)) {
+        uncheckedSnomedCoding = uncheckedCoding;
+      }
+    }
+    if (uncheckedAtcCoding == null && uncheckedSnomedCoding == null) {
+      return;
+    }
+
+    // ATC
+    var atcStandardMapPairList =
+        getValidAtcCodes(
+            uncheckedAtcCoding, immunizationOnset.getStartDateTime().toLocalDate(), immunizationId);
+
+    // SNOMED
+    var snomedCodingList = getSnomedCodingList(uncheckedSnomedCoding);
+    var snomedStandardConcepts =
+        getSnomedConceptList(
+            snomedCodingList, immunizationOnset, immunizationLogicId, immunizationId);
+
+    if (atcStandardMapPairList.isEmpty() && snomedStandardConcepts.isEmpty()) {
+      return;
+    } else if (!atcStandardMapPairList.isEmpty()) {
+      // ATC
+      immunizationCoding = uncheckedAtcCoding;
+    } else if (!snomedStandardConcepts.isEmpty()) {
+      // SNOMED
+      immunizationCoding = uncheckedSnomedCoding;
+    }
+
+    setImmunizationConceptsUsingSingleCoding(
+        wrapper,
+        dose,
+        route,
+        immunizationCoding,
+        personId,
+        visitOccId,
+        immunizationOnset,
+        immunizationLogicId,
+        immunizationSourceIdentifier,
+        immunizationId);
+  }
+
+  private List<SnomedVaccineStandardLookup> getSnomedConceptList(
+      List<Coding> snomedCodingList,
+      ResourceOnset immunizationOnset,
+      String immunizationLogicId,
+      String immunizationId) {
+    List<SnomedVaccineStandardLookup> snomedStandardConcepts = new ArrayList<>();
+
     for (var subSnomedCoding : snomedCodingList) {
-
-      var snomedVaccineConcepts =
+      var conceptList =
           findOmopConcepts.getSnomedVaccineConcepts(
               subSnomedCoding,
               immunizationOnset.getStartDateTime().toLocalDate(),
               bulkload,
-              dbMappings);
-
-      for (var snomedVaccineConcept : snomedVaccineConcepts) {
-        var basisDrugExposure =
-            setBasisDrugExposure(
-                dose,
-                route,
-                personId,
-                visitOccId,
-                immunizationOnset,
-                immunizationLogicId,
-                immunizationSourceIdentifier);
-        basisDrugExposure.setDrugConceptId(snomedVaccineConcept.getStandardVaccineConceptId());
-        basisDrugExposure.setDrugSourceConceptId(snomedVaccineConcept.getSnomedConceptId());
-        basisDrugExposure.setDrugSourceValue(snomedVaccineConcept.getSnomedCode());
-
-        vaccineDrugExposure.add(basisDrugExposure);
+              dbMappings,
+              immunizationLogicId,
+              immunizationId);
+      if (conceptList.isEmpty()) {
+        return Collections.emptyList();
       }
+      snomedStandardConcepts.addAll(conceptList);
+    }
+    return snomedStandardConcepts;
+  }
+
+  /**
+   * Extract valid pairs of ATC code and its OMOP concept_id and domain information as a list
+   *
+   * @param atcCoding
+   * @param immunizationDate the date of immunization
+   * @return a list of valid pairs of ATC code and its OMOP concept_id and domain information
+   */
+  private List<Pair<String, List<AtcStandardDomainLookup>>> getValidAtcCodes(
+      Coding atcCoding, LocalDate immunizationDate, String immunizationId) {
+    if (atcCoding == null) {
+      return Collections.emptyList();
     }
 
-    return vaccineDrugExposure;
+    List<Pair<String, List<AtcStandardDomainLookup>>> validAtcStandardConceptMaps =
+        new ArrayList<>();
+    List<AtcStandardDomainLookup> atcStandardMap =
+        findOmopConcepts.getAtcStandardConcepts(
+            atcCoding, immunizationDate, bulkload, dbMappings, immunizationId);
+    if (atcStandardMap.isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    validAtcStandardConceptMaps.add(Pair.of(atcCoding.getCode(), atcStandardMap));
+
+    return validAtcStandardConceptMaps;
+  }
+
+  /**
+   * Processes information from FHIR Immunization resource and transforms them into records OMOP CDM
+   * tables.
+   */
+  private void immunizationProcessor(
+      @Nullable Pair<String, List<AtcStandardDomainLookup>> atcStandardPair,
+      List<SnomedVaccineStandardLookup> snomedVaccineList,
+      OmopModelWrapper wrapper,
+      Quantity dose,
+      Coding route,
+      ResourceOnset immunizationOnset,
+      String immunizationLogicId,
+      String immunizationSourceIdentifier,
+      Long personId,
+      Long visitOccId,
+      String immunizationId) {
+
+    if (atcStandardPair == null && snomedVaccineList.isEmpty()) {
+      return;
+    }
+
+    if (atcStandardPair != null) {
+      var atcCode = atcStandardPair.getLeft();
+      var atcStandardMaps = atcStandardPair.getRight();
+
+      for (var atcStandardMap : atcStandardMaps) {
+        setImmunization(
+            wrapper,
+            dose,
+            route,
+            immunizationOnset,
+            immunizationLogicId,
+            immunizationSourceIdentifier,
+            personId,
+            visitOccId,
+            atcCode,
+            atcStandardMap.getStandardConceptId(),
+            atcStandardMap.getSourceConceptId(),
+            atcStandardMap.getStandardDomainId(),
+            immunizationId);
+      }
+
+    } else {
+      for (var snomedVaccine : snomedVaccineList) {
+        setImmunization(
+            wrapper,
+            dose,
+            route,
+            immunizationOnset,
+            immunizationLogicId,
+            immunizationSourceIdentifier,
+            personId,
+            visitOccId,
+            snomedVaccine.getSnomedCode(),
+            snomedVaccine.getStandardVaccineConceptId(),
+            snomedVaccine.getSnomedConceptId(),
+            snomedVaccine.getStandardVaccineDomainId(),
+            immunizationId);
+      }
+    }
+  }
+
+  /** Write immunization information into correct OMOP tables based on their domains. */
+  private void setImmunization(
+      OmopModelWrapper wrapper,
+      Quantity dose,
+      Coding route,
+      ResourceOnset immunizationOnset,
+      String immunizationLogicId,
+      String immunizationSourceIdentifier,
+      Long personId,
+      Long visitOccId,
+      String immunizationCode,
+      Integer immunizationConceptId,
+      Integer immunizationSourceConceptId,
+      String domain,
+      String immunizationId) {
+    switch (domain) {
+      case OMOP_DOMAIN_DRUG:
+        var drug =
+            setUpDrugExposure(
+                dose,
+                route,
+                immunizationOnset,
+                immunizationConceptId,
+                immunizationSourceConceptId,
+                immunizationCode,
+                personId,
+                visitOccId,
+                immunizationLogicId,
+                immunizationSourceIdentifier,
+                immunizationId);
+
+        wrapper.getDrugExposure().add(drug);
+
+        break;
+      case OMOP_DOMAIN_OBSERVATION:
+        var observation =
+            setUpObservation(
+                dose,
+                route,
+                immunizationOnset,
+                immunizationConceptId,
+                immunizationSourceConceptId,
+                immunizationCode,
+                personId,
+                visitOccId,
+                immunizationLogicId,
+                immunizationSourceIdentifier,
+                immunizationId);
+
+        wrapper.getObservation().add(observation);
+
+        break;
+      default:
+        log.error(
+            "[Unsupported domain] {} of code in [Immunization]: {}. Skip resource.",
+            domain,
+            immunizationId);
+        break;
+    }
+  }
+
+  /**
+   * Creates a new record of the drug_exposure table in OMOP CDM for the processed FHIR Immunization
+   * resource.
+   *
+   * @return new record of the drug_exposure table in OMOP CDM for the processed FHIR Immunization
+   *     resource
+   */
+  private DrugExposure setUpDrugExposure(
+      Quantity dose,
+      Coding route,
+      ResourceOnset onset,
+      Integer immunizationConceptId,
+      Integer immunizationSourceConceptId,
+      String immunizationCode,
+      Long personId,
+      Long visitOccId,
+      String immunizationLogicId,
+      String immunizationSourceIdentifier,
+      String immunizationId) {
+
+    var startDateTime = onset.getStartDateTime();
+    var endDateTime = onset.getEndDateTime();
+
+    var drugExposure =
+        DrugExposure.builder()
+            .drugExposureStartDate(startDateTime.toLocalDate())
+            .drugExposureStartDatetime(startDateTime)
+            .drugExposureEndDatetime(endDateTime)
+            .drugExposureEndDate(
+                endDateTime == null ? startDateTime.toLocalDate() : endDateTime.toLocalDate())
+            .personId(personId)
+            .drugSourceConceptId(immunizationSourceConceptId)
+            .drugConceptId(immunizationConceptId)
+            .visitOccurrenceId(visitOccId)
+            .drugTypeConceptId(CONCEPT_EHR)
+            .drugSourceValue(immunizationCode)
+            .fhirLogicalId(immunizationLogicId)
+            .fhirIdentifier(immunizationSourceIdentifier)
+            .build();
+
+    if (dose != null) {
+      drugExposure.setDoseUnitSourceValue(dose.getUnit());
+      drugExposure.setQuantity(dose.getValue());
+    }
+
+    if (route != null) {
+      var routeConcept =
+          findOmopConcepts.getConcepts(
+              route, startDateTime.toLocalDate(), bulkload, dbMappings, immunizationId);
+      drugExposure.setRouteSourceValue(routeConcept.getConceptCode());
+      drugExposure.setRouteConceptId(
+          routeConcept.getConceptId() == CONCEPT_NO_MATCHING_CONCEPT
+              ? null
+              : routeConcept.getConceptId());
+    }
+
+    return drugExposure;
+  }
+
+  private OmopObservation setUpObservation(
+      Quantity dose,
+      Coding route,
+      ResourceOnset onset,
+      Integer immunizationConceptId,
+      Integer immunizationSourceConceptId,
+      String immunizationCode,
+      Long personId,
+      Long visitOccId,
+      String immunizationLogicId,
+      String immunizationSourceIdentifier,
+      String immunizationId) {
+
+    var startDateTime = onset.getStartDateTime();
+
+    var newObservation =
+        OmopObservation.builder()
+            .personId(personId)
+            .observationDate(startDateTime.toLocalDate())
+            .observationDatetime(startDateTime)
+            .visitOccurrenceId(visitOccId)
+            .observationSourceConceptId(immunizationSourceConceptId)
+            .observationConceptId(immunizationConceptId)
+            .observationTypeConceptId(CONCEPT_EHR)
+            .observationSourceValue(immunizationCode)
+            .fhirLogicalId(immunizationLogicId)
+            .fhirIdentifier(immunizationSourceIdentifier)
+            .build();
+
+    if (dose != null) {
+      var doseCoding = new Coding().setCode(dose.getUnit()).setSystem(fhirSystems.getUcum());
+
+      var unitConcept =
+          findOmopConcepts.getConcepts(
+              doseCoding, startDateTime.toLocalDate(), bulkload, dbMappings, immunizationId);
+
+      newObservation.setUnitSourceValue(dose.getUnit());
+      newObservation.setValueAsNumber(dose.getValue());
+      newObservation.setUnitConceptId(
+          unitConcept.getConceptId() == CONCEPT_NO_MATCHING_CONCEPT
+              ? null
+              : unitConcept.getConceptId());
+    }
+
+    if (route != null) {
+      var routeConcept =
+          findOmopConcepts.getConcepts(
+              route, startDateTime.toLocalDate(), bulkload, dbMappings, immunizationId);
+      newObservation.setQualifierSourceValue(routeConcept.getConceptCode());
+      newObservation.setQualifierConceptId(
+          routeConcept.getConceptId() == CONCEPT_NO_MATCHING_CONCEPT
+              ? null
+              : routeConcept.getConceptId());
+    }
+
+    return newObservation;
   }
 
   private List<Coding> getSnomedCodingList(Coding snomedCoding) {
+    if (snomedCoding == null) {
+      return Collections.emptyList();
+    }
     var snomedCodes = snomedCoding.getCode();
     if (!snomedCodes.contains("+")) {
       return Arrays.asList(snomedCoding);
@@ -334,43 +659,17 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
     return snomedCodingList;
   }
 
-  private boolean checkIfCodeExists(Coding vaccineCoding) {
-    if (vaccineCoding == null) {
-      return false;
-    }
-
-    var code = checkDataAbsentReason.getValue(vaccineCoding.getCodeElement());
-    if (Strings.isNullOrEmpty(code)) {
-      return false;
-    }
-    return true;
-  }
-
-  private String getRoute(Immunization srcImmunization) {
+  private Coding getRoute(Immunization srcImmunization) {
     var routeCodeableConcept = checkDataAbsentReason.getValue(srcImmunization.getRoute());
     if (routeCodeableConcept == null) {
       return null;
     }
     var routeCodings = routeCodeableConcept.getCoding();
-    var routeText = routeCodeableConcept.getText();
-    if (routeCodings.isEmpty() && Strings.isNullOrEmpty(routeText)) {
+    if (routeCodings.isEmpty()) {
       return null;
-    } else if (routeCodings.isEmpty() && !Strings.isNullOrEmpty(routeText)) {
-      return routeText;
     } else {
-      return routeCodings.get(0).getCode();
+      return routeCodings.get(0);
     }
-  }
-
-  private Coding getCoding(List<Coding> vaccineCodingList, List<String> fhirSystemUrl) {
-    var codingOptional =
-        vaccineCodingList.stream()
-            .filter(coding -> fhirSystemUrl.contains(coding.getSystem()))
-            .findFirst();
-    if (codingOptional.isPresent()) {
-      return codingOptional.get();
-    }
-    return null;
   }
 
   private List<Coding> getVaccineCoding(Immunization srcImmunization) {
@@ -428,32 +727,45 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
     return resourceOnset;
   }
 
-  private Long getVisitOccId(
-      Immunization srcImmunization, String immunizationLogicId, Long personId) {
+  private Long getVisitOccId(Immunization srcImmunization, Long personId, String immunizationId) {
     var encounterReferenceIdentifier =
         fhirReferenceUtils.getEncounterReferenceIdentifier(srcImmunization);
     var encounterReferenceLogicalId =
         fhirReferenceUtils.getEncounterReferenceLogicalId(srcImmunization);
     var visitOccId =
         omopReferenceUtils.getVisitOccId(
-            encounterReferenceIdentifier,
-            encounterReferenceLogicalId,
-            personId,
-            immunizationLogicId);
+            encounterReferenceIdentifier, encounterReferenceLogicalId, personId, immunizationId);
     if (visitOccId == null) {
-      log.debug("No matching [Encounter] found for [Immunization]: {}.", immunizationLogicId);
+      log.debug("No matching [Encounter] found for [Immunization]: {}.", immunizationId);
     }
 
     return visitOccId;
   }
 
-  private Long getPersonId(Immunization srcImmunization, String conditionLogicId) {
+  private Long getPersonId(
+      Immunization srcImmunization, String immunizationLogicId, String immunizationId) {
     var patientReferenceIdentifier =
         fhirReferenceUtils.getSubjectReferenceIdentifier(srcImmunization);
     var patientReferenceLogicalId =
         fhirReferenceUtils.getSubjectReferenceLogicalId(srcImmunization);
 
     return omopReferenceUtils.getPersonId(
-        patientReferenceIdentifier, patientReferenceLogicalId, conditionLogicId);
+        patientReferenceIdentifier, patientReferenceLogicalId, immunizationLogicId, immunizationId);
+  }
+
+  /**
+   * Check if the used vaccine code exists in OMOP
+   *
+   * @param vaccineCoding Coding element from Immunization FHIR resource
+   * @param vocabularyId vocabulary Id in OMOP based on the used system URL in Coding
+   * @return a boolean value
+   */
+  private boolean checkIfAnyImmunizationCodesExist(
+      Coding vaccineCoding, List<String> vocabularyId) {
+    if (vaccineCoding == null) {
+      return false;
+    }
+    var codingVocabularyId = findOmopConcepts.getOmopVocabularyId(vaccineCoding.getSystem());
+    return vocabularyId.contains(codingVocabularyId);
   }
 }
