@@ -48,7 +48,7 @@ public class ImmunizationStepListener implements StepExecutionListener {
   private String startSingleStep;
 
   /**
-   * Constructor for objects of the class MedicationAdministrationStepListener.
+   * Constructor for objects of the class ImmunizationStepListener.
    *
    * @param repositories OMOP CDM repositories
    * @param dbMappings collections for the intermediate storage of data from OMOP CDM in RAM
@@ -74,8 +74,8 @@ public class ImmunizationStepListener implements StepExecutionListener {
   }
 
   /**
-   * Executes all activities which should take place before the step for FHIR
-   * MedicationAdministration resources is executed.
+   * Executes all activities which should take place before the step for FHIR Immunization resources
+   * is executed.
    *
    * @param stepExecution the execution of the step
    */
@@ -86,7 +86,7 @@ public class ImmunizationStepListener implements StepExecutionListener {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         try {
-          deleteAllDrugExposureData(stepExecution.createStepContribution());
+          deleteAllImmunizationData(stepExecution.createStepContribution());
         } catch (SQLException | IOException e) {
           e.printStackTrace();
           stepExecution.setTerminateOnly();
@@ -119,17 +119,19 @@ public class ImmunizationStepListener implements StepExecutionListener {
           .getOmopConceptMapWrapper()
           .setFindValidSnomedConcept(
               repositories.getConceptRepository().findValidConceptId(VOCABULARY_SNOMED));
+      dbMappings.setFindAtcStandardMapping(
+          repositories.getAtcStandardRepository().getAtcStandardMap());
     }
   }
 
   /**
-   * Deletes all data from OMOP CDM that originates from FHIR MedicationAdministration resources.
+   * Deletes all data from OMOP CDM that originates from FHIR Immunization resources.
    *
    * @param contribution a contribution to a StepExecution
    * @throws IOException
    * @throws SQLException
    */
-  private void deleteAllDrugExposureData(StepContribution contribution)
+  private void deleteAllImmunizationData(StepContribution contribution)
       throws SQLException, IOException {
 
     ExecuteSqlScripts executeSqlScripts = new ExecuteSqlScripts(dataSource, contribution);
@@ -140,8 +142,8 @@ public class ImmunizationStepListener implements StepExecutionListener {
   }
 
   /**
-   * Executes all activities which should take place after the step for FHIR
-   * MedicationAdministration resources has been executed.
+   * Executes all activities which should take place after the step for FHIR Immunization resources
+   * has been executed.
    *
    * @param stepExecution the execution of the step
    * @return status of the step execution
@@ -151,7 +153,7 @@ public class ImmunizationStepListener implements StepExecutionListener {
     memoryLogger.logMemoryDebugOnly();
     if (bulkload.equals(Boolean.TRUE)) {
       dbMappings.getOmopConceptMapWrapper().getFindValidAtcConcept().clear();
-
+      dbMappings.getFindAtcStandardMapping().clear();
       if (dictionaryLoadInRam.equals(Boolean.TRUE)) {
         dbMappings.getFindPersonIdByIdentifier().clear();
         dbMappings.getFindPersonIdByLogicalId().clear();
