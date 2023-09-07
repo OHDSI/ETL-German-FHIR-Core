@@ -116,7 +116,7 @@ public class PatientMapper implements FhirMapper<Patient> {
         extractCalculatedBirthDate(ageExtensionMap, ageAtDiagnosis, patientLogicId);
 
     if (realBirthDate == null && calculatedBirthDate == null) {
-      log.info("No [Birthdate] found for {}. Skip Resource.", patientLogicId);
+      log.info("No [Birthdate] found for [Patient]: {}. Skip Resource.", patientId);
       if (bulkload.equals(Boolean.FALSE)) {
         deleteExistingPatients(patientLogicId, patientSourceIdentifier);
       }
@@ -124,7 +124,7 @@ public class PatientMapper implements FhirMapper<Patient> {
     }
 
     if (bulkload.equals(Boolean.FALSE) && isDeleted) {
-      log.info("Found a deleted resource [{}]. Deleting from OMOP DB.", patientLogicId);
+      log.info("Found a deleted [Patient] resource {}. Deleting from OMOP DB.", patientId);
       deleteExistingPatients(patientLogicId, patientSourceIdentifier);
       deletedFhirReferenceCounter.increment();
       return null;
@@ -210,7 +210,7 @@ public class PatientMapper implements FhirMapper<Patient> {
       var existingPersonId =
           omopReferenceUtils.getExistingPersonId(patientSourceIdentifier, patientLogicId);
       if (existingPersonId != null) {
-        log.debug("[Patient] {} exists already in person. Update existing person", patientLogicId);
+        log.debug("[Patient] {} exists already in person. Update existing person", patientId);
 
         person.setPersonId(existingPersonId);
       }
@@ -432,7 +432,7 @@ public class PatientMapper implements FhirMapper<Patient> {
   private String cutString(String stringToBeCut, int maxLength) {
     if (!Strings.isNullOrEmpty(stringToBeCut) && stringToBeCut.length() > maxLength) {
       log.debug(
-          "The String [{}] is longer than allowed. Cut it to a length of {}.",
+          "The String: {} is longer than allowed. Cut it to a length of {}.",
           stringToBeCut,
           maxLength);
       return StringUtils.left(stringToBeCut, maxLength);
@@ -510,7 +510,7 @@ public class PatientMapper implements FhirMapper<Patient> {
       case "d":
         return documentationDateTime.minusDays(age);
       default:
-        log.warn("Unable to calculate [Birthdate] for {}.", patientLogicId);
+        log.warn("Unable to calculate [Birthdate] for [Patient]: {}.", patientId);
         return null;
     }
   }

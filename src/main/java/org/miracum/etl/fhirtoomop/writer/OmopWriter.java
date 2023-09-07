@@ -100,7 +100,7 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
             .collect(Collectors.toList());
 
     if (!medicationIdMap.isEmpty()) {
-      log.info("Inserting rowCount={} rows into medication_id_map table", medicationIdMap.size());
+      log.info("Inserting {} rows into medication_id_map table", medicationIdMap.size());
 
       repository.getMedicationIdRepository().saveAll(medicationIdMap);
     }
@@ -121,7 +121,7 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
             .collect(Collectors.toList());
 
     if (!postProcessMap.isEmpty()) {
-      log.info("Inserting rowCount={} rows into post_process_map table", postProcessMap.size());
+      log.info("Inserting {} rows into post_process_map table", postProcessMap.size());
 
       repository.getPostProcessMapRepository().saveAll(postProcessMap);
     }
@@ -141,7 +141,7 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
             .collect(Collectors.toList());
 
     if (!persons.isEmpty()) {
-      log.info("Inserting rowCount={} rows into person table", persons.size());
+      log.info("Inserting {} rows into person table", persons.size());
 
       repository.getPersonRepository().saveAll(persons);
     }
@@ -162,7 +162,7 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
             .collect(Collectors.toList());
 
     if (!visitDetails.isEmpty()) {
-      log.info("Inserting rowCount={} rows into visit_detail table", visitDetails.size());
+      log.info("Inserting {} rows into visit_detail table", visitDetails.size());
 
       repository.getVisitDetailRepository().saveAll(visitDetails);
     }
@@ -182,7 +182,7 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
             .collect(Collectors.toList());
 
     if (!visits.isEmpty()) {
-      log.info("Inserting rowCount={} rows into visit_occurrence table", visits.size());
+      log.info("Inserting {} rows into visit_occurrence table", visits.size());
 
       repository.getVisitOccRepository().saveAll(visits);
     }
@@ -203,7 +203,7 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
             .collect(Collectors.toList());
 
     if (!observations.isEmpty()) {
-      log.info("Inserting rowCount={} rows into observation table", observations.size());
+      log.info("Inserting {} rows into observation table", observations.size());
 
       repository.getObservationRepository().saveAll(observations);
     }
@@ -224,8 +224,7 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
             .collect(Collectors.toList());
 
     if (!conditionOccurrence.isEmpty()) {
-      log.info(
-          "Inserting rowCount={} rows into condition_occurrence table", conditionOccurrence.size());
+      log.info("Inserting {} rows into condition_occurrence table", conditionOccurrence.size());
 
       repository.getConditionOccRepository().saveAll(conditionOccurrence);
     }
@@ -246,7 +245,7 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
             .collect(Collectors.toList());
 
     if (!procedures.isEmpty()) {
-      log.info("Inserting rowCount={} rows into procedure_occurrence table", procedures.size());
+      log.info("Inserting {} rows into procedure_occurrence table", procedures.size());
 
       repository.getProcedureOccRepository().saveAll(procedures);
     }
@@ -267,7 +266,7 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
             .collect(Collectors.toList());
 
     if (!drugExposures.isEmpty()) {
-      log.info("Inserting rowCount={} rows into drug_exposure table", drugExposures.size());
+      log.info("Inserting {} rows into drug_exposure table", drugExposures.size());
 
       repository.getDrugExposureRepository().saveAll(drugExposures);
     }
@@ -288,7 +287,7 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
             .collect(Collectors.toList());
 
     if (!measurements.isEmpty()) {
-      log.info("Inserting rowCount={} rows into measurement table", measurements.size());
+      log.info("Inserting {} rows into measurement table", measurements.size());
 
       repository.getMeasurementRepository().saveAll(measurements);
     }
@@ -303,7 +302,7 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
     if (!deviceExposure.isEmpty()) {
-      log.info("Inserting rowCount={} rows into device_exposure table", deviceExposure.size());
+      log.info("Inserting {} rows into device_exposure table", deviceExposure.size());
 
       repository.getDeviceExposureRepository().saveAll(deviceExposure);
     }
@@ -317,7 +316,6 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
   @Override
   public void write(List<? extends OmopModelWrapper> items) {
     retryTemplate.execute(context -> writeOmopChunk(items));
-    log.info(
-        "Total: resourceCount={} FHIR resources processed", (int) resourcesProcessedTotal.count());
+    log.info("Total: {} FHIR resources processed", (int) resourcesProcessedTotal.count());
   }
 }

@@ -161,7 +161,7 @@ public class ResourceFhirReferenceUtils {
    */
   public String extractId(Resource resource) {
     if (!resource.hasId()) {
-      log.debug("Given [{}] has no identifying source value", resource.getResourceType());
+      log.debug("Given [{}] resource has no identifying source value", resource.getResourceType());
       return null;
     }
     var prefix = getResourceTypePrefix(resource);
@@ -184,7 +184,7 @@ public class ResourceFhirReferenceUtils {
                 .toLowerCase()
             + "-";
       default:
-        log.error("No Resource Type found, invalid resource, please check!");
+        log.error("No [Resource Type] found, invalid resource. Please check!");
         return null;
     }
   }
