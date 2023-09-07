@@ -130,6 +130,9 @@ public class ConditionMapper implements FhirMapper<Condition> {
           verificationStatusValue == null ? null : verificationStatusValue.getCode(),
           conditionLogicId);
       return null;
+    String conditionId = "";
+    if (!Strings.isNullOrEmpty(conditionLogicId)) {
+      conditionId = srcCondition.getId();
     }
 
     if (bulkload.equals(Boolean.FALSE)) {
@@ -150,14 +153,14 @@ public class ConditionMapper implements FhirMapper<Condition> {
       return null;
     }
 
-    var personId = getPersonId(srcCondition, conditionLogicId);
+    var personId = getPersonId(srcCondition, conditionLogicId, conditionId);
     if (personId == null) {
       log.warn("No matching [Person] found for [Condition]: {}. Skip resource", conditionLogicId);
       noPersonIdCounter.increment();
       return null;
     }
 
-    var visitOccId = getVisitOccId(srcCondition, conditionLogicId, personId);
+    var visitOccId = getVisitOccId(srcCondition, conditionId, personId);
 
     var diagnoseOnset = getConditionOnset(srcCondition);
     if (diagnoseOnset.getStartDateTime() == null) {
@@ -660,12 +663,12 @@ public class ConditionMapper implements FhirMapper<Condition> {
    * @param conditionLogicId logical id of the FHIR Condition resource
    * @return person_id of the referenced FHIR Patient resource from person table in OMOP CDM
    */
-  private Long getPersonId(Condition srcCondition, String conditionLogicId) {
+  private Long getPersonId(Condition srcCondition, String conditionLogicId, String conditionId) {
     var patientReferenceIdentifier = fhirReferenceUtils.getSubjectReferenceIdentifier(srcCondition);
     var patientReferenceLogicalId = fhirReferenceUtils.getSubjectReferenceLogicalId(srcCondition);
 
     return omopReferenceUtils.getPersonId(
-        patientReferenceIdentifier, patientReferenceLogicalId, conditionLogicId);
+        patientReferenceIdentifier, patientReferenceLogicalId, conditionLogicId, conditionId);
   }
 
   /**
@@ -673,24 +676,21 @@ public class ConditionMapper implements FhirMapper<Condition> {
    * FHIR Condition resource.
    *
    * @param srcCondition FHIR Condition resource
-   * @param conditionLogicId logical id of the FHIR Condition resource
+   * @param conditionId logical id of the FHIR Condition resource
    * @param personId person_id of the referenced FHIR Patient resource
    * @return visit_occurrence_id of the referenced FHIR Encounter resource from visit_occurrence
    *     table in OMOP CDM
    */
-  private Long getVisitOccId(Condition srcCondition, String conditionLogicId, Long personId) {
+  private Long getVisitOccId(Condition srcCondition, String conditionId, Long personId) {
     var encounterReferenceIdentifier =
         fhirReferenceUtils.getEncounterReferenceIdentifier(srcCondition);
     var encounterReferenceLogicalId =
         fhirReferenceUtils.getEncounterReferenceLogicalId(srcCondition);
     var visitOccId =
         omopReferenceUtils.getVisitOccId(
-            encounterReferenceIdentifier,
-            encounterReferenceLogicalId,
-            personId,
-            srcCondition.getId());
+            encounterReferenceIdentifier, encounterReferenceLogicalId, personId, conditionId);
     if (visitOccId == null) {
-      log.debug("No matching [Encounter] found for [Condition]: {}.", conditionLogicId);
+      log.debug("No matching [Encounter] found for [Condition]: {}.", conditionId);
     }
 
     return visitOccId;

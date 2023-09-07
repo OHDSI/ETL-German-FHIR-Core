@@ -92,6 +92,11 @@ public class ConsentMapper implements FhirMapper<Consent> {
       return null;
     }
 
+    String consentId = "";
+    if (!Strings.isNullOrEmpty(consentLogicId)) {
+      consentId = srcConsent.getId();
+    }
+
     if (bulkload.equals(Boolean.FALSE)) {
 
       deleteExistingObservation(consentLogicId, consentSourceIdentifier);
@@ -119,7 +124,7 @@ public class ConsentMapper implements FhirMapper<Consent> {
       return null;
     }
 
-    var personId = getPersonId(srcConsent, consentLogicId);
+    var personId = getPersonId(srcConsent, consentLogicId, consentId);
     if (personId == null) {
       log.warn("No matching [Person] found for {}. Skip resource", consentLogicId);
       noPersonIdCounter.increment();
@@ -239,11 +244,11 @@ public class ConsentMapper implements FhirMapper<Consent> {
    * @param consentLogicId logical id of the FHIR Consent resource
    * @return person_id of the referenced FHIR Patient resource from person table in OMOP CDM
    */
-  private Long getPersonId(Consent srcConsent, String consentLogicId) {
+  private Long getPersonId(Consent srcConsent, String consentLogicId, String consentId) {
     var patientReferenceIdentifier = fhirReferenceUtils.getSubjectReferenceIdentifier(srcConsent);
     var patientReferenceLogicalId = fhirReferenceUtils.getSubjectReferenceLogicalId(srcConsent);
     return omopReferenceUtils.getPersonId(
-        patientReferenceIdentifier, patientReferenceLogicalId, consentLogicId);
+        patientReferenceIdentifier, patientReferenceLogicalId, consentLogicId, consentId);
   }
 
   /**

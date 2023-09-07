@@ -118,6 +118,10 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
       noFhirReferenceCounter.increment();
       return null;
     }
+    String encounterId = "";
+    if (!Strings.isNullOrEmpty(encounterLogicId)) {
+      encounterId = srcEncounter.getId();
+    }
 
     if (bulkload.equals(Boolean.FALSE)) {
       deleteExistingDiagnosisInformation(encounterLogicId, encounterSourceIdentifier);
@@ -129,7 +133,7 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
       }
     }
 
-    var personId = getPersonId(srcEncounter);
+    var personId = getPersonId(srcEncounter, encounterLogicId, encounterId);
     if (personId == null) {
       log.warn("No matching [Person] found for {}. Skip resource", encounterLogicId);
       noPersonIdCounter.increment();
@@ -222,14 +226,14 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
    * @param srcEncounter FHIR Encounter resource
    * @return person_id of the referenced FHIR Patient resource from person table in OMOP CDM
    */
-  private Long getPersonId(Encounter srcEncounter) {
+  private Long getPersonId(Encounter srcEncounter, String encounterLogicId, String encounterId) {
     var patientReferenceIdentifier =
         resourceFhirReferenceUtils.getSubjectReferenceIdentifier(srcEncounter);
     var patientReferenceLogicalId =
         resourceFhirReferenceUtils.getSubjectReferenceLogicalId(srcEncounter);
 
     return omopReferenceUtils.getPersonId(
-        patientReferenceIdentifier, patientReferenceLogicalId, srcEncounter.getId());
+        patientReferenceIdentifier, patientReferenceLogicalId, encounterLogicId, encounterId);
   }
 
   /**

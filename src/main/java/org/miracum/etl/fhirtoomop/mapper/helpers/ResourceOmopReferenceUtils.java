@@ -1,6 +1,7 @@
 package org.miracum.etl.fhirtoomop.mapper.helpers;
 
 import com.google.common.base.Strings;
+import java.time.LocalDateTime;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -76,10 +77,11 @@ public class ResourceOmopReferenceUtils {
   public Long getPersonId(
       String patientReferenceIdentifier,
       String patientReferenceLogicalId,
-      String resourceLogicalId) {
+      String resourceLogicalId,
+      String resourceId) {
 
     if (patientReferenceIdentifier == null && patientReferenceLogicalId == null) {
-      log.warn("Unable to extract [Patient Reference] for {}. Skip resource", resourceLogicalId);
+      log.warn("Unable to extract [Patient Reference] for {}. Skip resource", resourceId);
       return null;
     }
 
@@ -222,22 +224,22 @@ public class ResourceOmopReferenceUtils {
       String encounterReferenceIdentifier,
       String encounterReferenceLogicalId,
       Long personId,
-      String sourceId) {
+      String resourceId) {
 
     if (encounterReferenceIdentifier == null && encounterReferenceLogicalId == null) {
-      log.warn("Unable to extract [Encounter Reference] for {}.", sourceId);
+      log.warn("Unable to extract [Encounter Reference] for {}.", resourceId);
       return null;
     }
     if (bulkload.equals(Boolean.FALSE)) {
       return searchVisitOccInDb(
-          encounterReferenceIdentifier, encounterReferenceLogicalId, personId, sourceId);
+          encounterReferenceIdentifier, encounterReferenceLogicalId, resourceId);
 
     } else {
       if (dictionaryLoadInRam.equals(Boolean.TRUE)) {
         return searchVisitOccInRam(encounterReferenceIdentifier, encounterReferenceLogicalId);
       } else {
         return searchVisitOccInDb(
-            encounterReferenceIdentifier, encounterReferenceLogicalId, personId, sourceId);
+            encounterReferenceIdentifier, encounterReferenceLogicalId, resourceId);
       }
     }
   }
@@ -277,28 +279,24 @@ public class ResourceOmopReferenceUtils {
    *
    * @param encounterReferenceIdentifier identifier of referenced FHIR Encounter resource
    * @param encounterReferenceLogicalId logical id of referenced FHIR Encounter resource
-   * @param personId referenced person_id
    * @param sourceId logical id of processing FHIR resource
    * @return visit_occurrence_id in OMOP CDM
    */
   private Long searchVisitOccInDb(
-      String encounterReferenceIdentifier,
-      String encounterReferenceLogicalId,
-      Long personId,
-      String sourceId) {
+      String encounterReferenceIdentifier, String encounterReferenceLogicalId, String resourceId) {
     var existingVisitOccId =
         getExistingVisitOccId(encounterReferenceLogicalId, encounterReferenceIdentifier);
-    //    if (existingVisitOccId == null && bulkload.equals(Boolean.FALSE)) {
-    //      // TODO: use JPA instead of JDBCTemplate
-    //      readerTemplate.update(
-    //          String.format("UPDATE %s SET last_updated_at=? WHERE fhir_id=?", inputTableName),
-    //          LocalDateTime.now().plusDays(1),
-    //          sourceId.substring(4));
-    //      log.warn(
-    //          "No visit found for [{}]. This resource will be processed again tomorrow.",
-    // sourceId);
-    //      return null;
-    //    }
+    if (existingVisitOccId == null && bulkload.equals(Boolean.FALSE)) {
+      // TODO: use JPA instead of JDBCTemplate
+      readerTemplate.update(
+          String.format("UPDATE %s SET last_updated_at=? WHERE fhir_id=?", inputTableName),
+          LocalDateTime.now().plusDays(1),
+          resourceId.substring(4));
+      log.warn(
+          "No [visit_occurrence] found for {}. This resource will be processed again tomorrow.",
+          resourceId);
+      return null;
+    }
 
     return existingVisitOccId;
   }

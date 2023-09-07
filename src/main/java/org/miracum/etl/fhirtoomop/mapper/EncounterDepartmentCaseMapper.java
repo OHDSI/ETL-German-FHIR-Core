@@ -115,6 +115,12 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
       noFhirReferenceCounter.increment();
       return null;
     }
+
+    String departmentCaseId = "";
+    if (!Strings.isNullOrEmpty(departmentCaseLogicId)) {
+      departmentCaseId = srcDepartmentCaseEncounter.getId();
+    }
+
     if (bulkload.equals(Boolean.FALSE)) {
       deleteExistingVisitDetails(departmentCaseLogicId, departmentCaseIdentifier);
       if (isDeleted) {
@@ -123,7 +129,7 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
         return null;
       }
     }
-    var personId = getPersonId(srcDepartmentCaseEncounter, departmentCaseLogicId);
+    var personId = getPersonId(srcDepartmentCaseEncounter, departmentCaseLogicId, departmentCaseId);
     if (personId == null) {
       log.warn(
           "No matching [Person] found for [Encounter]:{}. Skip resource", departmentCaseLogicId);
@@ -142,10 +148,7 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
 
     var visitOccId =
         omopReferenceUtils.getVisitOccId(
-            encounterReferenceIdentifier,
-            encounterReferenceLogicalId,
-            personId,
-            srcDepartmentCaseEncounter.getId());
+            encounterReferenceIdentifier, encounterReferenceLogicalId, personId, departmentCaseId);
     if (visitOccId == null) {
       log.error(
           "No matching [VisitOccurrence] found for [Encounter]:{}. Skip resource",
@@ -186,14 +189,20 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
    * @param departmentCaseLogicId logical id of the FHIR Encounter resource
    * @return person_id of the referenced FHIR Patient resource from person table in OMOP CDM
    */
-  private Long getPersonId(Encounter srcDepartmentCaseEncounter, String departmentCaseLogicId) {
+  private Long getPersonId(
+      Encounter srcDepartmentCaseEncounter, String departmentCaseLogicId, String departmentCaseId) {
     var patientReferenceIdentifier =
         referenceUtils.getSubjectReferenceIdentifier(srcDepartmentCaseEncounter);
     var patientReferenceLogicalId =
         referenceUtils.getSubjectReferenceLogicalId(srcDepartmentCaseEncounter);
 
     return omopReferenceUtils.getPersonId(
-        patientReferenceIdentifier, patientReferenceLogicalId, departmentCaseLogicId);
+        patientReferenceIdentifier,
+        patientReferenceLogicalId,
+        departmentCaseLogicId,
+        departmentCaseId);
+  }
+
   }
 
   /**

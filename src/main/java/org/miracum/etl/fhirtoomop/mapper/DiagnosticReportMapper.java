@@ -82,6 +82,10 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
       noFhirReferenceCounter.increment();
       return null;
     }
+    String diagnosticReportId = "";
+    if (!Strings.isNullOrEmpty(diagnosticReportLogicId)) {
+      diagnosticReportId = srcDiagnosticReport.getId();
+    }
 
     if (Boolean.FALSE.equals(bulkload)) {
       deleteExistingDiagnosticReport(diagnosticReportLogicId, diagnosticReportSourceIdentifier);
@@ -99,7 +103,7 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
       return null;
     }
 
-    var personId = getPersonId(srcDiagnosticReport, diagnosticReportLogicId);
+    var personId = getPersonId(srcDiagnosticReport, diagnosticReportLogicId, diagnosticReportId);
     if (personId == null) {
       log.warn(
           "No matching [Person] found for [DiagnosticReport]: {}. Skip resource",
@@ -141,7 +145,7 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
       return null;
     }
 
-    var visitOccId = getVisitOccId(srcDiagnosticReport, diagnosticReportLogicId, personId);
+    var visitOccId = getVisitOccId(srcDiagnosticReport, diagnosticReportId, personId);
 
     setDiagnosticReport(
         wrapper,
@@ -152,7 +156,8 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
         diagnosticReportLoincCoding,
         conclusionCoding,
         diagnosticReportLogicId,
-        diagnosticReportSourceIdentifier);
+        diagnosticReportSourceIdentifier,
+        diagnosticReportId);
 
     return wrapper;
   }
@@ -614,7 +619,7 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
   }
 
   private Long getVisitOccId(
-      DiagnosticReport srcDiagnosticReport, String diagnosticReportLogicId, Long personId) {
+      DiagnosticReport srcDiagnosticReport, String diagnosticReportId, Long personId) {
     var encounterReferenceIdentifier =
         fhirReferenceUtils.getEncounterReferenceIdentifier(srcDiagnosticReport);
     var encounterReferenceLogicalId =
@@ -624,22 +629,27 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
             encounterReferenceIdentifier,
             encounterReferenceLogicalId,
             personId,
-            diagnosticReportLogicId);
+            diagnosticReportId);
     if (visitOccId == null) {
-      log.debug(
-          "No matching [Encounter] found for [DiagnosticReport]: {}.", diagnosticReportLogicId);
+      log.debug("No matching [Encounter] found for [DiagnosticReport]: {}.", diagnosticReportId);
     }
 
     return visitOccId;
   }
 
-  private Long getPersonId(DiagnosticReport srcDiagnosticReport, String diagnosticReportLogicId) {
+  private Long getPersonId(
+      DiagnosticReport srcDiagnosticReport,
+      String diagnosticReportLogicId,
+      String diagnosticReportId) {
     var patientReferenceIdentifier =
         fhirReferenceUtils.getSubjectReferenceIdentifier(srcDiagnosticReport);
     var patientReferenceLogicalId =
         fhirReferenceUtils.getSubjectReferenceLogicalId(srcDiagnosticReport);
 
     return omopReferenceUtils.getPersonId(
-        patientReferenceIdentifier, patientReferenceLogicalId, diagnosticReportLogicId);
+        patientReferenceIdentifier,
+        patientReferenceLogicalId,
+        diagnosticReportLogicId,
+        diagnosticReportId);
   }
 }
