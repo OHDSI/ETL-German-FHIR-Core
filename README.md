@@ -2,11 +2,11 @@
 
 This repository is currently dependent on the following repositories, for testing:
 
-<https://gitlab.miracum.org/miracum/etl/deployment> (source fhir gateway/fhir server)
+<https://gitlab.miracum.org/miracum/etl/deployment> (source fhir gateway)
 
 <https://gitlab.miracum.org/miracum/etl/ohdsi-omop-v5> (dest omop db)
 
-[FHIR-TO-OMOP WIKI](https://gitlab.miracum.org/miracum/etl/fhir-to-omop/-/wikis/home)
+[FHIR-TO-OMOP WIKI](https://github.com/OHDSI/ETL-German-FHIR-Core/wiki)
 
 ## Run it
 
