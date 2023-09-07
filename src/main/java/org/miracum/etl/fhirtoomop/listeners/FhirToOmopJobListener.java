@@ -58,8 +58,14 @@ public class FhirToOmopJobListener implements JobExecutionListener {
   @Value("${data.fhirGateway.tableName}")
   private String inputTableName;
 
+  @Value("${data.fhirGateway.jdbcUrl}")
+  private String fhirJdbcUrl;
+
   @Value("${data.omopCdm.schema}")
   private String outputSchemaName;
+
+  @Value("${data.omopCdm.jdbcUrl}")
+  private String omopJdbcUrl;
 
   @Value("${app.version}")
   private String version;
@@ -140,7 +146,7 @@ public class FhirToOmopJobListener implements JobExecutionListener {
               "This Job runs as",
               Boolean.FALSE.equals(bulkLoad) ? "Incremental Load" : "Bulk Load"));
       if (StringUtils.isBlank(fhirBaseUrl)) {
-        log.info(String.format(format, "FHIR-Gateway URL", inputConnection.getMetaData().getURL()));
+        log.info(String.format(format, "FHIR-Gateway URL", fhirJdbcUrl));
         log.info(String.format(format, "Retrieve FHIR Resources from table", inputTableName));
       } else {
         log.info(String.format(format, "FHIR Server URL", fhirBaseUrl));
@@ -151,7 +157,7 @@ public class FhirToOmopJobListener implements JobExecutionListener {
               format,
               "Retrieving FHIR Resources date range",
               "From " + beginDateStr + " to " + adjustedEndDate()));
-      log.info(String.format(format, "OMOP Database URL", outputConnection.getMetaData().getURL()));
+      log.info(String.format(format, "OMOP Database URL", omopJdbcUrl));
       log.info(String.format(format, "Write data into Schema", outputSchemaName));
       log.info(String.format(format, "OMOP CDM Version", "v5.3.1"));
       log.info(String.format(format, "ETL Job version", version));
