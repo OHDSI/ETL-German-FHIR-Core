@@ -27,6 +27,7 @@ public class FhirSystems {
   private static String snomed;
   private static String dataAbsentReason;
   private static String ucum;
+  private static String orpha;
   private static String department;
   private static List<String> atc;
   private static String siteLocalizationExtension;
@@ -65,6 +66,7 @@ public class FhirSystems {
     SNOMED(snomed),
     UCUM(ucum),
     ATC(atc),
+    ORPHA(orpha),
     SITELOCALIZATIONEXTENSION(siteLocalizationExtension),
     PROCEDURESITELOCALIZATION(procedureSiteLocalization),
     DIAGNOSTICCONFIDENCE(diagnosticConfidence),
@@ -181,6 +183,14 @@ public class FhirSystems {
 
   public void setIcd10gm(List<String> icd10gm) {
     FhirSystems.icd10gm = icd10gm;
+  }
+
+  public String getOrpha() {
+    return orpha;
+  }
+
+  public void setOrpha(String orpha) {
+    FhirSystems.orpha = orpha;
   }
 
   public String getIdentifierType() {
