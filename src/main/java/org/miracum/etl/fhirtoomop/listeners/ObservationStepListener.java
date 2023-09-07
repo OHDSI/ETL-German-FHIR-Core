@@ -109,7 +109,8 @@ public class ObservationStepListener implements StepExecutionListener {
         dbMappings.setFindVisitOccIdByIdentifier(
             repositories.getVisitOccRepository().getFhirIdentifierAndVisitOccId());
       }
-
+      dbMappings.setFindLoincStandardMapping(
+          repositories.getLoincStandardRepository().getLoincStandardMap());
       dbMappings
           .getOmopConceptMapWrapper()
           .setFindValidLoincConcept(
@@ -157,7 +158,7 @@ public class ObservationStepListener implements StepExecutionListener {
       dbMappings.getOmopConceptMapWrapper().getFindValidLoincConcept().clear();
       dbMappings.getOmopConceptMapWrapper().getFindValidUcumConcept().clear();
       dbMappings.getOmopConceptMapWrapper().getFindValidSnomedConcept().clear();
-
+      dbMappings.getFindLoincStandardMapping().clear();
       if (dictionaryLoadInRam.equals(Boolean.TRUE)) {
         dbMappings.getFindPersonIdByIdentifier().clear();
         dbMappings.getFindPersonIdByLogicalId().clear();

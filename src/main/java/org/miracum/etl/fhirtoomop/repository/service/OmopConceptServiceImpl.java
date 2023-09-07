@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import org.miracum.etl.fhirtoomop.model.AtcStandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.IcdSnomedDomainLookup;
+import org.miracum.etl.fhirtoomop.model.LoincStandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.MedicationIdMap;
 import org.miracum.etl.fhirtoomop.model.OpsStandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.SnomedRaceStandardLookup;
@@ -12,6 +13,7 @@ import org.miracum.etl.fhirtoomop.model.omop.Concept;
 import org.miracum.etl.fhirtoomop.repository.AtcStandardRepository;
 import org.miracum.etl.fhirtoomop.repository.ConceptRepository;
 import org.miracum.etl.fhirtoomop.repository.IcdSnomedRepository;
+import org.miracum.etl.fhirtoomop.repository.LoincStandardRepository;
 import org.miracum.etl.fhirtoomop.repository.MedicationIdRepository;
 import org.miracum.etl.fhirtoomop.repository.OpsStandardRepository;
 import org.miracum.etl.fhirtoomop.repository.SnomedRaceRepository;
@@ -35,6 +37,7 @@ public class OmopConceptServiceImpl {
   @Autowired private SnomedRaceRepository snomedRaceRepository;
   @Autowired private OpsStandardRepository opsStandardRepository;
   @Autowired private AtcStandardRepository atcStandardRepository;
+  @Autowired private LoincStandardRepository loincStandardRepository;
   /**
    * Returns a map of all concepts based on a specific vocabulary and concept_code.
    *
@@ -103,6 +106,17 @@ public class OmopConceptServiceImpl {
   @Cacheable(cacheNames = "atc-standard", sync = true)
   public Map<String, List<AtcStandardDomainLookup>> getAtcStandardMap(String sourceCode) {
     return atcStandardRepository.getAtcStandardMapBySourceCode(sourceCode);
+  }
+
+  /**
+   * Returns a map of all LOINC-to-Standard mappings based on a specific LOINC code.
+   *
+   * @param sourceCode LOINC code
+   * @return map of all LOINC-to-Standard mappings based on a specific LOINC code
+   */
+  @Cacheable(cacheNames = "loinc-standard", sync = true)
+  public Map<String, List<LoincStandardDomainLookup>> getLoincStandardMap(String sourceCode) {
+    return loincStandardRepository.getLoincStandardMapBySourceCode(sourceCode);
   }
 
   /**

@@ -2,6 +2,7 @@ package org.miracum.etl.fhirtoomop.repository.service;
 
 import org.miracum.etl.fhirtoomop.repository.MeasurementRepository;
 import org.miracum.etl.fhirtoomop.repository.ObservationRepository;
+import org.miracum.etl.fhirtoomop.repository.ProcedureOccRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ObservationMapperServiceImpl {
   @Autowired ObservationRepository observationRepository;
   @Autowired MeasurementRepository measurementRepository;
+  @Autowired ProcedureOccRepository procedureRepository;
 
   /**
    * Delete FHIR Observation resources from OMOP CDM tables using fhir_logical_id
@@ -27,6 +29,7 @@ public class ObservationMapperServiceImpl {
   public void deleteExistingLabObservationByFhirLogicalId(String fhirLogicalId) {
     observationRepository.deleteByFhirLogicalId(fhirLogicalId);
     measurementRepository.deleteByFhirLogicalId(fhirLogicalId);
+    procedureRepository.deleteByFhirLogicalId(fhirLogicalId);
   }
 
   /**
@@ -37,5 +40,6 @@ public class ObservationMapperServiceImpl {
   public void deleteExistingLabObservationByFhirIdentifier(String fhirIdentifier) {
     observationRepository.deleteByFhirIdentifier(fhirIdentifier);
     measurementRepository.deleteByFhirIdentifier(fhirIdentifier);
+    procedureRepository.deleteByFhirIdentifier(fhirIdentifier);
   }
 }

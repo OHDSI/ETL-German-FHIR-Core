@@ -35,4 +35,5 @@ public class OmopRepository {
   @Autowired private SnomedRaceRepository snomedRaceRepository;
   @Autowired private OpsStandardRepository opsStandardRepository;
   @Autowired private AtcStandardRepository atcStandardRepository;
+  @Autowired private LoincStandardRepository loincStandardRepository;
 }
