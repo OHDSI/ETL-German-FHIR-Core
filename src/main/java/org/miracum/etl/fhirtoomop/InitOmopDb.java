@@ -134,6 +134,6 @@ public class InitOmopDb implements Tasklet {
         jobVersion,
         LocalDate.now(),
         "v5.3.1",
-        "ICD10GM 2020");
+        "v5.0");
   }
 }
