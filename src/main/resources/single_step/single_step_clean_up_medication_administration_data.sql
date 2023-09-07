@@ -5,5 +5,9 @@ DELETE
 FROM drug_exposure
 WHERE fhir_logical_id LIKE 'mea-%' OR fhir_identifier LIKE 'mea-%';
 
+DELETE
+FROM observation
+WHERE fhir_logical_id LIKE 'mea-%' OR fhir_identifier LIKE 'mea-%';
+
 
 COMMIT;
