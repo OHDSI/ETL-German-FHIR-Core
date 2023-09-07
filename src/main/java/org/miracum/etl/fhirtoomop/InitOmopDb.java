@@ -1,11 +1,20 @@
 package org.miracum.etl.fhirtoomop;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
+import org.miracum.etl.fhirtoomop.model.OrphaSnomedMapping;
 import org.miracum.etl.fhirtoomop.repository.OmopRepository;
 import org.miracum.etl.fhirtoomop.utils.ExecuteSqlScripts;
 import org.springframework.batch.core.StepContribution;
@@ -65,11 +74,18 @@ public class InitOmopDb implements Tasklet {
   public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext)
       throws Exception {
     importToCdmSourceTable();
+    insertOrphaSnomedMapping();
     modifyingTable(contribution);
     migrationFhirIdToOmopIdTable();
     return RepeatStatus.FINISHED;
   }
 
+  /**
+   * Modifies existing tables in OMOP CDM by adding indices adding or renaming columns as well as
+   * creates materialized views in cds_etl_helper schema.
+   *
+   * @param contribution contribution buffers changes until they can be applied to a chunk boundary
+   */
   private void modifyingTable(StepContribution contribution) throws SQLException, IOException {
     ExecuteSqlScripts executeSqlScripts = new ExecuteSqlScripts(outputDataSource, contribution);
     Resource addColumns = new ClassPathResource("pre_processing/pre_process_alter_tables.sql");
@@ -122,6 +138,71 @@ public class InitOmopDb implements Tasklet {
             "select setval('cds_etl_helper.fhir_id_to_omop_id_map_fhir_omop_id_seq',(select max(fhir_omop_id) from cds_etl_helper.fhir_id_to_omop_id_map)) ");
       }
     }
+  }
+
+  /** Creates and fills the orpha_snomed_mapping table in OMOP CDM with data from a csv file. */
+  private void insertOrphaSnomedMapping() {
+    createOrphaSnomedMapping();
+    log.info("Inserting data into orpha_snomed_mapping.");
+    Resource orphaSnomed = new ClassPathResource("orpha_snomed_mapping.csv");
+    try {
+      omopRepository.getOrphaSnomedMappingRepository().truncateTable();
+    } catch (Exception e) {
+      log.error("No file found in {}", orphaSnomed);
+    }
+    var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    try (BufferedReader br =
+        new BufferedReader(new FileReader(orphaSnomed.getFile(), StandardCharsets.UTF_8))) {
+      br.readLine();
+      var line = "";
+      List<OrphaSnomedMapping> orphaSnomedMappings = new ArrayList<>();
+      while ((line = br.readLine()) != null) {
+        var splitedLine = Arrays.asList(line.split(";"));
+        orphaSnomedMappings.add(
+            OrphaSnomedMapping.builder()
+                .orphaCode(splitedLine.get(0).toString())
+                .orphaConceptId(Integer.parseInt(splitedLine.get(1)))
+                .snomedCode(splitedLine.get(2).toString())
+                .snomedConceptId(Integer.parseInt(splitedLine.get(3)))
+                .snomedDomainId(splitedLine.get(4))
+                .snomedDomainConceptId(Integer.parseInt(splitedLine.get(5)))
+                .orphaValidStartDate(LocalDate.parse(splitedLine.get(6), formatter))
+                .orphaValidEndDate(LocalDate.parse(splitedLine.get(7), formatter))
+                .mappingValidStartDate(LocalDate.parse(splitedLine.get(8), formatter))
+                .mappingValidEndDate(LocalDate.parse(splitedLine.get(9), formatter))
+                .build());
+      }
+
+      omopRepository.getOrphaSnomedMappingRepository().saveAll(orphaSnomedMappings);
+      omopRepository.getOrphaSnomedMappingRepository().flush();
+      log.info("Inserted {} rows into orpha_snomed_mapping.", orphaSnomedMappings.size());
+    } catch (FileNotFoundException e) {
+      log.error(e.getMessage());
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+
+  /** Creates orpha_snomed_mapping table in cds_etl_helper schema in OMOP. */
+  private void createOrphaSnomedMapping() {
+    String createIdTable =
+        "CREATE TABLE IF NOT EXISTS cds_etl_helper.orpha_snomed_mapping (orpha_code varchar(255) NOT NULL, "
+            + "orpha_concept_id INTEGER, snomed_code varchar(255), snomed_concept_id INTEGER, "
+            + "snomed_domain_id varchar(64), snomed_domain_concept_id INTEGER, "
+            + "orpha_valid_start_date date, orpha_valid_end_date date, "
+            + "mapping_valid_start_date date, mapping_valid_end_date date); "
+            + "CREATE INDEX IF NOT EXISTS idx_orpha_code ON cds_etl_helper.orpha_snomed_mapping (orpha_code);"
+            + "CREATE INDEX IF NOT EXISTS idx_orpha_concept ON cds_etl_helper.orpha_snomed_mapping (orpha_concept_id);"
+            + "CREATE INDEX IF NOT EXISTS idx_snomed_code ON cds_etl_helper.orpha_snomed_mapping (snomed_code);"
+            + "CREATE INDEX IF NOT EXISTS idx_snomed_concept ON cds_etl_helper.orpha_snomed_mapping (snomed_concept_id);"
+            + "CREATE INDEX IF NOT EXISTS idx_snomed_domain ON cds_etl_helper.orpha_snomed_mapping (snomed_domain_id);"
+            + "CREATE INDEX IF NOT EXISTS idx_snomed_domain_concept ON cds_etl_helper.orpha_snomed_mapping (snomed_domain_concept_id);"
+            + "CREATE INDEX IF NOT EXISTS idx_orpha_start ON cds_etl_helper.orpha_snomed_mapping (orpha_valid_start_date);"
+            + "CREATE INDEX IF NOT EXISTS idx_orpha_end ON cds_etl_helper.orpha_snomed_mapping (orpha_valid_end_date);"
+            + "CREATE INDEX IF NOT EXISTS idx_mapping_start ON cds_etl_helper.orpha_snomed_mapping (mapping_valid_start_date);"
+            + "CREATE INDEX IF NOT EXISTS idx_mapping_end ON cds_etl_helper.orpha_snomed_mapping (mapping_valid_end_date);"
+            + "COMMIT;";
+    jdbcTemplate.execute(createIdTable);
   }
 
   /** Updates the cdm_source table in OMOP CDM. */

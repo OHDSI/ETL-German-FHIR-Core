@@ -33,6 +33,7 @@ public class OmopRepository {
   @Autowired private DeviceExposureRepository deviceExposureRepository;
   @Autowired private SnomedVaccineRepository snomedVaccineRepository;
   @Autowired private SnomedRaceRepository snomedRaceRepository;
+  @Autowired private OrphaSnomedMappingRepository orphaSnomedMappingRepository;
   @Autowired private OpsStandardRepository opsStandardRepository;
   @Autowired private AtcStandardRepository atcStandardRepository;
   @Autowired private LoincStandardRepository loincStandardRepository;

@@ -7,6 +7,7 @@ import org.miracum.etl.fhirtoomop.model.IcdSnomedDomainLookup;
 import org.miracum.etl.fhirtoomop.model.LoincStandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.MedicationIdMap;
 import org.miracum.etl.fhirtoomop.model.OpsStandardDomainLookup;
+import org.miracum.etl.fhirtoomop.model.OrphaSnomedMapping;
 import org.miracum.etl.fhirtoomop.model.SnomedRaceStandardLookup;
 import org.miracum.etl.fhirtoomop.model.SnomedVaccineStandardLookup;
 import org.miracum.etl.fhirtoomop.model.omop.Concept;
@@ -16,6 +17,7 @@ import org.miracum.etl.fhirtoomop.repository.IcdSnomedRepository;
 import org.miracum.etl.fhirtoomop.repository.LoincStandardRepository;
 import org.miracum.etl.fhirtoomop.repository.MedicationIdRepository;
 import org.miracum.etl.fhirtoomop.repository.OpsStandardRepository;
+import org.miracum.etl.fhirtoomop.repository.OrphaSnomedRepository;
 import org.miracum.etl.fhirtoomop.repository.SnomedRaceRepository;
 import org.miracum.etl.fhirtoomop.repository.SnomedVaccineRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +37,7 @@ public class OmopConceptServiceImpl {
   @Autowired private IcdSnomedRepository icdSnomedRepository;
   @Autowired private SnomedVaccineRepository snomedVaccineRepository;
   @Autowired private SnomedRaceRepository snomedRaceRepository;
+  @Autowired private OrphaSnomedRepository orphaSnomedRepository;
   @Autowired private OpsStandardRepository opsStandardRepository;
   @Autowired private AtcStandardRepository atcStandardRepository;
   @Autowired private LoincStandardRepository loincStandardRepository;
@@ -84,6 +87,17 @@ public class OmopConceptServiceImpl {
   @Cacheable(cacheNames = "snomed-race", sync = true)
   public Map<String, SnomedRaceStandardLookup> getSnomedRaceMap(String snomedCode) {
     return snomedRaceRepository.getSnomedRaceMapBySnomedCode(snomedCode);
+  }
+
+  /**
+   * Returns a map of all Orpha-to-SNOMED mappings based on a specific Orpha code.
+   *
+   * @param orphaCode an Orpha code
+   * @return map of all Orpha-to-SNOMED mappings based on a specific Orpha code
+   */
+  @Cacheable(cacheNames = "orpha-snomed", sync = true)
+  public Map<String, List<OrphaSnomedMapping>> getOrphaSnomedMap(String orphaCode) {
+    return orphaSnomedRepository.getOrphaSnomedMapByOrphaCode(orphaCode);
   }
 
   /**

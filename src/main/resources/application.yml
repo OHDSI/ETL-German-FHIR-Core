@@ -82,6 +82,7 @@ fhir:
     identifier-type: "http://terminology.hl7.org/CodeSystem/v2-0203"
     snomed: "http://snomed.info/sct"
     ucum: "http://unitsofmeasure.org"
+    orpha: "http://www.orpha.net"
     #department: "https://fhir.miracum.org/core/CodeSystem/fachabteilungen"
     department: "https://www.medizininformatik-initiative.de/fhir/core/modul-fall/CodeSystem/Fachabteilungsschluessel"
     data-absent-reason: "http://hl7.org/fhir/StructureDefinition/data-absent-reason"
@@ -147,6 +148,7 @@ fhir:
       - "http://fhir.de/CodeSystem/dimdi/icd-10-gm"
       - "http://fhir.de/CodeSystem/bfarm/icd-10-gm"
       - "http://snomed.info/sct"
+      - "http://www.orpha.net"
     vaccine-code:
       - "http://fhir.de/CodeSystem/dimdi/atc"
       - "http://fhir.de/CodeSystem/bfarm/atc"

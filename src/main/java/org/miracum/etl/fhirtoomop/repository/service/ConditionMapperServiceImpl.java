@@ -37,7 +37,7 @@ public class ConditionMapperServiceImpl {
     measurementRepository.deleteByFhirLogicalId(fhirLogicalId);
     conditionOccRepository.deleteByFhirLogicalId(fhirLogicalId);
     observationRepository.deleteByFhirLogicalId(fhirLogicalId);
-    //    frRepository.deleteByFhirLogicalId1(fhirLogicalId);
+    frRepository.deleteByFhirLogicalId1(fhirLogicalId);
     ppmRepository.deletePrimarySecondaryByFhirLogicalId(fhirLogicalId);
   }
 
@@ -51,7 +51,7 @@ public class ConditionMapperServiceImpl {
     measurementRepository.deleteByFhirIdentifier(fhirIdentifier);
     conditionOccRepository.deleteByFhirIdentifier(fhirIdentifier);
     observationRepository.deleteByFhirIdentifier(fhirIdentifier);
-    //    frRepository.deleteByFhirIdentifier1(fhirIdentifier);
+    frRepository.deleteByFhirIdentifier1(fhirIdentifier);
     ppmRepository.deletePrimarySecondaryByFhirIdentifier(fhirIdentifier);
   }
 
