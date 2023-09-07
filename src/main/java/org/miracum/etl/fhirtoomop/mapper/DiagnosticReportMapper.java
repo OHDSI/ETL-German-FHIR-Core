@@ -72,7 +72,6 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
     var wrapper = new OmopModelWrapper();
 
     var diagnosticReportLogicId = fhirReferenceUtils.extractId(srcDiagnosticReport);
-
     var diagnosticReportSourceIdentifier =
         fhirReferenceUtils.extractResourceFirstIdentifier(srcDiagnosticReport);
     if (Strings.isNullOrEmpty(diagnosticReportLogicId)
@@ -91,7 +90,9 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
       deleteExistingDiagnosticReport(diagnosticReportLogicId, diagnosticReportSourceIdentifier);
       if (isDeleted) {
         deletedFhirReferenceCounter.increment();
-        log.info("Found a deleted resource [{}]. Deleting from OMOP DB.", diagnosticReportLogicId);
+        log.info(
+            "Found a deleted [DiagnosticReport] resource {}. Deleting from OMOP DB.",
+            diagnosticReportId);
         return null;
       }
     }
@@ -99,7 +100,9 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
     var status = getStatus(srcDiagnosticReport);
     if (status == null) {
       log.error(
-          "[status] {} from {} is not acceptible. Skip resource.", status, diagnosticReportLogicId);
+          "The [status]: {} of {} is not acceptible for writing into OMOP CDM. Skip resource.",
+          status,
+          diagnosticReportId);
       return null;
     }
 
@@ -107,15 +110,14 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
     if (personId == null) {
       log.warn(
           "No matching [Person] found for [DiagnosticReport]: {}. Skip resource",
-          diagnosticReportLogicId);
+          diagnosticReportId);
       noPersonIdCounter.increment();
       return null;
     }
 
     var diagnosticReportOnset = getDiagnosticReportOnset(srcDiagnosticReport);
     if (diagnosticReportOnset.getStartDateTime() == null) {
-      log.warn(
-          "No [Date] found for [DiagnosticReport]: {}. Skip resource", diagnosticReportLogicId);
+      log.warn("No [Date] found for [DiagnosticReport]: {}. Skip resource", diagnosticReportId);
       noStartDateCounter.increment();
       return null;
     }
@@ -124,15 +126,14 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
     if (diagnosticReportCategoryLoincCoding == null) {
       log.warn(
           "No [Category Loinc Code] found for [DiagnosticReport]: {}. Skip resource",
-          diagnosticReportLogicId);
+          diagnosticReportId);
       return null;
     }
 
     var diagnosticReportLoincCoding = getLoincCoding(srcDiagnosticReport);
     if (diagnosticReportLoincCoding == null) {
       log.warn(
-          "No [Loinc code] found for [DiagnosticReport]: {}. Skip resource",
-          diagnosticReportLogicId);
+          "No [Loinc code] found for [DiagnosticReport]: {}. Skip resource", diagnosticReportId);
       noCodeCounter.increment();
       return null;
     }
@@ -141,7 +142,7 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
     if (conclusionCoding == null) {
       log.warn(
           "No [Conclusion Code] found for [DiagnosticReport]: {}. Skip resource",
-          diagnosticReportLogicId);
+          diagnosticReportId);
       return null;
     }
 
@@ -171,19 +172,21 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
       Coding diagnosticReportLoincCoding,
       Coding conclusionCoding,
       String diagnosticReportLogicId,
-      String diagnosticReportSourceIdentifier) {
+      String diagnosticReportSourceIdentifier,
+      String diagnosticReportId) {
     var loincCodingConcept =
         findOmopConcepts.getConcepts(
             diagnosticReportLoincCoding,
             diagnosticReportOnset.getStartDateTime().toLocalDate(),
             bulkload,
-            dbMappings);
+            dbMappings,
+            diagnosticReportId);
     if (loincCodingConcept == null) {
       return;
     }
     var categoryCodingConcept =
         findOmopConcepts.getCustomConcepts(
-            diagnosticReportCategoryLoincCoding,
+            diagnosticReportCategoryLoincCoding.getCode(),
             SOURCE_VOCABULARY_ID_DIAGNOSTIC_REPORT_CATEGORY,
             dbMappings);
     var domainId = loincCodingConcept.getDomainId();
@@ -198,7 +201,8 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
             loincCodingConcept,
             conclusionCoding,
             diagnosticReportLogicId,
-            diagnosticReportSourceIdentifier);
+            diagnosticReportSourceIdentifier,
+            diagnosticReportId);
         break;
       case OMOP_DOMAIN_MEASUREMENT:
         createDiagnosticReportMeasurement(
@@ -210,7 +214,8 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
             loincCodingConcept,
             conclusionCoding,
             diagnosticReportLogicId,
-            diagnosticReportSourceIdentifier);
+            diagnosticReportSourceIdentifier,
+            diagnosticReportId);
         break;
       case OMOP_DOMAIN_PROCEDURE:
         createDiagnosticReportProcedureOcc(
@@ -222,7 +227,8 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
             loincCodingConcept,
             conclusionCoding,
             diagnosticReportLogicId,
-            diagnosticReportSourceIdentifier);
+            diagnosticReportSourceIdentifier,
+            diagnosticReportId);
         break;
       default:
         log.warn("");
@@ -239,7 +245,8 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
       Concept loincCodingConcept,
       Coding conclusionCoding,
       String diagnosticReportLogicId,
-      String diagnosticReportSourceIdentifier) {
+      String diagnosticReportSourceIdentifier,
+      String diagnosticReportId) {
 
     var conclusionSnomedCodingList = getSnomedCodingList(conclusionCoding);
     if (conclusionSnomedCodingList.isEmpty()) {
@@ -252,7 +259,8 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
               modifiedSnomedCoding,
               diagnosticReportOnset.getStartDateTime().toLocalDate(),
               bulkload,
-              dbMappings);
+              dbMappings,
+              diagnosticReportId);
 
       if (snomedConcept == null) {
         continue;
@@ -281,7 +289,8 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
               interpretationCoding,
               diagnosticReportOnset.getStartDateTime().toLocalDate(),
               bulkload,
-              dbMappings);
+              dbMappings,
+              diagnosticReportLogicId);
       if (interpretationConcept != null) {
         diagnosticReportProcedure.setModifierConceptId(interpretationConcept.getConceptId());
         diagnosticReportProcedure.setModifierSourceValue(interpretationConcept.getConceptCode());
@@ -300,7 +309,8 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
       Concept loincCodingConcept,
       Coding conclusionCoding,
       String diagnosticReportLogicId,
-      String diagnosticReportSourceIdentifier) {
+      String diagnosticReportSourceIdentifier,
+      String diagnosticReportId) {
 
     var conclusionSnomedCodingList = getSnomedCodingList(conclusionCoding);
     if (conclusionSnomedCodingList.isEmpty()) {
@@ -313,7 +323,8 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
               modifiedSnomedCoding,
               diagnosticReportOnset.getStartDateTime().toLocalDate(),
               bulkload,
-              dbMappings);
+              dbMappings,
+              diagnosticReportId);
 
       if (snomedConcept == null) {
         continue;
@@ -343,7 +354,8 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
               interpretationCoding,
               diagnosticReportOnset.getStartDateTime().toLocalDate(),
               bulkload,
-              dbMappings);
+              dbMappings,
+              diagnosticReportLogicId);
 
       if (interpretationConcept != null) {
         diagnosticReportMeasurement.setOperatorConceptId(interpretationConcept.getConceptId());
@@ -361,7 +373,8 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
       Concept loincCodingConcept,
       Coding conclusionCoding,
       String diagnosticReportLogicId,
-      String diagnosticReportSourceIdentifier) {
+      String diagnosticReportSourceIdentifier,
+      String diagnosticReportId) {
 
     var conclusionSnomedCodingList = getSnomedCodingList(conclusionCoding);
     if (conclusionSnomedCodingList.isEmpty()) {
@@ -375,7 +388,8 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
               modifiedSnomedCoding,
               diagnosticReportOnset.getStartDateTime().toLocalDate(),
               bulkload,
-              dbMappings);
+              dbMappings,
+              diagnosticReportId);
 
       if (snomedConcept == null) {
         continue;
@@ -405,7 +419,8 @@ public class DiagnosticReportMapper implements FhirMapper<DiagnosticReport> {
               interpretationCoding,
               diagnosticReportOnset.getStartDateTime().toLocalDate(),
               bulkload,
-              dbMappings);
+              dbMappings,
+              diagnosticReportLogicId);
       if (interpretationConcept != null) {
         diagnosticReportObservation.setQualifierConceptId(interpretationConcept.getConceptId());
         diagnosticReportObservation.setQualifierSourceValue(interpretationConcept.getConceptCode());

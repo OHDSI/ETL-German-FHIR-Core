@@ -83,7 +83,6 @@ public class ConsentMapper implements FhirMapper<Consent> {
     var wrapper = new OmopModelWrapper();
 
     var consentLogicId = fhirReferenceUtils.extractId(srcConsent);
-
     var consentSourceIdentifier = fhirReferenceUtils.extractResourceFirstIdentifier(srcConsent);
     if (Strings.isNullOrEmpty(consentLogicId) && Strings.isNullOrEmpty(consentSourceIdentifier)) {
       log.warn("No [Identifier] or [Id] found. [Consent] resource is invalid. Skip resource");
@@ -103,7 +102,7 @@ public class ConsentMapper implements FhirMapper<Consent> {
 
       if (isDeleted) {
         deletedFhirReferenceCounter.increment();
-        log.info("Found a deleted resource [{}]. Deleting from OMOP DB.", consentLogicId);
+        log.info("Found a deleted [Consent] resource {}. Deleting from OMOP DB.", consentId);
         return null;
       }
     }
@@ -113,20 +112,21 @@ public class ConsentMapper implements FhirMapper<Consent> {
     if (Strings.isNullOrEmpty(statusValue)
         || !FHIR_RESOURCE_CONSENT_ACCEPTABLE_STATUS_LIST.contains(statusValue)) {
       log.error(
-          "The [status] of {} is not acceptable for writing into OMOP CDM. Skip resource.",
-          consentLogicId);
+          "The [status]: {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
+          statusValue,
+          consentId);
       return null;
     }
 
     var consentCategoryCoding = getResuscitateStatusCategoryCode(srcConsent);
     if (consentCategoryCoding == null) {
-      log.warn("No Category [dnr] found in [Consent]:{}. Skip resource", consentLogicId);
+      log.warn("No Category [dnr] found in [Consent]: {}. Skip resource", consentId);
       return null;
     }
 
     var personId = getPersonId(srcConsent, consentLogicId, consentId);
     if (personId == null) {
-      log.warn("No matching [Person] found for {}. Skip resource", consentLogicId);
+      log.warn("No matching [Person] found for [Consent]: {}. Skip resource", consentId);
       noPersonIdCounter.increment();
       return null;
     }
@@ -140,21 +140,26 @@ public class ConsentMapper implements FhirMapper<Consent> {
 
     var consentOnset = getConsentOnset(srcConsent);
     if (consentOnset.getStartDateTime() == null) {
-      log.warn("Unable to determine [dateTime] for {}. Skip resource", consentLogicId);
+      log.warn("Unable to determine [dateTime] for [Consent]: {}. Skip resource", consentId);
       noStartDateCounter.increment();
       return null;
     }
 
     var provisionCode = getConsentProvision(srcConsent);
     if (provisionCode == null) {
-      log.warn("No provision code found in [Consent]:{}. Skip resource", consentLogicId);
+      log.warn("No [provision code] found in [Consent]: {}. Skip resource", consentId);
       noCodeCounter.increment();
       return null;
     }
 
     var newResuscitationStatus =
         createOmopObservation(
-            personId, consentOnset, provisionCode, consentLogicId, consentSourceIdentifier);
+            personId,
+            consentOnset,
+            provisionCode,
+            consentLogicId,
+            consentSourceIdentifier,
+            consentId);
     if (newResuscitationStatus == null) {
       return null;
     }
@@ -193,7 +198,8 @@ public class ConsentMapper implements FhirMapper<Consent> {
       ResourceOnset consentOnset,
       String provisionCode,
       String consentLogicId,
-      String consentSourceIdentifier) {
+      String consentSourceIdentifier,
+      String consentId) {
     Integer provisionConceptId;
     if (provisionCode.equals(SNOMED_FOR_RESUSCITATION)) {
       provisionConceptId = CONCEPT_FOR_RESUSCITATION;
@@ -201,9 +207,9 @@ public class ConsentMapper implements FhirMapper<Consent> {
       provisionConceptId = CONCEPT_NOT_FOR_RESUSCITATION;
     } else {
       log.warn(
-          "The [provision code] {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
+          "The [provision code]: {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
           provisionCode,
-          consentLogicId);
+          consentId);
       return null;
     }
 

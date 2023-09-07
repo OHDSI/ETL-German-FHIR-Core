@@ -109,11 +109,17 @@ public class PatientMapper implements FhirMapper<Patient> {
       noFhirReferenceCounter.increment();
       return null;
     }
+
+    String patientId = "";
+    if (!Strings.isNullOrEmpty(patientLogicId)) {
+      patientId = srcPatient.getId();
+    }
+
     var ageExtensionMap = extractAgeExtension(srcPatient);
     var ageAtDiagnosis = setAgeAtDiagnosis(patientLogicId, patientSourceIdentifier);
     var realBirthDate = extractBirthDate(srcPatient);
     var calculatedBirthDate =
-        extractCalculatedBirthDate(ageExtensionMap, ageAtDiagnosis, patientLogicId);
+        extractCalculatedBirthDate(ageExtensionMap, ageAtDiagnosis, patientId);
 
     if (realBirthDate == null && calculatedBirthDate == null) {
       log.info("No [Birthdate] found for [Patient]: {}. Skip Resource.", patientId);
@@ -135,11 +141,11 @@ public class PatientMapper implements FhirMapper<Patient> {
       deleteExistingCalculatedBirthYear(patientLogicId, patientSourceIdentifier);
     }
 
-    var newPerson = createNewPerson(srcPatient, patientLogicId, patientSourceIdentifier);
+    var newPerson = createNewPerson(srcPatient, patientLogicId, patientSourceIdentifier, patientId);
     setBirthDate(realBirthDate, calculatedBirthDate, newPerson);
 
     var ethnicGroupCoding = extractEthnicGroup(srcPatient);
-    setRaceConcept(ethnicGroupCoding, newPerson);
+    setRaceConcept(ethnicGroupCoding, newPerson, patientLogicId);
     setEthnicityConcept(ethnicGroupCoding, newPerson);
 
     var death = setDeath(srcPatient, patientLogicId, patientSourceIdentifier);
@@ -193,7 +199,7 @@ public class PatientMapper implements FhirMapper<Patient> {
    * @return new record of the person table in OMOP CDM for the processed FHIR Patient resource
    */
   private Person createNewPerson(
-      Patient srcPatient, String patientLogicId, String patientSourceIdentifier) {
+      Patient srcPatient, String patientLogicId, String patientSourceIdentifier, String patientId) {
     var personSourceValue = cutString(patientSourceIdentifier, MAX_SOURCE_VALUE_LENGTH);
 
     var person =
@@ -250,7 +256,7 @@ public class PatientMapper implements FhirMapper<Patient> {
    * @param ethnicGroupCoding coding of ethnic group
    * @param person new record of the person table in OMOP CDM
    */
-  private void setRaceConcept(Coding ethnicGroupCoding, Person person) {
+  private void setRaceConcept(Coding ethnicGroupCoding, Person person, String patientLogicId) {
 
     if (ethnicGroupCoding == null || Strings.isNullOrEmpty(ethnicGroupCoding.getCode())) {
       person.setRaceConceptId(CONCEPT_UNKNOWN_RACIAL_GROUP);
@@ -264,7 +270,8 @@ public class PatientMapper implements FhirMapper<Patient> {
       person.setRaceSourceValue(ethnicGroupCode);
     } else {
       var ethnicConcept =
-          findOmopConcepts.getSnomedRaceConcepts(ethnicGroupCoding, bulkload, dbMappings);
+          findOmopConcepts.getSnomedRaceConcepts(
+              ethnicGroupCoding, bulkload, dbMappings, patientLogicId);
       if (ethnicConcept != null) {
         person.setRaceConceptId(ethnicConcept.getStandardRaceConceptId());
         person.setRaceSourceConceptId(ethnicConcept.getSnomedConceptId());
@@ -467,8 +474,12 @@ public class PatientMapper implements FhirMapper<Patient> {
   private LocalDateTime extractBirthDate(Patient srcPatient) {
     var birthDate = fhirPath.evaluateFirst(srcPatient, "Patient.birthDate", DateType.class);
     if (birthDate.isPresent()) {
+      var birthDateElement = birthDate.get();
+      if (!birthDateElement.hasValue() || birthDateElement.getValue() == null) {
+        return null;
+      }
       return LocalDateTime.ofInstant(
-          birthDate.get().getValue().toInstant(), ZoneId.of("Europe/Berlin"));
+          birthDateElement.getValue().toInstant(), ZoneId.of("Europe/Berlin"));
     } else {
       return null;
     }
@@ -478,13 +489,10 @@ public class PatientMapper implements FhirMapper<Patient> {
    * Calculate birth date from FHIR Patient resource.
    *
    * @param srcPatient FHIR Patient resource
-   * @param patientLogicId logical id of the FHIR Patient resource
    * @return calculated birth date from FHIR Patient resource
    */
   private LocalDateTime extractCalculatedBirthDate(
-      Map<String, Extension> ageExtensionMap,
-      PostProcessMap ageAtDiagnosis,
-      String patientLogicId) {
+      Map<String, Extension> ageExtensionMap, PostProcessMap ageAtDiagnosis, String patientId) {
     if (ageExtensionMap.isEmpty()) {
       return null;
     }
@@ -628,8 +636,7 @@ public class PatientMapper implements FhirMapper<Patient> {
       return CONCEPT_GENDER_UNKNOWN;
     }
     var sourceToConcepMap =
-        findOmopConcepts.getCustomConcepts(
-            new Coding(null, gender, null), SOURCE_VOCABULARY_ID_GENDER, dbMappings);
+        findOmopConcepts.getCustomConcepts(gender, SOURCE_VOCABULARY_ID_GENDER, dbMappings);
     return sourceToConcepMap.getTargetConceptId();
   }
 
