@@ -68,7 +68,6 @@ public class PostProcessTask implements Tasklet {
         new ClassPathResource("post_processing/post_process_icd_site_localization.sql");
     Resource severity = new ClassPathResource("post_processing/post_process_severity.sql");
     Resource stage = new ClassPathResource("post_processing/post_process_stage.sql");
-    Resource drugExposure = new ClassPathResource("post_processing/post_process_drug_exposure.sql");
     Resource diagnosisRank =
         new ClassPathResource("post_processing/post_process_diagnosis_rank.sql");
     //    Resource visitDetailInOtherTable =
@@ -80,34 +79,36 @@ public class PostProcessTask implements Tasklet {
     Resource visitAdmDis = new ClassPathResource("post_processing/post_process_visit_adm_dis.sql");
     Resource death = new ClassPathResource("post_processing/post_process_death.sql");
     Resource cleanUpFactRelationship =
-        new ClassPathResource("post_processing/post_processing_fact_relationship_clean_up.sql");
+        new ClassPathResource("post_processing/post_process_fact_relationship_clean_up.sql");
     Resource deviceProcedure =
-        new ClassPathResource("post_processing/post_processing_device_procedure.sql");
-    Resource diagnoseUse =
-        new ClassPathResource("post_processing/post_processing_diagnosis_use.sql");
+        new ClassPathResource("post_processing/post_process_device_procedure.sql");
+    Resource diagnoseUse = new ClassPathResource("post_processing/post_process_diagnosis_use.sql");
     Resource setCalculatedBirthOfYear =
         new ClassPathResource("post_processing/post_process_calculated_year_of_birth.sql");
     Resource datesOfHistoryOfTravel =
         new ClassPathResource("post_processing/post_process_history_of_travel.sql");
+    Resource conditionEra = new ClassPathResource("post_processing/post_process_condition_era.sql");
+    Resource drugEra = new ClassPathResource("post_processing/post_process_drug_era.sql");
 
     if (ifBulkLoad.equals(Boolean.FALSE)) {
       executeSqlScripts.executeSQLScript(observationPeriod);
-      executeSqlScripts.executeSQLScript(icdSiteLocalization);
-      executeSqlScripts.executeSQLScript(severity);
-      executeSqlScripts.executeSQLScript(stage);
-      executeSqlScripts.executeSQLScript(drugExposure);
       executeSqlScripts.executeSQLScript(locationUpdates);
       executeSqlScripts.executeSQLScript(visitAdmDis);
       executeSqlScripts.executeSQLScript(visitDetailUpdates);
       // executeSqlScripts.executeSQLScript(visitDetailInOtherTable);
       executeSqlScripts.executeSQLScript(death);
       executeSqlScripts.executeSQLScript(deviceProcedure);
-      executeSqlScripts.executeSQLScript(diagnoseUse);
-      executeSqlScripts.executeSQLScript(diagnosisRank);
+      // executeSqlScripts.executeSQLScript(diagnoseUse);
+      // executeSqlScripts.executeSQLScript(diagnosisRank);
+      executeSqlScripts.executeSQLScript(icdSiteLocalization);
+      executeSqlScripts.executeSQLScript(severity);
+      executeSqlScripts.executeSQLScript(stage);
       executeSqlScripts.executeSQLScript(primarySecondaryIcd);
       executeSqlScripts.executeSQLScript(cleanUpFactRelationship);
       executeSqlScripts.executeSQLScript(setCalculatedBirthOfYear);
       executeSqlScripts.executeSQLScript(datesOfHistoryOfTravel);
+      executeSqlScripts.executeSQLScript(conditionEra);
+      executeSqlScripts.executeSQLScript(drugEra);
     } else {
 
       switch (startSingleStep) {
@@ -116,14 +117,15 @@ public class PostProcessTask implements Tasklet {
           executeSqlScripts.executeSQLScript(datesOfHistoryOfTravel);
           break;
         case FHIR_RESOURCE_CONDITION:
+          //          executeSqlScripts.executeSQLScript(visitDetailInOtherTable);
+          // executeSqlScripts.executeSQLScript(diagnoseUse);
+          // executeSqlScripts.executeSQLScript(diagnosisRank);
           executeSqlScripts.executeSQLScript(icdSiteLocalization);
           executeSqlScripts.executeSQLScript(severity);
           executeSqlScripts.executeSQLScript(stage);
-          //          executeSqlScripts.executeSQLScript(visitDetailInOtherTable);
-          executeSqlScripts.executeSQLScript(diagnoseUse);
-          executeSqlScripts.executeSQLScript(diagnosisRank);
           executeSqlScripts.executeSQLScript(primarySecondaryIcd);
           executeSqlScripts.executeSQLScript(cleanUpFactRelationship);
+          executeSqlScripts.executeSQLScript(conditionEra);
 
           break;
         case FHIR_RESOURCE_PROCEDURE:
@@ -131,12 +133,12 @@ public class PostProcessTask implements Tasklet {
           //          executeSqlScripts.executeSQLScript(visitDetailInOtherTable);
           break;
         case FHIR_RESOURCE_MEDICATION_ADMINISTRATION, FHIR_RESOURCE_MEDICATION_STATEMENT:
-          executeSqlScripts.executeSQLScript(drugExposure);
+          executeSqlScripts.executeSQLScript(drugEra);
           //          executeSqlScripts.executeSQLScript(visitDetailInOtherTable);
           break;
 
-        case FHIR_RESOURCE_MEDICATION:
-          executeSqlScripts.executeSQLScript(drugExposure);
+        case FHIR_RESOURCE_IMMUNIZATION:
+          executeSqlScripts.executeSQLScript(drugEra);
           break;
         case FHIR_RESOURCE_DEPARTMENT_CASE:
           executeSqlScripts.executeSQLScript(visitDetailUpdates);
@@ -144,21 +146,22 @@ public class PostProcessTask implements Tasklet {
           break;
         case "":
           executeSqlScripts.executeSQLScript(observationPeriod);
-          executeSqlScripts.executeSQLScript(icdSiteLocalization);
-          executeSqlScripts.executeSQLScript(severity);
-          executeSqlScripts.executeSQLScript(stage);
-          executeSqlScripts.executeSQLScript(drugExposure);
           executeSqlScripts.executeSQLScript(locationUpdates);
           executeSqlScripts.executeSQLScript(visitAdmDis);
           executeSqlScripts.executeSQLScript(visitDetailUpdates);
           //          executeSqlScripts.executeSQLScript(visitDetailInOtherTable);
           executeSqlScripts.executeSQLScript(death);
           executeSqlScripts.executeSQLScript(deviceProcedure);
-          executeSqlScripts.executeSQLScript(diagnoseUse);
-          executeSqlScripts.executeSQLScript(diagnosisRank);
+          // executeSqlScripts.executeSQLScript(diagnoseUse);
+          // executeSqlScripts.executeSQLScript(diagnosisRank);
+          executeSqlScripts.executeSQLScript(icdSiteLocalization);
+          executeSqlScripts.executeSQLScript(severity);
+          executeSqlScripts.executeSQLScript(stage);
           executeSqlScripts.executeSQLScript(primarySecondaryIcd);
           executeSqlScripts.executeSQLScript(setCalculatedBirthOfYear);
           executeSqlScripts.executeSQLScript(datesOfHistoryOfTravel);
+          executeSqlScripts.executeSQLScript(conditionEra);
+          executeSqlScripts.executeSQLScript(drugEra);
 
           break;
         default:

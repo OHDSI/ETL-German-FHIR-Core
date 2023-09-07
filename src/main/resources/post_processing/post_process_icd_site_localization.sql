@@ -44,10 +44,10 @@ SELECT
 	, il.localization_code
 FROM
 	icdlocalizations il
-JOIN observation o 
+JOIN observation o
 ON
 	il.fhir_logical_id = o.fhir_logical_id
-	AND il.localization_code = o.value_as_string 
+	AND il.localization_code = o.value_as_string
 )
 UPDATE
 	icdlocalizations

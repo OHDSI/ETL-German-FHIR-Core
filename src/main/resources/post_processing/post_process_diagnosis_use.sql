@@ -94,7 +94,7 @@ WITH diagnose_use AS
                                     fhir_logical_id,
                                     fhir_identifier
                         )
-            SELECT du.person_id,
+            SELECT DISTINCT du.person_id,
                    du.condition_concept_id,
                    du.condition_start_date,
                    du.condition_start_datetime,
@@ -228,7 +228,7 @@ WITH diagnose_use AS
                                     fhir_logical_id,
                                     fhir_identifier
                         )
-            SELECT du.person_id,
+            SELECT DISTINCT du.person_id,
                    du.procedure_concept_id,
                    du.procedure_date,
                    du.procedure_datetime,
@@ -365,7 +365,7 @@ WITH diagnose_use AS
                                     fhir_logical_id,
                                     fhir_identifier
                         )
-            SELECT du.person_id,
+            SELECT DISTINCT du.person_id,
                    du.measurement_concept_id,
                    du.measurement_date,
                    du.measurement_datetime,
@@ -511,7 +511,7 @@ WITH diagnose_use AS
                                     fhir_logical_id,
                                     fhir_identifier
                         )
-            SELECT du.person_id,
+            SELECT DISTINCT du.person_id,
                    du.observation_concept_id,
                    du.observation_date,
                    du.observation_datetime,

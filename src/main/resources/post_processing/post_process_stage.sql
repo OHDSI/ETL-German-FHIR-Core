@@ -44,7 +44,7 @@ SELECT
 	, o.observation_id
 FROM
 	icdstage "is"
-JOIN observation o 
+JOIN observation o
 ON
 	"is".stage = o.observation_source_value
 	AND "is".fhir_logical_id = o.fhir_logical_id

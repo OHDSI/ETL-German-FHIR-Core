@@ -75,7 +75,7 @@ SELECT
 	, co.condition_occurrence_id
 FROM
 	icdpairs ip
-JOIN condition_occurrence co  
+JOIN condition_occurrence co
 ON
 	ip.secondary_code = co.condition_source_value
 	AND (ip.fhir_logical_id = co.fhir_logical_id

@@ -83,7 +83,7 @@ BEGIN
                                       fhir_logical_id,
                                       fhir_identifier
                           )
-              SELECT    ecs.person_id,
+              SELECT  DISTINCT  ecs.person_id,
                         ecs.condition_concept_id,
                         ecs.condition_start_date,
                         ecs.condition_start_datetime,
@@ -201,7 +201,7 @@ BEGIN
                                       fhir_logical_id,
                                       fhir_identifier
                           )
-              SELECT    ecs.person_id,
+              SELECT  DISTINCT  ecs.person_id,
                         ecs.procedure_concept_id,
                         ecs.procedure_date,
                         ecs.procedure_datetime,
@@ -323,7 +323,7 @@ BEGIN
                                       fhir_logical_id,
                                       fhir_identifier
                           )
-              SELECT    ecs.person_id,
+              SELECT  DISTINCT  ecs.person_id,
                         ecs.measurement_concept_id,
                         ecs.measurement_date,
                         ecs.measurement_datetime,
@@ -450,7 +450,7 @@ BEGIN
                                       fhir_logical_id,
                                       fhir_identifier
                           )
-              SELECT    ecs.person_id,
+              SELECT  DISTINCT  ecs.person_id,
                         ecs.observation_concept_id,
                         ecs.observation_date,
                         ecs.observation_datetime,
