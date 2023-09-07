@@ -2,7 +2,7 @@ package org.miracum.etl.fhirtoomop;
 
 import static org.miracum.etl.fhirtoomop.Constants.FHIR_RESOURCE_CONDITION;
 import static org.miracum.etl.fhirtoomop.Constants.FHIR_RESOURCE_DEPARTMENT_CASE;
-import static org.miracum.etl.fhirtoomop.Constants.FHIR_RESOURCE_MEDICATION;
+import static org.miracum.etl.fhirtoomop.Constants.FHIR_RESOURCE_IMMUNIZATION;
 import static org.miracum.etl.fhirtoomop.Constants.FHIR_RESOURCE_MEDICATION_ADMINISTRATION;
 import static org.miracum.etl.fhirtoomop.Constants.FHIR_RESOURCE_MEDICATION_STATEMENT;
 import static org.miracum.etl.fhirtoomop.Constants.FHIR_RESOURCE_OBSERVATION;
