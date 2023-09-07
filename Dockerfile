@@ -11,7 +11,7 @@ RUN gradle build --info && \
     awk -F"," '{ instructions += $4 + $5; covered += $5 } END { print covered, "/", instructions, " instructions covered"; print 100*covered/instructions, "% covered" }' build/reports/jacoco/test/jacocoTestReport.csv && \
     java -Djarmode=layertools -jar build/libs/*.jar extract
 
-FROM gcr.io/distroless/java17-debian11@sha256:6c07dc702666ef34151430725224dc58d9e617d3a88d961335373ac961266b1e
+FROM gcr.io/distroless/java17-debian11@sha256:672df6324b5e36527b201135c37c3ed14579b2eb9485a4f4e9ab526d466f671c
 WORKDIR /opt/omoptofhir
 
 COPY --from=build /home/gradle/src/dependencies/ ./
