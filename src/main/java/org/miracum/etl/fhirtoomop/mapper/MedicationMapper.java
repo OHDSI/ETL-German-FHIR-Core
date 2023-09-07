@@ -1,5 +1,7 @@
 package org.miracum.etl.fhirtoomop.mapper;
 
+import static org.miracum.etl.fhirtoomop.Constants.FHIR_RESOURCE_MEDICATION_ACCEPTABLE_STATUS_LIST;
+
 import com.google.common.base.Strings;
 import io.micrometer.core.instrument.Counter;
 import java.util.concurrent.atomic.AtomicLong;
@@ -73,7 +75,6 @@ public class MedicationMapper implements FhirMapper<Medication> {
     var wrapper = new OmopModelWrapper();
 
     var medicationLogicId = fhirReferenceUtils.extractId(srcMedication);
-
     var medicationSourceIdentifier =
         fhirReferenceUtils.extractResourceFirstIdentifier(srcMedication);
     if (Strings.isNullOrEmpty(medicationLogicId)
@@ -83,9 +84,24 @@ public class MedicationMapper implements FhirMapper<Medication> {
       return null;
     }
 
+    String medicationId = "";
+    if (!Strings.isNullOrEmpty(medicationLogicId)) {
+      medicationId = srcMedication.getId();
+    }
+
+    var statusValue = getStatusValue(srcMedication);
+    if (!Strings.isNullOrEmpty(statusValue)
+        && !FHIR_RESOURCE_MEDICATION_ACCEPTABLE_STATUS_LIST.contains(statusValue)) {
+      log.error(
+          "The [status]: {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
+          statusValue,
+          medicationId);
+      return null;
+    }
+
     var atcCode = getAtcCode(srcMedication);
     if (atcCode == null) {
-      log.warn("No [ATC] code found for {}. Skip resource", srcMedication.getId());
+      log.warn("No [ATC] code found for [Medication]: {}. Skip resource", medicationId);
       noCodeCounter.increment();
       return null;
     }
@@ -120,6 +136,24 @@ public class MedicationMapper implements FhirMapper<Medication> {
       return;
     }
     wrapper.getMedicationIdMap().add(medicationIdMap);
+  }
+
+  /**
+   * Extracts the status value from the FHIR Medication resource.
+   *
+   * @param srcMedication FHIR Medication resource
+   * @return status value from the FHIR Medication resource
+   */
+  private String getStatusValue(Medication srcMedication) {
+    var medicationStatus = srcMedication.getStatusElement();
+    if (medicationStatus == null) {
+      return null;
+    }
+    var statusValue = medicationStatus.getCode();
+    if (!Strings.isNullOrEmpty(statusValue)) {
+      return statusValue;
+    }
+    return null;
   }
 
   /**
