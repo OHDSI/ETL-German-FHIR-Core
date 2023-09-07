@@ -6,6 +6,7 @@ import static org.miracum.etl.fhirtoomop.Constants.CONCEPT_NO_MATCHING_CONCEPT;
 import static org.miracum.etl.fhirtoomop.Constants.CONCEPT_PRIMARY_DIAGNOSIS;
 import static org.miracum.etl.fhirtoomop.Constants.CONCEPT_SECONDARY_DIAGNOSIS;
 import static org.miracum.etl.fhirtoomop.Constants.CONCEPT_STILL_PATIENT;
+import static org.miracum.etl.fhirtoomop.Constants.FHIR_RESOURCE_ENCOUNTER_ACCEPTABLE_STATUS_LIST;
 import static org.miracum.etl.fhirtoomop.Constants.MAX_SOURCE_VALUE_LENGTH;
 import static org.miracum.etl.fhirtoomop.Constants.SOURCE_VOCABULARY_ID_DIAGNOSIS_TYPE;
 import static org.miracum.etl.fhirtoomop.Constants.SOURCE_VOCABULARY_ID_VISIT_STATUS;
@@ -26,7 +27,6 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.CodeableConcept;
-import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.Encounter.DiagnosisComponent;
 import org.hl7.fhir.r4.model.Enumerations.ResourceType;
@@ -35,6 +35,7 @@ import org.miracum.etl.fhirtoomop.DbMappings;
 import org.miracum.etl.fhirtoomop.config.FhirSystems;
 import org.miracum.etl.fhirtoomop.mapper.helpers.FindOmopConcepts;
 import org.miracum.etl.fhirtoomop.mapper.helpers.MapperMetrics;
+import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceCheckDataAbsentReason;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceFhirReferenceUtils;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceOmopReferenceUtils;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceOnset;
@@ -68,6 +69,7 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
   @Autowired ResourceFhirReferenceUtils fhirReferenceUtils;
   @Autowired FindOmopConcepts findOmopConcepts;
   @Autowired EncounterInstitutionContactMapperServiceImpl institutionContactService;
+  @Autowired ResourceCheckDataAbsentReason checkDataAbsentReason;
 
   private static final Counter noStartDateCounter =
       MapperMetrics.setNoStartDateCounter("EncounterInstitutionContact");
@@ -126,16 +128,26 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
     if (bulkload.equals(Boolean.FALSE)) {
       deleteExistingDiagnosisInformation(encounterLogicId, encounterSourceIdentifier);
       if (isDeleted) {
-        log.info("Found a deleted resource [{}]. Deleting from OMOP DB.", encounterLogicId);
+        log.info("Found a deleted [Encounter] resource {}. Deleting from OMOP DB.", encounterId);
         deleteExistingVisitOccs(encounterLogicId, encounterSourceIdentifier);
         deletedFhirReferenceCounter.increment();
         return null;
       }
     }
 
+    var statusValue = getStatusValue(srcEncounter);
+    if (Strings.isNullOrEmpty(statusValue)
+        || !FHIR_RESOURCE_ENCOUNTER_ACCEPTABLE_STATUS_LIST.contains(statusValue)) {
+      log.error(
+          "The [status]: {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
+          statusValue,
+          encounterId);
+      return null;
+    }
+
     var personId = getPersonId(srcEncounter, encounterLogicId, encounterId);
     if (personId == null) {
-      log.warn("No matching [Person] found for {}. Skip resource", encounterLogicId);
+      log.warn("No matching [Person] found for [Encounter]: {}. Skip resource", encounterId);
       noPersonIdCounter.increment();
       return null;
     }
@@ -143,7 +155,7 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
     var institutionContactOnset = getInstitutionContactOnset(srcEncounter);
 
     if (institutionContactOnset.getStartDateTime() == null) {
-      log.warn("No [start_date] found for {}. Skip resource", encounterLogicId);
+      log.warn("No [start date] found for [Encounter]: {}. Skip resource", encounterId);
       noStartDateCounter.increment();
       return null;
     }
@@ -154,7 +166,8 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
             encounterLogicId,
             encounterSourceIdentifier,
             personId,
-            institutionContactOnset);
+            institutionContactOnset,
+            encounterId);
 
     wrapper.setVisitOccurrence(newVisitOccurrence);
 
@@ -178,7 +191,8 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
             personId,
             institutionContactOnset.getStartDateTime(),
             encounterLogicId,
-            encounterSourceIdentifier);
+            encounterSourceIdentifier,
+            encounterId);
 
     wrapper.getPostProcessMap().add(admissionOccasion);
 
@@ -188,7 +202,8 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
             personId,
             institutionContactOnset.getStartDateTime(),
             encounterLogicId,
-            encounterSourceIdentifier);
+            encounterSourceIdentifier,
+            encounterId);
     if (admissionReason != null) {
       wrapper.getPostProcessMap().add(admissionReason);
     }
@@ -199,7 +214,8 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
             personId,
             newVisitOccurrence.getVisitEndDatetime(),
             encounterLogicId,
-            encounterSourceIdentifier);
+            encounterSourceIdentifier,
+            encounterId);
 
     wrapper.getPostProcessMap().add(dischargeReason);
 
@@ -219,6 +235,25 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
       institutionContactService.deleteVisitOccByIdentifier(encounterSourceIdentifier);
     }
   }
+
+  /**
+   * Extracts the status value from the FHIR Encounter resource.
+   *
+   * @param srcEncounter FHIR Encounter resource
+   * @return status value from the FHIR Encounter resource
+   */
+  private String getStatusValue(Encounter srcEncounter) {
+    var encounterStatus = srcEncounter.getStatusElement();
+    if (encounterStatus == null) {
+      return null;
+    }
+    var statusValue = encounterStatus.getCode();
+    if (!Strings.isNullOrEmpty(statusValue)) {
+      return statusValue;
+    }
+    return null;
+  }
+
   /**
    * Returns the person_id of the referenced FHIR Patient resource for the processed FHIR Encounter
    * resource.
@@ -279,17 +314,18 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
       String encounterLogicId,
       String encounterSourceIdentifier,
       Long personId,
-      ResourceOnset institutionContactOnset) {
+      ResourceOnset institutionContactOnset,
+      String encounterId) {
     var startDateTime = institutionContactOnset.getStartDateTime();
     var endDateTime = institutionContactOnset.getEndDateTime();
     var visitTypeConceptId = getVisitTypeConceptId(srcEncounter, endDateTime);
-    var visitEndDateTime = setVisitEndDateTime(visitTypeConceptId, endDateTime, encounterLogicId);
+    var visitEndDateTime = setVisitEndDateTime(visitTypeConceptId, endDateTime, encounterId);
     var visitSourceValue = cutString(encounterSourceIdentifier);
     var visitOccurrence =
         VisitOccurrence.builder()
             .visitStartDate(startDateTime.toLocalDate())
             .visitStartDatetime(startDateTime)
-            .visitConceptId(getPatientVisitType(srcEncounter))
+            .visitConceptId(getPatientVisitType(srcEncounter, encounterId))
             .personId(personId)
             .visitTypeConceptId(visitTypeConceptId)
             .fhirLogicalId(encounterLogicId)
@@ -304,7 +340,7 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
       if (existingVisitOccId != null) {
         log.debug(
             "[Encounter] {} exists already in visit_occurrence. Update existing visit_occurrence",
-            encounterLogicId);
+            encounterId);
         visitOccurrence.setVisitOccurrenceId(existingVisitOccId);
       }
     }
@@ -329,7 +365,7 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
 
       var sourceToConceptMap =
           findOmopConcepts.getCustomConcepts(
-              new Coding(null, visitStatus, null), SOURCE_VOCABULARY_ID_VISIT_STATUS, dbMappings);
+              visitStatus, SOURCE_VOCABULARY_ID_VISIT_STATUS, dbMappings);
       var visitTypeConceptId = sourceToConceptMap.getTargetConceptId();
       if (!visitTypeConceptId.equals(CONCEPT_NO_MATCHING_CONCEPT)) {
         return visitTypeConceptId;
@@ -346,18 +382,21 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
    * @param srcEncounter FHIR Encounter resource
    * @return visit_concept_id of Encounter class in OMOP CDM
    */
-  private Integer getPatientVisitType(Encounter srcEncounter) {
+  private Integer getPatientVisitType(Encounter srcEncounter, String encounterId) {
     if (!srcEncounter.hasClass_() || Strings.isNullOrEmpty(srcEncounter.getClass_().getCode())) {
-      log.debug("No class found for Encounter {}.", srcEncounter.getIdElement().getIdPart());
+      log.debug("No [class] found for [Encounter]: {}.", encounterId);
       return CONCEPT_NO_MATCHING_CONCEPT;
     }
-    var visitType = srcEncounter.getClass_().getCode();
+    var encounterClass = checkDataAbsentReason.getValue(srcEncounter.getClass_());
+    if (encounterClass == null) {
+      return CONCEPT_NO_MATCHING_CONCEPT;
+    }
+    var visitType = encounterClass.getCode();
     if (visitType.equalsIgnoreCase("station") || visitType.equalsIgnoreCase("stationaer")) {
       return CONCEPT_INPATIENT;
     }
     var sourceToConceptMap =
-        findOmopConcepts.getCustomConcepts(
-            new Coding(null, visitType, null), SOURCE_VOCABULARY_ID_VISIT_TYPE, dbMappings);
+        findOmopConcepts.getCustomConcepts(visitType, SOURCE_VOCABULARY_ID_VISIT_TYPE, dbMappings);
     return sourceToConceptMap.getTargetConceptId();
   }
 
@@ -367,10 +406,9 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
    * @param newVisitOccurrence new record of the visit_occurrence table in OMOP CDM for the
    *     processed FHIR Encounter resource
    * @param endDateTime end date time of the FHIR Encounter resource
-   * @param encounterLogicId logical id of FHIR Encounter resource
    */
   private LocalDateTime setVisitEndDateTime(
-      Integer visitTypeConceptId, LocalDateTime endDateTime, String encounterLogicId) {
+      Integer visitTypeConceptId, LocalDateTime endDateTime, String encounterId) {
     if (visitTypeConceptId.equals(CONCEPT_STILL_PATIENT)) {
       return LocalDateTime.now();
     } else {
@@ -378,8 +416,8 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
         return endDateTime;
       } else {
         log.warn(
-            "Missing [Enddate] for terminated [Encounter] {}, set default. Please check.",
-            encounterLogicId);
+            "Missing [end date] for terminated [Encounter]: {}, set to default. Please check.",
+            encounterId);
         return LocalDateTime.of(LocalDate.now(), LocalTime.MIDNIGHT);
       }
     }
@@ -397,7 +435,7 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
     }
     if (identifier.length() > MAX_SOURCE_VALUE_LENGTH) {
       log.debug(
-          "Truncating overlong encounter source identifier={} to maxSourceValueLength={} characters",
+          "Truncating overlong [Encounter] source identifier={} to maxSourceValueLength={} characters",
           identifier,
           MAX_SOURCE_VALUE_LENGTH);
       identifier = StringUtils.left(identifier, MAX_SOURCE_VALUE_LENGTH);
@@ -421,7 +459,8 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
       Long personId,
       LocalDateTime startDateTime,
       String encounterLogicId,
-      String encounterSourceIdentifier) {
+      String encounterSourceIdentifier,
+      String encounterId) {
     var admissionReasonCode = getAdmissionReasonCode(srcEncounter);
     if (admissionReasonCode != null) {
       return PostProcessMap.builder()
@@ -435,7 +474,7 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
           .build();
 
     } else {
-      log.debug("No [Admission reason] found for [{}].", srcEncounter.getId());
+      log.debug("No [Admission reason] found for [Encounter]: {}.", encounterId);
       return null;
     }
   }
@@ -482,7 +521,8 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
       Long personId,
       LocalDateTime dischargeDateTime,
       String encounterLogicId,
-      String encounterSourceIdentifier) {
+      String encounterSourceIdentifier,
+      String encounterId) {
     var dischargeReasonCode = getDischargeReasonCode(srcEncounter);
     if (dischargeReasonCode != null) {
 
@@ -497,7 +537,7 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
           .build();
 
     } else {
-      log.debug("No [Discharge reason] found for [{}].", srcEncounter.getId());
+      log.debug("No [Discharge reason] found for [Encounter]: {}.", encounterId);
       return null;
     }
   }
@@ -546,7 +586,8 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
       Long personId,
       LocalDateTime startDateTime,
       String encounterLogicId,
-      String encounterSourceIdentifier) {
+      String encounterSourceIdentifier,
+      String encounterId) {
 
     var admissionOccasionCode = getAdmissionOccasionCode(srcEncounter);
     if (admissionOccasionCode != null) {
@@ -560,7 +601,7 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
           .fhirIdentifier(encounterSourceIdentifier)
           .build();
     } else {
-      log.debug("No [Admission occasion] found for [{}].", encounterLogicId);
+      log.debug("No [Admission occasion] found for [Encounter]: {}.", encounterId);
       return null;
     }
   }
@@ -672,7 +713,7 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
 
         var typeConceptId =
             findOmopConcepts
-                .getCustomConcepts(useCoding, SOURCE_VOCABULARY_ID_DIAGNOSIS_TYPE, dbMappings)
+                .getCustomConcepts(type, SOURCE_VOCABULARY_ID_DIAGNOSIS_TYPE, dbMappings)
                 .getTargetConceptId();
         if (typeConceptId != null) {
 

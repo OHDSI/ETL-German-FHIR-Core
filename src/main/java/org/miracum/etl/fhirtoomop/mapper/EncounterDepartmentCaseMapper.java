@@ -4,6 +4,7 @@ import static org.miracum.etl.fhirtoomop.Constants.CONCEPT_EHR;
 import static org.miracum.etl.fhirtoomop.Constants.CONCEPT_INPATIENT;
 import static org.miracum.etl.fhirtoomop.Constants.CONCEPT_NO_MATCHING_CONCEPT;
 import static org.miracum.etl.fhirtoomop.Constants.CONCEPT_STILL_PATIENT;
+import static org.miracum.etl.fhirtoomop.Constants.FHIR_RESOURCE_ENCOUNTER_ACCEPTABLE_STATUS_LIST;
 import static org.miracum.etl.fhirtoomop.Constants.SOURCE_VOCABULARY_ID_VISIT_DETAIL_STATUS;
 import static org.miracum.etl.fhirtoomop.Constants.SOURCE_VOCABULARY_ID_VISIT_STATUS;
 import static org.miracum.etl.fhirtoomop.Constants.SOURCE_VOCABULARY_ID_VISIT_TYPE;
@@ -18,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.Encounter.EncounterLocationComponent;
 import org.hl7.fhir.r4.model.Reference;
@@ -106,7 +106,6 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
     var wrapper = new OmopModelWrapper();
 
     var departmentCaseLogicId = fhirReferenceUtils.extractId(srcDepartmentCaseEncounter);
-
     var departmentCaseIdentifier =
         fhirReferenceUtils.extractIdentifier(srcDepartmentCaseEncounter, "VN");
     if (Strings.isNullOrEmpty(departmentCaseLogicId)
@@ -125,14 +124,25 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
       deleteExistingVisitDetails(departmentCaseLogicId, departmentCaseIdentifier);
       if (isDeleted) {
         deletedFhirReferenceCounter.increment();
-        log.info("Found a deleted resource [{}]. Deleting from OMOP DB.", departmentCaseLogicId);
+        log.info(
+            "Found a deleted [Encounter] resource {}. Deleting from OMOP DB.", departmentCaseId);
         return null;
       }
     }
+
+    var statusValue = getStatusValue(srcDepartmentCaseEncounter);
+    if (Strings.isNullOrEmpty(statusValue)
+        || !FHIR_RESOURCE_ENCOUNTER_ACCEPTABLE_STATUS_LIST.contains(statusValue)) {
+      log.error(
+          "The [status]: {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
+          statusValue,
+          departmentCaseId);
+      return null;
+    }
+
     var personId = getPersonId(srcDepartmentCaseEncounter, departmentCaseLogicId, departmentCaseId);
     if (personId == null) {
-      log.warn(
-          "No matching [Person] found for [Encounter]:{}. Skip resource", departmentCaseLogicId);
+      log.warn("No matching [Person] found for [Encounter]: {}. Skip resource", departmentCaseId);
       noPersonIdCounter.increment();
       return null;
     }
@@ -141,8 +151,8 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
     var encounterReferenceLogicalId = getVisitReferenceLogicalId(srcDepartmentCaseEncounter);
     if (encounterReferenceIdentifier == null && encounterReferenceLogicalId == null) {
       log.warn(
-          "Unable to extract encounter reference from [Encounter]:{}. Skip resource",
-          departmentCaseLogicId);
+          "Unable to extract [encounter reference] from [Encounter]: {}. Skip resource",
+          departmentCaseId);
       return null;
     }
 
@@ -151,16 +161,15 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
             encounterReferenceIdentifier, encounterReferenceLogicalId, personId, departmentCaseId);
     if (visitOccId == null) {
       log.error(
-          "No matching [VisitOccurrence] found for [Encounter]:{}. Skip resource",
-          departmentCaseLogicId);
+          "No matching [VisitOccurrence] found for [Encounter]: {}. Skip resource",
+          departmentCaseId);
       return null;
     }
 
-    var departmentCaseOnset =
-        getDepartmentCaseOnset(srcDepartmentCaseEncounter, departmentCaseLogicId);
+    var departmentCaseOnset = getDepartmentCaseOnset(srcDepartmentCaseEncounter);
 
     if (departmentCaseOnset.getStartDateTime() == null) {
-      log.warn("No [start_date] found for {}. Skip resource", departmentCaseLogicId);
+      log.warn("No [start date] found for [Encounter]: {}. Skip resource", departmentCaseId);
       noStartDateCounter.increment();
       return null;
     }
@@ -172,7 +181,8 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
             visitOccId,
             departmentCaseOnset,
             departmentCaseLogicId,
-            departmentCaseIdentifier);
+            departmentCaseIdentifier,
+            departmentCaseId);
 
     if (newVisitDetails.isEmpty()) {
       return null;
@@ -203,6 +213,22 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
         departmentCaseId);
   }
 
+  /**
+   * Extracts the status value from the FHIR Encounter resource.
+   *
+   * @param srcEncounter FHIR Encounter resource
+   * @return status value from the FHIR Encounter resource
+   */
+  private String getStatusValue(Encounter srcEncounter) {
+    var encounterStatus = srcEncounter.getStatusElement();
+    if (encounterStatus == null) {
+      return null;
+    }
+    var statusValue = encounterStatus.getCode();
+    if (!Strings.isNullOrEmpty(statusValue)) {
+      return statusValue;
+    }
+    return null;
   }
 
   /**
@@ -265,10 +291,11 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
       Long visitOccId,
       ResourceOnset departmentCaseOnset,
       String departmentCaseLogicId,
-      String departmentCaseLogicIdentifier) {
-    var stations = getStation(srcDepartmentCaseEncounter, departmentCaseLogicId);
+      String departmentCaseLogicIdentifier,
+      String departmentCaseId) {
+    var stations = getStation(srcDepartmentCaseEncounter, departmentCaseId);
 
-    var fabCode = getFabCode(srcDepartmentCaseEncounter, departmentCaseLogicId);
+    var fabCode = getFabCode(srcDepartmentCaseEncounter, departmentCaseId);
 
     // Work around for p21 Data format
     if (stations.isEmpty()) {
@@ -279,7 +306,8 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
           srcDepartmentCaseEncounter,
           departmentCaseLogicId,
           departmentCaseLogicIdentifier,
-          fabCode);
+          fabCode,
+          departmentCaseId);
     } else {
       return createVisitDetailFromLocation(
           stations,
@@ -288,7 +316,8 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
           srcDepartmentCaseEncounter,
           departmentCaseLogicId,
           departmentCaseLogicIdentifier,
-          fabCode);
+          fabCode,
+          departmentCaseId);
     }
   }
 
@@ -312,7 +341,8 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
       Encounter srcDepartmentCaseEncounter,
       String departmentCaseLogicId,
       String departmentCaseLogicIdentifier,
-      String fabCode) {
+      String fabCode,
+      String departmentCaseId) {
     List<VisitDetail> visitDetailList = new ArrayList<>();
     var endDateTime = departmentCaseOnset.getEndDateTime();
     var startDateTime = departmentCaseOnset.getStartDateTime();
@@ -321,8 +351,7 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
             .personId(personId)
             .visitOccurrenceId(visitOccId)
             .careSiteId(getCareSiteId(fabCode))
-            .visitDetailConceptId(
-                getPatientVisitType(srcDepartmentCaseEncounter, departmentCaseLogicId))
+            .visitDetailConceptId(getPatientVisitType(srcDepartmentCaseEncounter, departmentCaseId))
             .fhirLogicalId(departmentCaseLogicId)
             .fhirIdentifier(departmentCaseLogicIdentifier)
             .build();
@@ -332,7 +361,7 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
     newVisitDetail.setVisitDetailStartDate(startDateTime.toLocalDate());
     newVisitDetail.setVisitDetailStartDatetime(startDateTime);
 
-    setEndDate(newVisitDetail, endDateTime, departmentCaseLogicId);
+    setEndDate(newVisitDetail, endDateTime, departmentCaseId);
 
     visitDetailList.add(newVisitDetail);
 
@@ -359,7 +388,8 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
       Encounter srcDepartmentCaseEncounter,
       String departmentCaseLogicId,
       String departmentCaseLogicIdentifier,
-      String fabCode) {
+      String fabCode,
+      String departmentCaseId) {
 
     List<VisitDetail> visitDetailList = new ArrayList<>();
     for (var station : stations) {
@@ -370,8 +400,8 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
       if (locationStartDateTime == null) {
 
         log.warn(
-            "No [start_date] found for [Location] in {}. Skip the [Location].",
-            srcDepartmentCaseEncounter.getId());
+            "No [start date] found for [Location] in [Encounter]: {}. Skip the [Location].",
+            departmentCaseId);
 
         continue;
       }
@@ -382,7 +412,7 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
               .visitOccurrenceId(visitOccId)
               .careSiteId(getCareSiteId(fabCode))
               .visitDetailConceptId(
-                  getPatientVisitType(srcDepartmentCaseEncounter, departmentCaseLogicId))
+                  getPatientVisitType(srcDepartmentCaseEncounter, departmentCaseId))
               .fhirLogicalId(departmentCaseLogicId)
               .fhirIdentifier(departmentCaseLogicIdentifier)
               .build();
@@ -393,7 +423,7 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
       newVisitDetail.setVisitDetailStartDatetime(locationStartDateTime);
       newVisitDetail.setVisitDetailSourceValue(getStationName(station));
 
-      setEndDate(newVisitDetail, locationEndDateTime, departmentCaseLogicId);
+      setEndDate(newVisitDetail, locationEndDateTime, departmentCaseId);
 
       visitDetailList.add(newVisitDetail);
     }
@@ -404,15 +434,14 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
    * Extracts station information from FHIR Encounter resource.
    *
    * @param srcDepartmentCaseEncounter FHIR Encounter resource
-   * @param departmentCaseLogicId logical id of the FHIR Encounter resource
    * @return list of stations where the patient has been during this encounter
    */
   private List<EncounterLocationComponent> getStation(
-      Encounter srcDepartmentCaseEncounter, String departmentCaseLogicId) {
+      Encounter srcDepartmentCaseEncounter, String departmentCaseId) {
     if (!srcDepartmentCaseEncounter.hasLocation()) {
       log.warn(
-          "No [Location Reference] found. [Encounter]:{} is invalid. Please check.",
-          departmentCaseLogicId);
+          "No [Location Reference] found. [Encounter]: {} is invalid. Please check.",
+          departmentCaseId);
       return Collections.emptyList();
     }
     return srcDepartmentCaseEncounter.getLocation();
@@ -448,8 +477,7 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
    * @param departmentCaseLogicId logical id of the FHIR Encounter resource
    * @return start date time and end date time of the department case from FHIR Encounter resource
    */
-  private ResourceOnset getDepartmentCaseOnset(
-      Encounter srcDepartmentCaseEncounter, String departmentCaseLogicId) {
+  private ResourceOnset getDepartmentCaseOnset(Encounter srcDepartmentCaseEncounter) {
     var resourceOnset = new ResourceOnset();
     if (!srcDepartmentCaseEncounter.hasPeriod() || srcDepartmentCaseEncounter.getPeriod() == null) {
       return resourceOnset;
@@ -468,16 +496,15 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
    * Extracts department (FAB) code information from FHIR Encounter resource.
    *
    * @param srcDepartmentCaseEncounter FHIR Encounter resource
-   * @param departmentCaseLogicId logical id of the FHIR Encounter resource
    * @return department (FAB) code from FHIR Encounter resource
    */
-  private String getFabCode(Encounter srcDepartmentCaseEncounter, String departmentCaseLogicId) {
+  private String getFabCode(Encounter srcDepartmentCaseEncounter, String departmentCaseId) {
     var fabSourceValue =
         srcDepartmentCaseEncounter.getServiceType().getCoding().stream()
             .filter(fab -> fab.getSystem().equalsIgnoreCase(fhirSystems.getDepartment()))
             .findAny();
     if (fabSourceValue.isEmpty()) {
-      log.debug("No department (FAB) code found for [Encounter]:{}.", departmentCaseLogicId);
+      log.debug("No department [FAB] code found for [Encounter]: {}.", departmentCaseId);
       return null;
     }
     return fabSourceValue.get().getCode();
@@ -499,11 +526,10 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
       String departmentCaseLogicId) {
 
     if (station == null) {
-      return getDepartmentCaseStatus(
-          srcDepartmentCaseEncounter, endDateTime, departmentCaseLogicId);
+      return getDepartmentCaseStatus(srcDepartmentCaseEncounter, endDateTime);
     }
 
-    return getLocationStatus(station, endDateTime, departmentCaseLogicId);
+    return getLocationStatus(station, endDateTime);
   }
 
   /**
@@ -516,12 +542,9 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
    * @return visit_detail_type_concept_id of department case status in OMOP CDM
    */
   private Integer getDepartmentCaseStatus(
-      Encounter srcDepartmentCaseEncounter,
-      LocalDateTime endDateTime,
-      String departmentCaseLogicId) {
+      Encounter srcDepartmentCaseEncounter, LocalDateTime endDateTime) {
     if (srcDepartmentCaseEncounter.hasStatus() && srcDepartmentCaseEncounter.getStatus() != null) {
-      var departmentCaseStatus =
-          new Coding(null, srcDepartmentCaseEncounter.getStatus().toString(), null);
+      var departmentCaseStatus = srcDepartmentCaseEncounter.getStatus().toString();
       var sourceToConceptMap =
           findOmopConcepts.getCustomConcepts(
               departmentCaseStatus, SOURCE_VOCABULARY_ID_VISIT_STATUS, dbMappings);
@@ -548,10 +571,9 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
    * @param departmentCaseLogicId logical id of the FHIR Encounter resource
    * @return visit_detail_type_concept_id of station status in OMOP CDM
    */
-  private Integer getLocationStatus(
-      EncounterLocationComponent station, LocalDateTime endDateTime, String departmentCaseLogicId) {
+  private Integer getLocationStatus(EncounterLocationComponent station, LocalDateTime endDateTime) {
     if (station.hasStatus() && station.getStatus() != null) {
-      var locationStatus = new Coding(null, station.getStatus().toString(), null);
+      var locationStatus = station.getStatus().toString();
 
       var sourceToConceptMap =
           findOmopConcepts.getCustomConcepts(
@@ -621,15 +643,14 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
    * Encounter resource.
    *
    * @param srcDepartmentCaseEncounter FHIR Encounter resource
-   * @param departmentCaseLogicId logical id of the FHIR Encounter resource
    * @return visit_detail_concept_id of Encounter class in OMOP CDM
    */
   private Integer getPatientVisitType(
-      Encounter srcDepartmentCaseEncounter, String departmentCaseLogicId) {
+      Encounter srcDepartmentCaseEncounter, String departmentCaseId) {
 
     if (!srcDepartmentCaseEncounter.hasClass_()
         || Strings.isNullOrEmpty(srcDepartmentCaseEncounter.getClass_().getCode())) {
-      log.debug("No class found for Encounter {}.", departmentCaseLogicId);
+      log.debug("No class found for Encounter {}.", departmentCaseId);
       return CONCEPT_NO_MATCHING_CONCEPT;
     }
     var visitType = srcDepartmentCaseEncounter.getClass_().getCode();
@@ -637,8 +658,7 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
       return CONCEPT_INPATIENT;
     }
     var sourceToConceptMap =
-        findOmopConcepts.getCustomConcepts(
-            new Coding(null, visitType, null), SOURCE_VOCABULARY_ID_VISIT_TYPE, dbMappings);
+        findOmopConcepts.getCustomConcepts(visitType, SOURCE_VOCABULARY_ID_VISIT_TYPE, dbMappings);
     return sourceToConceptMap.getTargetConceptId();
   }
 
@@ -648,10 +668,9 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
    * @param newVisitDetail new record of the visit_detail table in OMOP CDM for the processed FHIR
    *     Encounter resource
    * @param endDateTime end date time of the FHIR Encounter resource
-   * @param departmentCaseLogicId logical id of the FHIR Encounter resource
    */
   private void setEndDate(
-      VisitDetail newVisitDetail, LocalDateTime endDateTime, String departmentCaseLogicId) {
+      VisitDetail newVisitDetail, LocalDateTime endDateTime, String departmentCaseId) {
     if (endDateTime != null) {
       newVisitDetail.setVisitDetailEndDate(endDateTime.toLocalDate());
       newVisitDetail.setVisitDetailEndDatetime(endDateTime);
@@ -662,8 +681,8 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
       newVisitDetail.setVisitDetailEndDatetime(LocalDateTime.now());
     } else {
       log.warn(
-          "Missing [Enddate] for terminated [Encounter] {}, set default. Please check.",
-          departmentCaseLogicId);
+          "Missing [end date] for terminated [Encounter]: {}, set to default. Please check.",
+          departmentCaseId);
       newVisitDetail.setVisitDetailEndDate(LocalDate.now());
       newVisitDetail.setVisitDetailEndDatetime(LocalDateTime.now());
     }
