@@ -5,8 +5,12 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.miracum.etl.fhirtoomop.model.AtcStandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.IcdSnomedDomainLookup;
+import org.miracum.etl.fhirtoomop.model.LoincStandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.MedicationIdMap;
+import org.miracum.etl.fhirtoomop.model.OpsStandardDomainLookup;
+import org.miracum.etl.fhirtoomop.model.OrphaSnomedMapping;
 import org.miracum.etl.fhirtoomop.model.PostProcessMap;
 import org.miracum.etl.fhirtoomop.model.SnomedRaceStandardLookup;
 import org.miracum.etl.fhirtoomop.model.SnomedVaccineStandardLookup;
@@ -54,6 +58,10 @@ public class DbMappings {
   private Map<String, List<IcdSnomedDomainLookup>> findIcdSnomedMapping;
   private Map<String, List<SnomedVaccineStandardLookup>> findSnomedVaccineMapping;
   private Map<String, SnomedRaceStandardLookup> findSnomedRaceStandardMapping;
+  private Map<String, List<OrphaSnomedMapping>> findOrphaSnomedMapping;
+  private Map<String, List<OpsStandardDomainLookup>> findOpsStandardMapping;
+  private Map<String, List<AtcStandardDomainLookup>> findAtcStandardMapping;
+  private Map<String, List<LoincStandardDomainLookup>> findLoincStandardMapping;
 
   private Map<Long, List<VisitDetail>> findAllVisitDetails;
   private Map<Long, List<ConditionOccurrence>> findConditionOccurrence;
