@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
+import org.miracum.etl.fhirtoomop.repository.OmopRepository;
 import org.miracum.etl.fhirtoomop.utils.ExecuteSqlScripts;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -29,6 +30,7 @@ public class InitOmopDb implements Tasklet {
   private final String jobVersion;
   private final Boolean bulkload;
   private final DataSource outputDataSource;
+  private final OmopRepository omopRepository;
 
   /**
    * Constructor for objects of the class InitOmopDb.
@@ -36,13 +38,20 @@ public class InitOmopDb implements Tasklet {
    * @param jdbcTemplate JdbcTemplate for the execution of SQL statements
    * @param jobVersion the version of the ETL job
    * @param bulkload flag to differentiate between bulk load or incremental load
+   * @param outputDataSource the data source to query against
+   * @param omopRepository OMOP CDM repositories
    */
   public InitOmopDb(
-      JdbcTemplate jdbcTemplate, String jobVersion, Boolean bulkload, DataSource outputDataSource) {
+      JdbcTemplate jdbcTemplate,
+      String jobVersion,
+      Boolean bulkload,
+      DataSource outputDataSource,
+      OmopRepository omopRepository) {
     this.jdbcTemplate = jdbcTemplate;
     this.jobVersion = jobVersion;
     this.bulkload = bulkload;
     this.outputDataSource = outputDataSource;
+    this.omopRepository = omopRepository;
   }
 
   /**

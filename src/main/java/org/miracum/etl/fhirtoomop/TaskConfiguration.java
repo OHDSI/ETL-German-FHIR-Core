@@ -616,7 +616,7 @@ public class TaskConfiguration {
   public Step initOmopDb(JdbcTemplate jdbcTemplate, DataSource outputDataSource) {
     return stepBuilderFactory
         .get("initJobInfo")
-        .tasklet(new InitOmopDb(jdbcTemplate, version, bulkload, outputDataSource))
+        .tasklet(new InitOmopDb(jdbcTemplate, version, bulkload, outputDataSource, repositories))
         .build();
   }
 
