@@ -211,7 +211,7 @@ public class TaskConfiguration {
     return new DefaultTaskConfigurer(defaultDataSource);
   }
 
-  /** Add simpleMeterRegistry to the globalRegistry in Metircs. */
+  /** Add simpleMeterRegistry to the globalRegistry in Metrics. */
   @Bean
   public void setMetrics() {
     Metrics.globalRegistry.add(new SimpleMeterRegistry());
@@ -282,19 +282,15 @@ public class TaskConfiguration {
    * @return JdbcPagingItemReader for reading FHIR resources from FHIR Gateway
    */
   private JdbcPagingItemReader<FhirPsqlResource> encounterReader(
-      DataSource dataSource, boolean hasPartOf) {
+      DataSource dataSource, String contactLevel) {
     var whereClause = new StringBuilder();
     whereClause.append("WHERE type = 'Encounter' AND ");
     if (bulkload.equals(Boolean.TRUE)) {
       whereClause.append("is_deleted = false AND ");
     }
-    if (!hasPartOf) {
-      whereClause.append("NOT ");
-    }
 
-    // escape '?' to prevent it from being interpreted as a placeholder
-    // see https://stackoverflow.com/a/35359397
-    whereClause.append("(data ?? 'partOf') ");
+    whereClause.append(
+        "(data -> 'type' -> 0 -> 'coding' -> 0 ->> 'code'= '" + contactLevel + "') ");
     whereClause.append(setDateRange());
 
     return new JdbcPagingItemReaderBuilder<FhirPsqlResource>()
@@ -744,7 +740,7 @@ public class TaskConfiguration {
     var resourceType = "Encounter";
     log.info(FETCH_RESOURCES_LOG, resourceType);
     if (StringUtils.isBlank(fhirBaseUrl)) {
-      return encounterReader(dataSource, false);
+      return encounterReader(dataSource, "einrichtungskontakt");
     }
     return fhirServerItemReader(
         client,
@@ -821,7 +817,7 @@ public class TaskConfiguration {
     log.info(FETCH_RESOURCES_LOG, "Department Cases");
 
     if (StringUtils.isBlank(fhirBaseUrl)) {
-      return encounterReader(dataSource, true);
+      return encounterReader(dataSource, "abteilungskontakt");
     }
     return fhirServerItemReader(
         client, fhirParser, ResourceType.ENCOUNTER.getDisplay(), STEP_ENCOUNTER_DEPARTMENT_KONTAKT);
