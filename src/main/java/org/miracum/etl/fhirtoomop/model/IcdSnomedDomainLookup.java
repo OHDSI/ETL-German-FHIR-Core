@@ -12,8 +12,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * The IcdSnomedDomainLookup class describes the structure of the icd_snomed_domain_lookup table in
- * OMOP CDM. The icd_snomed_domain_lookup table contains the mapping between ICD-10-GM and SNOMED.
+ * The IcdSnomedDomainLookup class describes the structure of the icd_snomed_domain_lookup view in
+ * OMOP CDM. The icd_snomed_domain_lookup view contains the mapping between ICD-10-GM and SNOMED.
  *
  * @author Elisa Henke
  * @author Yuan Peng

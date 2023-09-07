@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * The IcdSnomedId class specifies a composite primary key class for icd_snomed_domain_lookup table
+ * The IcdSnomedId class specifies a composite primary key class for icd_snomed_domain_lookup view
  * in OMOP CDM. The class is mapped to multiple fields of the icd_snomed_domain_lookup entity.
  *
  * @author Elisa Henke
