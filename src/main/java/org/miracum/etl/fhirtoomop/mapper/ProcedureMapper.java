@@ -2,6 +2,9 @@ package org.miracum.etl.fhirtoomop.mapper;
 
 import static org.miracum.etl.fhirtoomop.Constants.CONCEPT_EHR;
 import static org.miracum.etl.fhirtoomop.Constants.FHIR_RESOURCE_ACCEPTABLE_EVENT_STATUS_LIST;
+import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_DRUG;
+import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_MEASUREMENT;
+import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_OBSERVATION;
 import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_PROCEDURE;
 import static org.miracum.etl.fhirtoomop.Constants.SOURCE_VOCABULARY_ID_PROCEDURE_BODYSITE;
 import static org.miracum.etl.fhirtoomop.Constants.SOURCE_VOCABULARY_ID_PROCEDURE_DICOM;
@@ -31,14 +34,19 @@ import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceFhirReferenceUtils;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceOmopReferenceUtils;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceOnset;
 import org.miracum.etl.fhirtoomop.model.OmopModelWrapper;
+import org.miracum.etl.fhirtoomop.model.OpsStandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.omop.Concept;
 import org.miracum.etl.fhirtoomop.model.omop.DeviceExposure;
+import org.miracum.etl.fhirtoomop.model.omop.DrugExposure;
+import org.miracum.etl.fhirtoomop.model.omop.Measurement;
+import org.miracum.etl.fhirtoomop.model.omop.OmopObservation;
 import org.miracum.etl.fhirtoomop.model.omop.ProcedureOccurrence;
 import org.miracum.etl.fhirtoomop.model.omop.SourceToConceptMap;
 import org.miracum.etl.fhirtoomop.repository.service.DeviceExposureMapperServiceImpl;
 import org.miracum.etl.fhirtoomop.repository.service.OmopConceptServiceImpl;
 import org.miracum.etl.fhirtoomop.repository.service.ProcedureMapperServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
 /**
@@ -107,14 +115,26 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
     var wrapper = new OmopModelWrapper();
 
     var procedureLogicId = fhirReferenceUtils.extractId(srcProcedure);
-
     var procedureSourceIdentifier = fhirReferenceUtils.extractResourceFirstIdentifier(srcProcedure);
     if (Strings.isNullOrEmpty(procedureLogicId)
         && Strings.isNullOrEmpty(procedureSourceIdentifier)) {
       log.warn("No [Identifier] or [Id] found. [Procedure] resource is invalid. Skip resource");
-
       noFhirReferenceCounter.increment();
       return null;
+    }
+
+    String procedureId = "";
+    if (!Strings.isNullOrEmpty(procedureLogicId)) {
+      procedureId = srcProcedure.getId();
+    }
+
+    if (bulkload.equals(Boolean.FALSE)) {
+      deleteExistingProcedureEntry(procedureLogicId, procedureSourceIdentifier);
+      if (isDeleted) {
+        deletedFhirReferenceCounter.increment();
+        log.info("Found a deleted [Procedure] resource {}. Deleting from OMOP DB.", procedureId);
+        return null;
+      }
     }
 
     var statusElement = srcProcedure.getStatusElement();
@@ -122,65 +142,48 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
     if (Strings.isNullOrEmpty(statusValue)
         || !FHIR_RESOURCE_ACCEPTABLE_EVENT_STATUS_LIST.contains(statusValue)) {
       log.error(
-          "The [status] of {} is not acceptable for writing into OMOP CDM. Skip resource.",
-          procedureLogicId);
+          "The [status]: {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
+          statusValue,
+          procedureId);
       return null;
     }
 
-    if (bulkload.equals(Boolean.FALSE)) {
-
-      deleteExistingProcedureOccurrence(procedureLogicId, procedureSourceIdentifier);
-      deleteExistingDeviceExposure(procedureLogicId, procedureSourceIdentifier);
-      if (isDeleted) {
-        deletedFhirReferenceCounter.increment();
-        log.info("Found a deleted resource [{}]. Deleting from OMOP DB.", procedureLogicId);
-        return null;
-      }
-    }
-
-    var personId = getPersonId(srcProcedure, procedureLogicId);
+    var personId = getPersonId(srcProcedure, procedureLogicId, procedureId);
     if (personId == null) {
-      log.warn("No matching [Person] found for {}. Skip resource", procedureLogicId);
+      log.warn("No matching [Person] found for [Procedure]: {}. Skip resource", procedureId);
       noPersonIdCounter.increment();
       return null;
     }
 
     var procedureCodings = getProcedureCodings(srcProcedure, procedureLogicId);
     if (procedureCodings.isEmpty()) {
-      log.warn("No Code found in [Procedure]:{}. Skip resource", procedureLogicId);
+      log.warn("No [Code] found in [Procedure]: {}. Skip resource", procedureId);
       noCodeCounter.increment();
       return null;
     }
 
     var procedureOnset = getProcedureOnset(srcProcedure);
     if (procedureOnset.getStartDateTime() == null) {
-      log.warn("Unable to determine [Performed DateTime] for {}. Skip resource", procedureLogicId);
+      log.warn(
+          "Unable to determine [Performed DateTime] for [Procedure]: {}. Skip resource",
+          procedureId);
       noStartDateCounter.increment();
       return null;
     }
 
-    var visitOccId = getVisitOccId(srcProcedure, personId, procedureLogicId);
+    var visitOccId = getVisitOccId(srcProcedure, personId, procedureId);
 
-    //    var newProcedureOccurrence =
-    //        createProcedureOccurrence(
-    //            procedureCodings,
-    //            procedureOnset.getStartDateTime(),
-    //            personId,
-    //            visitOccId,
-    //            procedureLogicId,
-    //            procedureSourceIdentifier,
-    //            srcProcedure);
-    var newProcedureOccurrence =
-        setProcedureConceptsUsingMultipleCodings(
-            procedureOnset.getStartDateTime(),
-            procedureCodings,
-            srcProcedure,
-            personId,
-            visitOccId,
-            procedureLogicId,
-            procedureSourceIdentifier);
+    createProcedureMapping(
+        wrapper,
+        procedureCodings,
+        procedureOnset.getStartDateTime(),
+        personId,
+        visitOccId,
+        procedureLogicId,
+        procedureSourceIdentifier,
+        srcProcedure,
+        procedureId);
 
-    wrapper.getProcedureOccurrence().addAll(newProcedureOccurrence);
     var usedCodesCodeableConcepts = srcProcedure.getUsedCode();
     if (!usedCodesCodeableConcepts.isEmpty()) {
       var deviceExposures =
@@ -190,7 +193,8 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
               procedureOnset,
               procedureLogicId,
               procedureSourceIdentifier,
-              usedCodesCodeableConcepts);
+              usedCodesCodeableConcepts,
+              procedureId);
       wrapper.setDeviceExposure(deviceExposures);
     }
 
@@ -217,7 +221,8 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
       ResourceOnset procedureOnset,
       String procedureLogicId,
       String procedureSourceIdentifier,
-      List<CodeableConcept> usedCodesCodeableConcepts) {
+      List<CodeableConcept> usedCodesCodeableConcepts,
+      String procedureId) {
     var deviceCodings = extractDeviceCode(usedCodesCodeableConcepts);
     if (deviceCodings.isEmpty()) {
 
@@ -226,32 +231,35 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
     List<DeviceExposure> deviceExposures = new ArrayList<>();
     for (var deviceCoding : deviceCodings) {
       var deviceCode = checkDataAbsentReason.getValue(deviceCoding.getCodeElement());
-      if (!Strings.isNullOrEmpty(deviceCode)) {
-        var startDateTime = procedureOnset.getStartDateTime();
-        var endDateTime = procedureOnset.getEndDateTime();
-        var deviceConcept =
-            findOmopConcepts.getConcepts(
-                deviceCoding, startDateTime.toLocalDate(), bulkload, dbMappings);
-        if (deviceConcept != null) {
-          var deviceExposure =
-              DeviceExposure.builder()
-                  .personId(personId)
-                  .visitOccurrenceId(visitOccId)
-                  .fhirIdentifier(procedureSourceIdentifier)
-                  .fhirLogicalId(procedureLogicId)
-                  .deviceExposureStartDate(startDateTime.toLocalDate())
-                  .deviceExposureStartDatetime(startDateTime)
-                  .deviceExposureEndDate(endDateTime == null ? null : endDateTime.toLocalDate())
-                  .deviceExposureEndDatetime(endDateTime)
-                  .deviceTypeConceptId(CONCEPT_EHR)
-                  .deviceConceptId(deviceConcept.getConceptId())
-                  .deviceSourceConceptId(deviceConcept.getConceptId())
-                  .deviceSourceValue(deviceCode)
-                  .build();
-
-          addToList(deviceExposures, deviceExposure);
-        }
+      if (Strings.isNullOrEmpty(deviceCode)) {
+        continue;
       }
+
+      var startDateTime = procedureOnset.getStartDateTime();
+      var endDateTime = procedureOnset.getEndDateTime();
+      var deviceConcept =
+          findOmopConcepts.getConcepts(
+              deviceCoding, startDateTime.toLocalDate(), bulkload, dbMappings, procedureId);
+      if (deviceConcept == null) {
+        continue;
+      }
+      var deviceExposure =
+          DeviceExposure.builder()
+              .personId(personId)
+              .visitOccurrenceId(visitOccId)
+              .fhirIdentifier(procedureSourceIdentifier)
+              .fhirLogicalId(procedureLogicId)
+              .deviceExposureStartDate(startDateTime.toLocalDate())
+              .deviceExposureStartDatetime(startDateTime)
+              .deviceExposureEndDate(endDateTime == null ? null : endDateTime.toLocalDate())
+              .deviceExposureEndDatetime(endDateTime)
+              .deviceTypeConceptId(CONCEPT_EHR)
+              .deviceConceptId(deviceConcept.getConceptId())
+              .deviceSourceConceptId(deviceConcept.getConceptId())
+              .deviceSourceValue(deviceCode)
+              .build();
+
+      addToList(deviceExposures, deviceExposure);
     }
     return deviceExposures;
   }
@@ -278,80 +286,42 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
    * @param procedureLogicId logical id of the FHIR Procedure resource
    * @param procedureSourceIdentifier identifier of the FHIR Procedure resource
    * @param bodySite anatomical body site information from procedure FHIR resource
-   * @return new record of the procedure_occurrence table in OMOP CDM for the processed FHIR
-   *     Procedure resource
    */
-  //  private List<ProcedureOccurrence> createProcedureOccurrence(
-  //      List<Coding> procedureCodings,
-  //      LocalDateTime procedureStartDatetime,
-  //      Long personId,
-  //      Long visitOccId,
-  //      String procedureLogicId,
-  //      String procedureSourceIdentifier,
-  //      Procedure srcProcedure) {
-  //
-  //    //    ProcedureOccurrence procedureOccurrence =
-  //    //        createBasisProcedureOccurrence(
-  //    //            procedureStartDatetime,
-  //    //            personId,
-  //    //            visitOccId,
-  //    //            procedureLogicId,
-  //    //            procedureSourceIdentifier);
-  //
-  //    List<ProcedureOccurrence> procedureList = new ArrayList<>();
-  //    var codingSize = procedureCodings.size();
-  //    if (codingSize == 1) {
-  //      setProcedureConceptsUsingSingleCoding(
-  //          procedureStartDatetime,
-  //          procedureCodings,
-  //          srcProcedure,
-  //          personId,
-  //          visitOccId,
-  //          procedureLogicId,
-  //          procedureSourceIdentifier,
-  //          procedureList);
-  //    } else {
-  //      setProcedureConceptsUsingMultipleCodings(
-  //          procedureStartDatetime,
-  //          procedureCodings,
-  //          srcProcedure,
-  //          personId,
-  //          visitOccId,
-  //          procedureLogicId,
-  //          procedureSourceIdentifier,
-  //          procedureList);
-  //    }
-  //
-  //    if (procedureList.isEmpty()) {
-  //      return Collections.emptyList();
-  //    }
-  //
-  //    return procedureList;
-  //  }
-
-  /**
-   * @param procedureStartDatetime
-   * @param personId
-   * @param visitOccId
-   * @param procedureLogicId
-   * @param procedureSourceIdentifier
-   * @return
-   */
-  private ProcedureOccurrence createBasisProcedureOccurrence(
+  private void createProcedureMapping(
+      OmopModelWrapper wrapper,
+      List<Coding> procedureCodings,
       LocalDateTime procedureStartDatetime,
       Long personId,
       Long visitOccId,
       String procedureLogicId,
-      String procedureSourceIdentifier) {
-    return ProcedureOccurrence.builder()
-        .procedureDate(procedureStartDatetime.toLocalDate())
-        .procedureDatetime(procedureStartDatetime)
-        .personId(personId)
-        .visitOccurrenceId(visitOccId)
-        .procedureTypeConceptId(CONCEPT_EHR)
-        .fhirLogicalId(procedureLogicId)
-        .fhirIdentifier(procedureSourceIdentifier)
-        .build();
+      String procedureSourceIdentifier,
+      Procedure srcProcedure,
+      String procedureId) {
+
+    var codingSize = procedureCodings.size();
+    if (codingSize == 1) {
+      setProcedureConceptsUsingSingleCoding(
+          wrapper,
+          procedureStartDatetime,
+          procedureCodings.get(0),
+          srcProcedure,
+          personId,
+          visitOccId,
+          procedureLogicId,
+          procedureSourceIdentifier,
+          procedureId);
+    } else {
+      setProcedureConceptsUsingMultipleCodings(
+          wrapper,
+          procedureStartDatetime,
+          procedureCodings,
+          srcProcedure,
+          personId,
+          visitOccId,
+          procedureLogicId,
+          procedureSourceIdentifier,
+          procedureId);
+    }
   }
 
   /**
@@ -364,77 +334,107 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
    * @return
    */
   private void setProcedureConceptsUsingSingleCoding(
+      OmopModelWrapper wrapper,
       LocalDateTime procedureStartDatetime,
-      //      List<Coding> procedureCodings,
-      List<Concept> procedureConceptList,
-      //      Procedure srcProcedure,
-      Pair<String, Integer> procedureBodySiteLocalization,
+      Coding procedureCoding,
+      Procedure srcProcedure,
       Long personId,
       Long visitOccId,
       String procedureLogicId,
       String procedureSourceIdentifier,
-      List<ProcedureOccurrence> procedureList) {
+      String procedureId) {
 
-    //    for (var procedureCoding : procedureCodings) {
+    List<Pair<String, List<OpsStandardDomainLookup>>> opsStandardMapPairList = null;
+    SourceToConceptMap dicomConcept = null;
+    Concept snomedConcept = null;
 
-    //      var procedureCodeExist =
-    //          checkIfAnyProcedureCodesExist(procedureCoding, listOfProcedureVocabularyId);
-    //      if (!procedureCodeExist) {
-    //        continue;
-    //      }
-    for (var procedureConcept : procedureConceptList) {
-      var procedureOccurrence =
-          createBasisProcedureOccurrence(
-              procedureStartDatetime,
-              personId,
-              visitOccId,
-              procedureLogicId,
-              procedureSourceIdentifier);
-      procedureOccurrence.setProcedureSourceValue(procedureConcept.getConceptCode());
-      procedureOccurrence.setProcedureConceptId(procedureConcept.getConceptId());
-      procedureOccurrence.setProcedureSourceConceptId(procedureConcept.getConceptId());
-      setProcedureModifier(procedureOccurrence, procedureBodySiteLocalization);
-      procedureList.add(procedureOccurrence);
+    var procedureCodeExist =
+        checkIfAnyProcedureCodesExist(procedureCoding, listOfProcedureVocabularyId);
+    if (!procedureCodeExist) {
+      return;
     }
-    //      var procedureOccurrence =
-    //          createBasisProcedureOccurrence(
-    //              procedureStartDatetime,
-    //              personId,
-    //              visitOccId,
-    //              procedureLogicId,
-    //              procedureSourceIdentifier);
-    //      var procedureVocabularyId =
-    // findOmopConcepts.getOmopVocabularyId(procedureCoding.getSystem());
-    //      if (procedureVocabularyId.equals(SOURCE_VOCABULARY_ID_PROCEDURE_DICOM)) {
-    //        var procedureConcept =
-    //            findOmopConcepts.getCustomConcepts(procedureCoding, procedureVocabularyId,
-    // dbMappings);
-    //        if (procedureConcept == null) {
-    //          continue;
-    //        }
-    //        procedureOccurrence.setProcedureSourceValue(procedureCoding.getCode());
-    //        procedureOccurrence.setProcedureConceptId(procedureConcept.getTargetConceptId());
-    //
-    // procedureOccurrence.setProcedureSourceConceptId(procedureConcept.getTargetConceptId());
-    //
-    //      } else {
-    //        var procedureConcept =
-    //            findOmopConcepts.getConcepts(
-    //                procedureCoding, procedureStartDatetime.toLocalDate(), bulkload, dbMappings);
-    //        if (procedureConcept == null) {
-    //          continue;
-    //        }
-    //        procedureOccurrence.setProcedureSourceValue(procedureCoding.getCode());
-    //        procedureOccurrence.setProcedureConceptId(procedureConcept.getConceptId());
-    //        procedureOccurrence.setProcedureSourceConceptId(procedureConcept.getConceptId());
-    //      }
-    //
-    //      var procedureBodySiteLocalization =
-    //          getBodySiteLocalization(
-    //              srcProcedure, procedureCoding, procedureStartDatetime.toLocalDate());
-    //      setProcedureModifier(procedureOccurrence, procedureBodySiteLocalization);
-    //      procedureList.add(procedureOccurrence);
-    //    }
+
+    var procedureVocabularyId = findOmopConcepts.getOmopVocabularyId(procedureCoding.getSystem());
+
+    var procedureBodySiteLocalization =
+        getBodySiteLocalization(
+            srcProcedure, procedureCoding, procedureStartDatetime.toLocalDate(), procedureId);
+
+    if (procedureVocabularyId.equals(VOCABULARY_OPS)) {
+      // for OPS codes
+
+      opsStandardMapPairList =
+          getValidOpsCodes(procedureCoding, procedureStartDatetime.toLocalDate(), procedureId);
+
+      if (opsStandardMapPairList.isEmpty()) {
+        return;
+      }
+      for (var singlePair : opsStandardMapPairList) {
+        procedureProcessor(
+            singlePair,
+            null,
+            null,
+            wrapper,
+            procedureBodySiteLocalization,
+            procedureStartDatetime,
+            procedureLogicId,
+            procedureSourceIdentifier,
+            personId,
+            visitOccId,
+            procedureId);
+      }
+
+    } else if (procedureVocabularyId.equals(SOURCE_VOCABULARY_ID_PROCEDURE_DICOM)) {
+      // for DICOM codes
+
+      dicomConcept =
+          findOmopConcepts.getCustomConcepts(
+              procedureCoding.getCode(), procedureVocabularyId, dbMappings);
+      if (dicomConcept == null) {
+        return;
+      }
+
+      procedureProcessor(
+          null,
+          null,
+          dicomConcept,
+          wrapper,
+          procedureBodySiteLocalization,
+          procedureStartDatetime,
+          procedureLogicId,
+          procedureSourceIdentifier,
+          personId,
+          visitOccId,
+          procedureId);
+
+    } else if (procedureVocabularyId.equals(VOCABULARY_SNOMED)) {
+      // for SNOMED codes
+
+      snomedConcept =
+          findOmopConcepts.getConcepts(
+              procedureCoding,
+              procedureStartDatetime.toLocalDate(),
+              bulkload,
+              dbMappings,
+              procedureId);
+
+      if (snomedConcept == null) {
+        return;
+      }
+
+      procedureProcessor(
+          null,
+          snomedConcept,
+          null,
+          wrapper,
+          procedureBodySiteLocalization,
+          procedureStartDatetime,
+          procedureLogicId,
+          procedureSourceIdentifier,
+          personId,
+          visitOccId,
+          procedureId);
+    }
   }
 
   /**
@@ -447,332 +447,408 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
    * @param snomedCoding
    * @return
    */
-  private List<ProcedureOccurrence> setProcedureConceptsUsingMultipleCodings(
+  private void setProcedureConceptsUsingMultipleCodings(
+      OmopModelWrapper wrapper,
       LocalDateTime procedureStartDatetime,
       List<Coding> procedureCodings,
       Procedure srcProcedure,
       Long personId,
       Long visitOccId,
       String procedureLogicId,
-      String procedureSourceIdentifier
-      //      ,
-      //      List<ProcedureOccurrence> procedureList
-      ) {
+      String procedureSourceIdentifier,
+      String procedureId) {
 
-    var opsCoding = getCodingBySystemUrl(procedureCodings, fhirSystems.getOps());
-    var snomedCoding = getCodingBySystemUrl(procedureCodings, List.of(fhirSystems.getSnomed()));
-    var dicomCoding =
-        getCodingBySystemUrl(procedureCodings, List.of(fhirSystems.getProcedureDicom()));
+    Coding uncheckedOpsCoding = null;
+    Coding uncheckedDicomCoding = null;
+    Coding uncheckedSnomedCoding = null;
+    Coding procedureCoding = null;
 
-    var opsConcept =
-        findOmopConcepts.getConcepts(
-            opsCoding, procedureStartDatetime.toLocalDate(), bulkload, dbMappings);
+    for (var uncheckedCoding : procedureCodings) {
+      var procedureVocabularyId = findOmopConcepts.getOmopVocabularyId(uncheckedCoding.getSystem());
+      if (procedureVocabularyId.equals(VOCABULARY_OPS)) {
+        uncheckedOpsCoding = uncheckedCoding;
+      }
+      if (procedureVocabularyId.equals(SOURCE_VOCABULARY_ID_PROCEDURE_DICOM)) {
+        uncheckedDicomCoding = uncheckedCoding;
+      }
+      if (procedureVocabularyId.equals(VOCABULARY_SNOMED)) {
+        uncheckedSnomedCoding = uncheckedCoding;
+      }
+    }
+    if (uncheckedOpsCoding == null
+        && uncheckedDicomCoding == null
+        && uncheckedSnomedCoding == null) {
+      return;
+    }
+
+    // OPS
+    var opsStandardMapPairList =
+        getValidOpsCodes(uncheckedOpsCoding, procedureStartDatetime.toLocalDate(), procedureId);
+
+    // DICOM
+    SourceToConceptMap dicomConcept = null;
+    if (uncheckedDicomCoding != null) {
+      dicomConcept =
+          findOmopConcepts.getCustomConcepts(
+              uncheckedDicomCoding.getCode(),
+              findOmopConcepts.getOmopVocabularyId(uncheckedDicomCoding.getSystem()),
+              dbMappings);
+    }
+    // SNOMED
     var snomedConcept =
         findOmopConcepts.getConcepts(
-            snomedCoding, procedureStartDatetime.toLocalDate(), bulkload, dbMappings);
-    var dicomConcept =
-        findOmopConcepts.getCustomConcepts(
-            dicomCoding, SOURCE_VOCABULARY_ID_PROCEDURE_DICOM, dbMappings);
-    var procedureBodySiteLocalization =
-        getBodySiteLocalization(srcProcedure, opsCoding, procedureStartDatetime.toLocalDate());
-    List<ProcedureOccurrence> procedureList = new ArrayList<>();
-    if (opsConcept != null && snomedConcept != null && dicomConcept != null) {
-      setProcedureUsingSnomedAndOps(
-          procedureStartDatetime,
-          //          procedureCodings,
-          //          srcProcedure,
-          opsConcept,
-          snomedConcept,
-          personId,
-          visitOccId,
-          procedureLogicId,
-          procedureSourceIdentifier,
-          //          opsCoding,
-          //          snomedCoding,
-          procedureBodySiteLocalization,
-          procedureList);
-      setProcedureUsingSnomedAndDicom(
-          procedureStartDatetime,
-          //          procedureCodings,
-          //          srcProcedure,
-          dicomConcept,
-          snomedConcept,
-          personId,
-          visitOccId,
-          procedureLogicId,
-          procedureSourceIdentifier,
-          //          snomedCoding,
-          //          dicomCoding,
-          procedureBodySiteLocalization,
-          procedureList);
-    } else if (opsConcept != null && snomedConcept != null && dicomConcept == null) {
-      setProcedureUsingSnomedAndOps(
-          procedureStartDatetime,
-          //          procedureCodings,
-          //          srcProcedure,
-          opsConcept,
-          snomedConcept,
-          personId,
-          visitOccId,
-          procedureLogicId,
-          procedureSourceIdentifier,
-          //          opsCoding,
-          //          snomedCoding,
-          procedureBodySiteLocalization,
-          procedureList);
-    } else if (opsConcept == null && snomedConcept != null && dicomConcept != null) {
-      setProcedureUsingSnomedAndDicom(
-          procedureStartDatetime,
-          //          procedureCodings,
-          //          srcProcedure,
-          dicomConcept,
-          snomedConcept,
-          personId,
-          visitOccId,
-          procedureLogicId,
-          procedureSourceIdentifier,
-          //          snomedCoding,
-          //          dicomCoding,
-          procedureBodySiteLocalization,
-          procedureList);
-    } else {
-      var procedureCodeConceptList =
-          getProcedureCodeConcept(opsConcept, snomedConcept, dicomConcept);
-      if (procedureCodeConceptList.isEmpty()) {
-        return Collections.emptyList();
-      }
-      setProcedureConceptsUsingSingleCoding(
-          procedureStartDatetime,
-          procedureCodeConceptList,
-          //          procedureCodings,
-          //          srcProcedure,
-          procedureBodySiteLocalization,
-          personId,
-          visitOccId,
-          procedureLogicId,
-          procedureSourceIdentifier,
-          procedureList);
+            uncheckedSnomedCoding,
+            procedureStartDatetime.toLocalDate(),
+            bulkload,
+            dbMappings,
+            procedureId);
+
+    if (opsStandardMapPairList.isEmpty() && snomedConcept == null && dicomConcept == null) {
+      return;
+    } else if (!opsStandardMapPairList.isEmpty()) {
+      // OPS
+      procedureCoding = uncheckedOpsCoding;
+    } else if (dicomConcept != null) {
+      // DICOM
+      procedureCoding = uncheckedDicomCoding;
+    } else if (snomedConcept != null) {
+      // SNOMED
+      procedureCoding = uncheckedSnomedCoding;
     }
 
-    return procedureList;
-    //    var opsCodeExist = checkIfSpecificProcedureCodesExist(opsCoding, VOCABULARY_OPS);
-    //    var snomedCodeExist = checkIfSpecificProcedureCodesExist(snomedCoding, VOCABULARY_SNOMED);
-    //    var dicomCodeExist =
-    //        checkIfSpecificProcedureCodesExist(dicomCoding, SOURCE_VOCABULARY_ID_PROCEDURE_DICOM);
-    //
-    //    if (snomedCodeExist && opsCodeExist && dicomCodeExist) {
-    //
-    //      setProcedureUsingSnomedAndOps(
-    //          procedureStartDatetime,
-    //          procedureCodings,
-    //          srcProcedure,
-    //          personId,
-    //          visitOccId,
-    //          procedureLogicId,
-    //          procedureSourceIdentifier,
-    //          opsCoding,
-    //          snomedCoding,
-    //          procedureList);
-    //      setProcedureUsingSnomedAndDicom(
-    //          procedureStartDatetime,
-    //          procedureCodings,
-    //          srcProcedure,
-    //          personId,
-    //          visitOccId,
-    //          procedureLogicId,
-    //          procedureSourceIdentifier,
-    //          snomedCoding,
-    //          dicomCoding,
-    //          procedureList);
-    //    } else if (snomedCodeExist && opsCodeExist) {
-    //      setProcedureUsingSnomedAndOps(
-    //          procedureStartDatetime,
-    //          procedureCodings,
-    //          srcProcedure,
-    //          personId,
-    //          visitOccId,
-    //          procedureLogicId,
-    //          procedureSourceIdentifier,
-    //          opsCoding,
-    //          snomedCoding,
-    //          procedureList);
-    //
-    //    } else if (snomedCodeExist && dicomCodeExist) {
-    //      setProcedureUsingSnomedAndDicom(
-    //          procedureStartDatetime,
-    //          procedureCodings,
-    //          srcProcedure,
-    //          personId,
-    //          visitOccId,
-    //          procedureLogicId,
-    //          procedureSourceIdentifier,
-    //          snomedCoding,
-    //          dicomCoding,
-    //          procedureList);
-    //
-    //    } else {
-    //      setProcedureConceptsUsingSingleCoding(
-    //          procedureStartDatetime,
-    //          procedureCodings,
-    //          srcProcedure,
-    //          personId,
-    //          visitOccId,
-    //          procedureLogicId,
-    //          procedureSourceIdentifier,
-    //          procedureList);
-    //    }
+    setProcedureConceptsUsingSingleCoding(
+        wrapper,
+        procedureStartDatetime,
+        procedureCoding,
+        srcProcedure,
+        personId,
+        visitOccId,
+        procedureLogicId,
+        procedureSourceIdentifier,
+        procedureId);
   }
 
-  private List<Concept> getProcedureCodeConcept(
-      Concept opsConcept, Concept snomedConcept, SourceToConceptMap dicomConcept) {
-    Concept dicomFormatedConcept = null;
-    if (dicomConcept != null) {
-      dicomFormatedConcept =
-          Concept.builder()
-              .conceptId(dicomConcept.getTargetConceptId())
-              .domainId(OMOP_DOMAIN_PROCEDURE)
-              .vocabularyId(VOCABULARY_SNOMED)
-              .validStartDate(dicomConcept.getValidStartDate())
-              .validEndDate(dicomConcept.getValidEndDate())
-              .build();
+  /**
+   * Processes information from FHIR Procedure resource and transforms them into records OMOP CDM
+   * tables.
+   *
+   * @param singlePair one pair of OPS code and its OMOP standard concept_id and domain information
+   * @param omopConcept extracted Concept from OMOP
+   * @param dicomConcept source_to_concept_map entry for DICOM code
+   * @param wrapper the OMOP model wrapper
+   * @param procedureDate date of the FHIR Procedure resource
+   * @param procedureLogicId logical id of the FHIR Procedure resource
+   * @param procedureSourceIdentifier identifier of the FHIR Procedure resource
+   * @param personId person_id of the referenced FHIR Patient resource
+   * @param visiOccId visit_occurrence_id of the referenced FHIR Encounter resource
+   */
+  private void procedureProcessor(
+      @Nullable Pair<String, List<OpsStandardDomainLookup>> opsStandardPair,
+      @Nullable Concept snomedConcept,
+      @Nullable SourceToConceptMap dicomConcept,
+      OmopModelWrapper wrapper,
+      Pair<String, Integer> procedureBodySiteLocalization,
+      LocalDateTime procedureStartDatetime,
+      String procedureLogicId,
+      String procedureSourceIdentifier,
+      Long personId,
+      Long visitOccId,
+      String procedureId) {
+
+    if (opsStandardPair == null && snomedConcept == null && dicomConcept == null) {
+      return;
     }
-    if (opsConcept != null && snomedConcept == null && dicomFormatedConcept == null) {
-      return List.of(opsConcept);
-    } else if (opsConcept == null && snomedConcept != null && dicomFormatedConcept == null) {
-      return List.of(snomedConcept);
-    } else if (opsConcept != null && snomedConcept == null && dicomFormatedConcept != null) {
-      return List.of(opsConcept, dicomFormatedConcept);
-    } else if (opsConcept == null && snomedConcept == null && dicomFormatedConcept != null) {
-      return List.of(dicomFormatedConcept);
+
+    if (opsStandardPair != null) {
+      var opsCode = opsStandardPair.getLeft();
+      var opsStandardMaps = opsStandardPair.getRight();
+
+      for (var opsStandardMap : opsStandardMaps) {
+        setProcedure(
+            wrapper,
+            procedureBodySiteLocalization,
+            procedureStartDatetime,
+            procedureLogicId,
+            procedureSourceIdentifier,
+            personId,
+            visitOccId,
+            opsCode,
+            opsStandardMap.getStandardConceptId(),
+            opsStandardMap.getSourceConceptId(),
+            opsStandardMap.getStandardDomainId(),
+            procedureId);
+      }
+
+    } else if (dicomConcept != null) {
+      setProcedure(
+          wrapper,
+          procedureBodySiteLocalization,
+          procedureStartDatetime,
+          procedureLogicId,
+          procedureSourceIdentifier,
+          personId,
+          visitOccId,
+          dicomConcept.getSourceCode(),
+          dicomConcept.getTargetConceptId(),
+          dicomConcept.getTargetConceptId(),
+          OMOP_DOMAIN_PROCEDURE,
+          procedureId);
+
     } else {
+      setProcedure(
+          wrapper,
+          procedureBodySiteLocalization,
+          procedureStartDatetime,
+          procedureLogicId,
+          procedureSourceIdentifier,
+          personId,
+          visitOccId,
+          snomedConcept.getConceptCode(),
+          snomedConcept.getConceptId(),
+          snomedConcept.getConceptId(),
+          snomedConcept.getDomainId(),
+          procedureId);
+    }
+  }
+
+  /** Write procedure information into correct OMOP tables based on their domains. */
+  private void setProcedure(
+      OmopModelWrapper wrapper,
+      Pair<String, Integer> procedureBodySiteLocalization,
+      LocalDateTime procedureStartDatetime,
+      String procedureLogicId,
+      String procedureSourceIdentifier,
+      Long personId,
+      Long visitOccId,
+      String procedureCode,
+      Integer procedureConceptId,
+      Integer procedureSourceConceptId,
+      String domain,
+      String procedureId) {
+    switch (domain) {
+      case OMOP_DOMAIN_PROCEDURE:
+        var procedure =
+            setUpProcedure(
+                procedureStartDatetime,
+                procedureConceptId,
+                procedureSourceConceptId,
+                procedureCode,
+                personId,
+                visitOccId,
+                procedureBodySiteLocalization,
+                procedureLogicId,
+                procedureSourceIdentifier);
+
+        wrapper.getProcedureOccurrence().add(procedure);
+
+        break;
+      case OMOP_DOMAIN_OBSERVATION:
+        var observation =
+            setUpObservation(
+                procedureStartDatetime,
+                procedureConceptId,
+                procedureSourceConceptId,
+                procedureCode,
+                personId,
+                visitOccId,
+                procedureBodySiteLocalization,
+                procedureLogicId,
+                procedureSourceIdentifier);
+
+        wrapper.getObservation().add(observation);
+
+        break;
+      case OMOP_DOMAIN_DRUG:
+        var drug =
+            setUpDrug(
+                procedureStartDatetime,
+                procedureConceptId,
+                procedureSourceConceptId,
+                procedureCode,
+                personId,
+                visitOccId,
+                procedureLogicId,
+                procedureSourceIdentifier);
+
+        wrapper.getDrugExposure().add(drug);
+
+        break;
+      case OMOP_DOMAIN_MEASUREMENT:
+        var measurement =
+            setUpMeasurement(
+                procedureStartDatetime,
+                procedureConceptId,
+                procedureSourceConceptId,
+                procedureCode,
+                personId,
+                visitOccId,
+                procedureBodySiteLocalization,
+                procedureLogicId,
+                procedureSourceIdentifier);
+
+        wrapper.getMeasurement().add(measurement);
+
+        break;
+      default:
+        //        throw new UnsupportedOperationException(String.format("Unsupported domain %s",
+        // domain));
+        log.error(
+            "[Unsupported domain] {} of code in [Procedure]: {}. Skip resource.",
+            domain,
+            procedureId);
+        break;
+    }
+  }
+
+  private ProcedureOccurrence setUpProcedure(
+      LocalDateTime procedureStartDatetime,
+      Integer procedureConceptId,
+      Integer procedureSourceConceptId,
+      String procedureCode,
+      Long personId,
+      Long visitOccId,
+      Pair<String, Integer> procedureBodySiteLocalization,
+      String procedureLogicId,
+      String procedureSourceIdentifier) {
+
+    var newProcedureOccurrence =
+        ProcedureOccurrence.builder()
+            .personId(personId)
+            .procedureDate(procedureStartDatetime.toLocalDate())
+            .procedureDatetime(procedureStartDatetime)
+            .visitOccurrenceId(visitOccId)
+            .procedureSourceConceptId(procedureSourceConceptId)
+            .procedureConceptId(procedureConceptId)
+            .procedureTypeConceptId(CONCEPT_EHR)
+            .procedureSourceValue(procedureCode)
+            .fhirLogicalId(procedureLogicId)
+            .fhirIdentifier(procedureSourceIdentifier)
+            .build();
+
+    if (procedureBodySiteLocalization != null) {
+      newProcedureOccurrence.setModifierSourceValue(procedureBodySiteLocalization.getLeft());
+      newProcedureOccurrence.setModifierConceptId(procedureBodySiteLocalization.getRight());
+    }
+
+    return newProcedureOccurrence;
+  }
+
+  private OmopObservation setUpObservation(
+      LocalDateTime procedureStartDatetime,
+      Integer procedureConceptId,
+      Integer procedureSourceConceptId,
+      String procedureCode,
+      Long personId,
+      Long visitOccId,
+      Pair<String, Integer> procedureBodySiteLocalization,
+      String procedureLogicId,
+      String procedureSourceIdentifier) {
+
+    var newObservation =
+        OmopObservation.builder()
+            .personId(personId)
+            .observationDate(procedureStartDatetime.toLocalDate())
+            .observationDatetime(procedureStartDatetime)
+            .visitOccurrenceId(visitOccId)
+            .observationSourceConceptId(procedureSourceConceptId)
+            .observationConceptId(procedureConceptId)
+            .observationTypeConceptId(CONCEPT_EHR)
+            .observationSourceValue(procedureCode)
+            .fhirLogicalId(procedureLogicId)
+            .fhirIdentifier(procedureSourceIdentifier)
+            .build();
+
+    if (procedureBodySiteLocalization != null) {
+      newObservation.setQualifierSourceValue(procedureBodySiteLocalization.getLeft());
+      newObservation.setQualifierConceptId(procedureBodySiteLocalization.getRight());
+    }
+
+    return newObservation;
+  }
+
+  private Measurement setUpMeasurement(
+      LocalDateTime procedureStartDatetime,
+      Integer procedureConceptId,
+      Integer procedureSourceConceptId,
+      String procedureCode,
+      Long personId,
+      Long visitOccId,
+      Pair<String, Integer> procedureBodySiteLocalization,
+      String procedureLogicId,
+      String procedureSourceIdentifier) {
+
+    var newMeasurement =
+        Measurement.builder()
+            .personId(personId)
+            .measurementDate(procedureStartDatetime.toLocalDate())
+            .measurementDatetime(procedureStartDatetime)
+            .visitOccurrenceId(visitOccId)
+            .measurementSourceConceptId(procedureSourceConceptId)
+            .measurementConceptId(procedureConceptId)
+            .measurementTypeConceptId(CONCEPT_EHR)
+            .measurementSourceValue(procedureCode)
+            .fhirLogicalId(procedureLogicId)
+            .fhirIdentifier(procedureSourceIdentifier)
+            .build();
+
+    if (procedureBodySiteLocalization != null) {
+      newMeasurement.setValueSourceValue(procedureBodySiteLocalization.getLeft());
+      newMeasurement.setValueAsConceptId(procedureBodySiteLocalization.getRight());
+    }
+
+    return newMeasurement;
+  }
+
+  private DrugExposure setUpDrug(
+      LocalDateTime procedureStartDatetime,
+      Integer procedureConceptId,
+      Integer procedureSourceConceptId,
+      String procedureCode,
+      Long personId,
+      Long visitOccId,
+      String procedureLogicId,
+      String procedureSourceIdentifier) {
+
+    return DrugExposure.builder()
+        .personId(personId)
+        .drugExposureStartDate(procedureStartDatetime.toLocalDate())
+        .drugExposureStartDatetime(procedureStartDatetime)
+        .drugExposureEndDate(procedureStartDatetime.toLocalDate())
+        .visitOccurrenceId(visitOccId)
+        .drugSourceConceptId(procedureSourceConceptId)
+        .drugConceptId(procedureConceptId)
+        .drugTypeConceptId(CONCEPT_EHR)
+        .drugSourceValue(procedureCode)
+        .fhirLogicalId(procedureLogicId)
+        .fhirIdentifier(procedureSourceIdentifier)
+        .build();
+  }
+
+  /**
+   * Extract valid pairs of OPS code and its OMOP concept_id and domain information as a list
+   *
+   * @param opsCoding
+   * @param procedureDate the date of procedure
+   * @return a list of valid pairs of OPS code and its OMOP concept_id and domain information
+   */
+  private List<Pair<String, List<OpsStandardDomainLookup>>> getValidOpsCodes(
+      Coding opsCoding, LocalDate procedureDate, String procedureId) {
+    if (opsCoding == null) {
       return Collections.emptyList();
     }
-  }
 
-  /**
-   * @param procedureStartDatetime
-   * @param procedureCodings
-   * @param srcProcedure
-   * @param procedureOccurrence
-   * @param snomedCoding
-   * @param dicomCoding
-   */
-  private void setProcedureUsingSnomedAndDicom(
-      LocalDateTime procedureStartDatetime,
-      //      List<Coding> procedureCodings,
-      //      Procedure srcProcedure,
-      SourceToConceptMap dicomConcept,
-      Concept snomedConcept,
-      Long personId,
-      Long visitOccId,
-      String procedureLogicId,
-      String procedureSourceIdentifier,
-      //      Coding snomedCoding,
-      //      Coding dicomCoding,
-      Pair<String, Integer> procedureBodySiteLocalization,
-      List<ProcedureOccurrence> procedureList) {
-    //    var dicomConcept =
-    //        findOmopConcepts.getCustomConcepts(
-    //            dicomCoding, SOURCE_VOCABULARY_ID_PROCEDURE_DICOM, dbMappings);
-    //
-    //    var snomedConcept =
-    //        findOmopConcepts.getConcepts(
-    //            snomedCoding, procedureStartDatetime.toLocalDate(), bulkload, dbMappings);
-    //
-    //    if (dicomConcept == null && snomedConcept == null) {
-    //      return;
-    //    }
-    var procedureOccurrence =
-        createBasisProcedureOccurrence(
-            procedureStartDatetime,
-            personId,
-            visitOccId,
-            procedureLogicId,
-            procedureSourceIdentifier);
-    //    if (dicomConcept != null && snomedConcept != null) {
-    procedureOccurrence.setProcedureSourceValue(dicomConcept.getSourceCode());
-    procedureOccurrence.setProcedureConceptId(snomedConcept.getConceptId());
-    procedureOccurrence.setProcedureSourceConceptId(dicomConcept.getTargetConceptId());
+    List<Pair<String, List<OpsStandardDomainLookup>>> validOpsStandardConceptMaps =
+        new ArrayList<>();
+    List<OpsStandardDomainLookup> opsStandardMap =
+        findOmopConcepts.getOpsStandardConcepts(
+            opsCoding, procedureDate, bulkload, dbMappings, procedureId);
+    if (opsStandardMap.isEmpty()) {
+      return Collections.emptyList();
+    }
 
-    //      var procedureBodySiteLocalization =
-    //          getBodySiteLocalization(srcProcedure, null, procedureStartDatetime.toLocalDate());
-    setProcedureModifier(procedureOccurrence, procedureBodySiteLocalization);
-    procedureList.add(procedureOccurrence);
-    //    } else {
-    //      setProcedureConceptsUsingSingleCoding(
-    //          procedureStartDatetime,
-    //          procedureCodings,
-    //          srcProcedure,
-    //          personId,
-    //          visitOccId,
-    //          procedureLogicId,
-    //          procedureSourceIdentifier,
-    //          procedureList);
-    //    }
-  }
+    validOpsStandardConceptMaps.add(Pair.of(opsCoding.getCode(), opsStandardMap));
 
-  /**
-   * @param procedureStartDatetime
-   * @param procedureCodings
-   * @param srcProcedure
-   * @param procedureOccurrence
-   * @param opsCoding
-   * @param snomedCoding
-   */
-  private void setProcedureUsingSnomedAndOps(
-      LocalDateTime procedureStartDatetime,
-      //      List<Coding> procedureCodings,
-      Concept opsConcept,
-      Concept snomedConcept,
-      //      Procedure srcProcedure,
-      Long personId,
-      Long visitOccId,
-      String procedureLogicId,
-      String procedureSourceIdentifier,
-      //      Coding opsCoding,
-      //      Coding snomedCoding,
-      Pair<String, Integer> procedureBodySiteLocalization,
-      List<ProcedureOccurrence> procedureList) {
-    //    var opsConcept =
-    //        findOmopConcepts.getConcepts(
-    //            opsCoding, procedureStartDatetime.toLocalDate(), bulkload, dbMappings);
-    //
-    //    var snomedConcept =
-    //        findOmopConcepts.getConcepts(
-    //            snomedCoding, procedureStartDatetime.toLocalDate(), bulkload, dbMappings);
-    //
-    //    if (opsConcept == null && snomedConcept == null) {
-    //      return;
-    //    }
-
-    var procedureOccurrence =
-        createBasisProcedureOccurrence(
-            procedureStartDatetime,
-            personId,
-            visitOccId,
-            procedureLogicId,
-            procedureSourceIdentifier);
-    //    if (opsConcept != null && snomedConcept != null) {
-    //    procedureOccurrence.setProcedureSourceValue(opsCoding.getCode());
-    procedureOccurrence.setProcedureSourceValue(opsConcept.getConceptCode());
-    procedureOccurrence.setProcedureConceptId(snomedConcept.getConceptId());
-    procedureOccurrence.setProcedureSourceConceptId(opsConcept.getConceptId());
-    //    var procedureBodySiteLocalization =
-    //        getBodySiteLocalization(srcProcedure, opsCoding,
-    // procedureStartDatetime.toLocalDate());
-    setProcedureModifier(procedureOccurrence, procedureBodySiteLocalization);
-    procedureList.add(procedureOccurrence);
-    //    } else {
-    //      setProcedureConceptsUsingSingleCoding(
-    //          procedureStartDatetime,
-    //          procedureCodings,
-    //          srcProcedure,
-    //          personId,
-    //          visitOccId,
-    //          procedureLogicId,
-    //          procedureSourceIdentifier,
-    //          procedureList);
-    //    }
+    return validOpsStandardConceptMaps;
   }
 
   /**
@@ -794,36 +870,6 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
   }
 
   /**
-   * Delete FHIR Procedure resources from OMOP CDM tables using fhir_logical_id and fhir_identifier
-   *
-   * @param procedureLogicId logical id of the FHIR Procedure resource
-   * @param procedureSourceIdentifier identifier of the FHIR Procedure resource
-   */
-  private void deleteExistingProcedureOccurrence(
-      String procedureLogicId, String procedureSourceIdentifier) {
-    if (!Strings.isNullOrEmpty(procedureLogicId)) {
-      procedureService.deleteExistingProcedureOccByFhirLogicalId(procedureLogicId);
-    } else {
-      procedureService.deleteExistingProcedureOccByFhirIdentifier(procedureSourceIdentifier);
-    }
-  }
-
-  /**
-   * Delete FHIR Procedure resources from OMOP CDM tables using fhir_logical_id and fhir_identifier
-   *
-   * @param procedureLogicId logical id of the FHIR Procedure resource
-   * @param procedureSourceIdentifier identifier of the FHIR Procedure resource
-   */
-  private void deleteExistingDeviceExposure(
-      String procedureLogicId, String procedureSourceIdentifier) {
-    if (!Strings.isNullOrEmpty(procedureLogicId)) {
-      deviceExposureService.deleteExistingDeviceExposureByFhirLogicalId(procedureLogicId);
-    } else {
-      deviceExposureService.deleteExistingDeviceExposureByFhirIdentifier(procedureSourceIdentifier);
-    }
-  }
-
-  /**
    * Returns the person_id of the referenced FHIR Patient resource for the processed FHIR Procedure
    * resource.
    *
@@ -831,11 +877,11 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
    * @param procedureLogicId logical id of the FHIR Procedure resource
    * @return person_id of the referenced FHIR Patient resource from person table in OMOP CDM
    */
-  private Long getPersonId(Procedure srcProcedure, String procedureLogicId) {
+  private Long getPersonId(Procedure srcProcedure, String procedureLogicId, String procedureId) {
     var patientReferenceIdentifier = fhirReferenceUtils.getSubjectReferenceIdentifier(srcProcedure);
     var patientReferenceLogicalId = fhirReferenceUtils.getSubjectReferenceLogicalId(srcProcedure);
     return omopReferenceUtils.getPersonId(
-        patientReferenceIdentifier, patientReferenceLogicalId, procedureLogicId);
+        patientReferenceIdentifier, patientReferenceLogicalId, procedureLogicId, procedureId);
   }
 
   /**
@@ -848,7 +894,7 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
    * @return visit_occurrence_id of the referenced FHIR Encounter resource from visit_occurrence
    *     table in OMOP CDM
    */
-  private Long getVisitOccId(Procedure srcProcedure, Long personId, String procedureLogicId) {
+  private Long getVisitOccId(Procedure srcProcedure, Long personId, String procedureId) {
     var encounterReferenceIdentifier =
         fhirReferenceUtils.getEncounterReferenceIdentifier(srcProcedure);
     var encounterReferenceLogicalId =
@@ -856,13 +902,10 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
 
     var visitOccId =
         omopReferenceUtils.getVisitOccId(
-            encounterReferenceIdentifier,
-            encounterReferenceLogicalId,
-            personId,
-            srcProcedure.getId());
+            encounterReferenceIdentifier, encounterReferenceLogicalId, personId, procedureId);
 
     if (visitOccId == null) {
-      log.debug("No matching [Encounter] found for {}.", procedureLogicId);
+      log.debug("No matching [Encounter] found for [Procedure]: {}.", procedureId);
     }
 
     return visitOccId;
@@ -919,16 +962,24 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
   private List<Coding> getProcedureCodings(Procedure srcProcedure, String procedureLogicId) {
     List<Coding> codingList = new ArrayList<>();
     var procedureCodings = srcProcedure.getCode().getCoding();
-    if (procedureCodings.isEmpty()) {
+    if (procedureCodings.size() == 1) {
+      var procedureCoding = procedureCodings.get(0);
+      if (checkIfCodeExist(procedureCoding)) {
+        codingList.add(procedureCodings.get(0));
+        return codingList;
+      }
       return Collections.emptyList();
     }
 
-    for (var coding : procedureCodings) {
-      if (checkIfCodeExist(coding)) {
-        codingList.add(coding);
+    if (procedureCodings.size() > 1) {
+      for (var coding : procedureCodings) {
+        if (checkIfCodeExist(coding)) {
+          codingList.add(coding);
+        }
       }
+      return codingList;
     }
-    return codingList;
+    return Collections.emptyList();
   }
 
   /**
@@ -938,19 +989,23 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
    * @param vocabularyId vocabulary Id in OMOP based on the used system URL in Coding
    * @return a Coding from Procedure FHIR
    */
-  private Coding getCodingBySystemUrl(List<Coding> codingList, List<String> codingSystemUrl) {
-    for (var coding : codingList) {
-      var codingUrl = coding.getSystem();
-      if (codingSystemUrl.contains(codingUrl)) {
-
-        return coding;
-      }
+  private Coding getCoding(List<Coding> procedureCodings, String vocabularyId) {
+    var codingOptional =
+        procedureCodings.stream()
+            .filter(
+                procedureCoding ->
+                    findOmopConcepts
+                        .getOmopVocabularyId(procedureCoding.getSystem())
+                        .equals(vocabularyId))
+            .findFirst();
+    if (codingOptional.isPresent()) {
+      return codingOptional.get();
     }
     return null;
   }
 
   private Pair<String, Integer> getBodySiteLocalization(
-      Procedure srcProcedure, Coding procedureCoding, LocalDate procedureDate) {
+      Procedure srcProcedure, Coding procedureCoding, LocalDate procedureDate, String procedureId) {
     var siteLocalization = getOpsSiteLocalization(procedureCoding);
     var procedureBodySite = getBodySite(srcProcedure);
     if (siteLocalization == null && procedureBodySite == null) {
@@ -958,11 +1013,12 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
     } else if (siteLocalization != null) {
       var opsSiteLocalizationConcept =
           findOmopConcepts.getCustomConcepts(
-              siteLocalization, SOURCE_VOCABULARY_ID_PROCEDURE_BODYSITE, dbMappings);
+              siteLocalization.getCode(), SOURCE_VOCABULARY_ID_PROCEDURE_BODYSITE, dbMappings);
       return Pair.of(siteLocalization.getCode(), opsSiteLocalizationConcept.getTargetConceptId());
     }
     var procedureBodySiteConcept =
-        findOmopConcepts.getConcepts(procedureBodySite, procedureDate, bulkload, dbMappings);
+        findOmopConcepts.getConcepts(
+            procedureBodySite, procedureDate, bulkload, dbMappings, procedureId);
     if (procedureBodySiteConcept == null) {
       return null;
     }
@@ -1056,7 +1112,6 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
       return false;
     }
     var codingVocabularyId = findOmopConcepts.getOmopVocabularyId(procedureCoding.getSystem());
-    //    return codingVocabularyId.equals(vocabularyId);
     return vocabularyId.contains(codingVocabularyId);
   }
 
@@ -1066,5 +1121,20 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
     }
     var codingVocabularyId = findOmopConcepts.getOmopVocabularyId(procedureCoding.getSystem());
     return codingVocabularyId.equals(vocabularyId);
+  }
+
+  /**
+   * Deletes FHIR Procedure resources from OMOP CDM tables using fhir_logical_id and fhir_identifier
+   *
+   * @param procedureLogicId logical id of the FHIR Procedure resource
+   * @param procedureSourceIdentifier identifier of the FHIR Procedure resource
+   */
+  private void deleteExistingProcedureEntry(
+      String procedureLogicId, String procedureSourceIdentifier) {
+    if (!Strings.isNullOrEmpty(procedureLogicId)) {
+      procedureService.deleteExistingProceduresByFhirLogicalId(procedureLogicId);
+    } else {
+      procedureService.deleteExistingProceduresByFhirIdentifier(procedureSourceIdentifier);
+    }
   }
 }
