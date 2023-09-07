@@ -4,12 +4,14 @@ import java.util.List;
 import java.util.Map;
 import org.miracum.etl.fhirtoomop.model.IcdSnomedDomainLookup;
 import org.miracum.etl.fhirtoomop.model.MedicationIdMap;
+import org.miracum.etl.fhirtoomop.model.OpsStandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.SnomedRaceStandardLookup;
 import org.miracum.etl.fhirtoomop.model.SnomedVaccineStandardLookup;
 import org.miracum.etl.fhirtoomop.model.omop.Concept;
 import org.miracum.etl.fhirtoomop.repository.ConceptRepository;
 import org.miracum.etl.fhirtoomop.repository.IcdSnomedRepository;
 import org.miracum.etl.fhirtoomop.repository.MedicationIdRepository;
+import org.miracum.etl.fhirtoomop.repository.OpsStandardRepository;
 import org.miracum.etl.fhirtoomop.repository.SnomedRaceRepository;
 import org.miracum.etl.fhirtoomop.repository.SnomedVaccineRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +31,7 @@ public class OmopConceptServiceImpl {
   @Autowired private IcdSnomedRepository icdSnomedRepository;
   @Autowired private SnomedVaccineRepository snomedVaccineRepository;
   @Autowired private SnomedRaceRepository snomedRaceRepository;
+  @Autowired private OpsStandardRepository opsStandardRepository;
   /**
    * Returns a map of all concepts based on a specific vocabulary and concept_code.
    *
@@ -77,6 +80,16 @@ public class OmopConceptServiceImpl {
     return snomedRaceRepository.getSnomedRaceMapBySnomedCode(snomedCode);
   }
 
+  /**
+   * Returns a map of all OPS-to-Standard mappings based on a specific OPS code.
+   *
+   * @param sourceCode OPS code
+   * @return map of all OPS-to-Standard mappings based on a specific OPS code
+   */
+  @Cacheable(cacheNames = "ops-standard", sync = true)
+  public Map<String, List<OpsStandardDomainLookup>> getOpsStandardMap(String sourceCode) {
+    return opsStandardRepository.getOpsStandardMapBySourceCode(sourceCode);
+  }
   /**
    * Writes the medicationIdMap immediately to medication_id_map table in OMOP CDM.
    *

@@ -108,6 +108,8 @@ public class ProcedureStepListener implements StepExecutionListener {
         dbMappings.setFindVisitOccIdByIdentifier(
             repositories.getVisitOccRepository().getFhirIdentifierAndVisitOccId());
       }
+      dbMappings.setFindOpsStandardMapping(
+          repositories.getOpsStandardRepository().getOpsStandardMap());
       dbMappings
           .getOmopConceptMapWrapper()
           .setFindValidOpsConcept(
@@ -149,6 +151,7 @@ public class ProcedureStepListener implements StepExecutionListener {
     memoryLogger.logMemoryDebugOnly();
     if (bulkload.equals(Boolean.TRUE)) {
       dbMappings.getOmopConceptMapWrapper().getFindValidOpsConcept().clear();
+      dbMappings.getFindOpsStandardMapping().clear();
       if (dictionaryLoadInRam.equals(Boolean.TRUE)) {
         dbMappings.getFindPersonIdByIdentifier().clear();
         dbMappings.getFindPersonIdByLogicalId().clear();
