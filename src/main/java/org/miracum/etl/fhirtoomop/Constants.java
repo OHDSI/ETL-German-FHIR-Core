@@ -30,6 +30,7 @@ public class Constants {
   public static final int CONCEPT_RESUSCITATION_STATUS = 4127294;
   public static final int CONCEPT_STAGE = 4106767;
   public static final int CONCEPT_SEVERITY = 4077563;
+  public static final int CONCEPT_FINDING_SITE = 4181514;
 
   public static final String ETHNICITY_SOURCE_HISPANIC_OR_LATINO = "2135-2";
   public static final String ETHNICITY_SOURCE_MIXED = "26242008";
@@ -37,6 +38,7 @@ public class Constants {
   public static final String STAR_CROSS_CODING_REGEX = "[+†*!]*";
 
   public static final String VOCABULARY_ICD10GM = "ICD10GM";
+  public static final String VOCABULARY_ORPHA = "ORPHA";
   public static final String VOCABULARY_UCUM = "UCUM";
   public static final String VOCABULARY_LOINC = "LOINC";
   public static final String VOCABULARY_ATC = "ATC";
@@ -102,22 +104,23 @@ public class Constants {
   public static final String OMOP_DOMAIN_GENDER = "Gender";
 
   public static final ImmutableList<String> FHIR_RESOURCE_ACCEPTABLE_EVENT_STATUS_LIST =
-      ImmutableList.of("in-progress", "on-hold", "completed");
+      ImmutableList.of("in-progress", "on-hold", "completed", "unknown");
+  public static final ImmutableList<String> FHIR_RESOURCE_CONDITION_ACCEPTABLE_STATUS_LIST =
+      ImmutableList.of("provisional", "differential", "confirmed");
+  public static final ImmutableList<String> FHIR_RESOURCE_ENCOUNTER_ACCEPTABLE_STATUS_LIST =
+      ImmutableList.of("in-progress", "onleave", "finished", "unknown");
   public static final ImmutableList<String>
       FHIR_RESOURCE_MEDICATION_STATEMENT_ACCEPTABLE_STATUS_LIST =
-          ImmutableList.of(
-              "active",
-              "completed",
-              "on-hold",
-              "entered-in-error",
-              "intended",
-              "stopped",
-              "unknown",
-              "not-taken");
+          ImmutableList.of("active", "completed", "on-hold", "intended", "stopped", "unknown");
+  public static final ImmutableList<String>
+      FHIR_RESOURCE_MEDICATION_ADMINISTRATION_ACCEPTABLE_STATUS_LIST =
+          ImmutableList.of("in-progress", "on-hold", "completed", "stopped", "unknown");
+  public static final ImmutableList<String> FHIR_RESOURCE_MEDICATION_ACCEPTABLE_STATUS_LIST =
+      ImmutableList.of("active", "inactive");
   public static final ImmutableList<String> FHIR_RESOURCE_CONSENT_ACCEPTABLE_STATUS_LIST =
       ImmutableList.of("active");
   public static final ImmutableList<String> FHIR_RESOURCE_OBSERVATION_ACCEPTABLE_STATUS_LIST =
-      ImmutableList.of("final");
+      ImmutableList.of("final", "unknown");
   public static final ImmutableList<String> FHIR_RESOURCE_GECCO_OBSERVATION_ACCEPTABLE_VALUE_CODE =
       ImmutableList.of("373066001");
   public static final ImmutableList<String>
@@ -128,9 +131,6 @@ public class Constants {
 
   public static final ImmutableList<String> FHIR_RESOURCE_DIAGNOSTIC_REPORT_ACCEPTABLE_STATUS_LIST =
       ImmutableList.of("final", "amended", "corrected", "appended");
-  public static final ImmutableList<String>
-      FHIR_RESOURCE_CONDITION_ACCEPTABLE_VERIFICATION_STATUS_LIST =
-          ImmutableList.of("confirmed", "410605003");
   public static final ImmutableList<String> FHIR_RESOURCE_OBSERVATION_HISTORY_OF_TRAVEL_CODES =
       ImmutableList.of("8691-8", "443846001");
   public static final ImmutableList<String>
