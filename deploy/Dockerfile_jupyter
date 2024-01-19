@@ -1,0 +1,7 @@
+FROM jupyter/scipy-notebook:python-3.10
+
+USER root
+COPY ./requirements.txt /tmp/requirements.txt
+RUN apt-get update -y && apt-get install -y libpq-dev
+
+RUN pip install -r /tmp/requirements.txt

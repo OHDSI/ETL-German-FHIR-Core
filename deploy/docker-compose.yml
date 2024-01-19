@@ -66,5 +66,19 @@ services:
       omop-db-postgress:
         condition: service_started
 
+  jupyter:
+    container_name: jupyter_notebook
+    build:
+      context: .
+      dockerfile: Dockerfile_jupyter
+    command: start-notebook.sh --NotebookApp.token='cb0nxGAG'
+    volumes:
+      - ../query:/home/jovyan/query
+    ports:
+      - 8888:8888
+    depends_on:
+      omop-db-postgress:
+        condition: service_started
+
 volumes:
   omop-postgress:
