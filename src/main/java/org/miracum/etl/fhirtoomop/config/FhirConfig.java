@@ -6,6 +6,7 @@ import ca.uhn.fhir.parser.IParser;
 import ca.uhn.fhir.rest.client.api.IClientInterceptor;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.client.interceptor.BasicAuthInterceptor;
+import ca.uhn.fhir.rest.client.interceptor.BearerTokenAuthInterceptor;
 import com.google.common.base.Strings;
 import org.hl7.fhir.r4.hapi.fluentpath.FhirPathR4;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceFhirReferenceUtils;
@@ -36,6 +37,8 @@ public class FhirConfig {
   @Value("${data.fhirServer.password}")
   private String fhirServerPassword;
 
+  @Value("${data.fhirServer.token}")
+  private String fhirServerToken;
   /**
    * Sets the FHIR context with FHIR R4 version.
    *
@@ -94,6 +97,12 @@ public class FhirConfig {
     if (!Strings.isNullOrEmpty(fhirServerPassword) && !Strings.isNullOrEmpty(fhirServerUsername)) {
       IClientInterceptor authInterceptor =
           new BasicAuthInterceptor(fhirServerUsername, fhirServerPassword);
+      fhirClient.registerInterceptor(authInterceptor);
+    }
+
+    if(!Strings.isNullOrEmpty(fhirServerToken)) {
+      IClientInterceptor authInterceptor =
+              new BearerTokenAuthInterceptor(fhirServerToken);
       fhirClient.registerInterceptor(authInterceptor);
     }
 

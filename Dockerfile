@@ -6,6 +6,7 @@ COPY build.gradle settings.gradle gradle.properties ./
 RUN gradle clean build --no-daemon || true
 
 COPY --chown=gradle:gradle . .
+RUN gradle spotlessApply
 RUN gradle build --info && \
     gradle jacocoTestReport && \
     awk -F"," '{ instructions += $4 + $5; covered += $5 } END { print covered, "/", instructions, " instructions covered"; print 100*covered/instructions, "% covered" }' build/reports/jacoco/test/jacocoTestReport.csv && \

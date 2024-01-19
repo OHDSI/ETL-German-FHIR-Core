@@ -1,6 +1,19 @@
 version: "3.7"
 
 services:
+  omop-db-postgress:
+    image: postgres:latest
+    container_name: omop-db-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ohdsi_admin_user
+      POSTGRES_PASSWORD: admin1
+      POSTGRES_DB: ohdsi
+    volumes:
+      - omop-postgress:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
   ohdsi-germany:
     image: fhir-to-omop:latest
     build: ../
@@ -18,9 +31,10 @@ services:
       DATA_FHIRSERVER_BASEURL: $DATA_FHIRSERVER_BASEURL
       DATA_FHIRSERVER_USERNAME: $DATA_FHIRSERVER_USERNAME
       DATA_FHIRSERVER_PASSWORD: $DATA_FHIRSERVER_PASSWORD
+      DATA_FHIRSERVER_TOKEN: $DATA_FHIRSERVER_TOKEN
       DATA_FHIRSERVER_CONNECTIONTIMEOUT: $DATA_FHIRSERVER_CONNECTIONTIMEOUT
       DATA_FHIRSERVER_SOCKETTIMEOUT: $DATA_FHIRSERVER_SOCKETTIMEOUT
-      DATA_OMOPCDM_JDBCURL: $DATA_OMOPCDM_JDBCURL
+      DATA_OMOPCDM_JDBCURL: "jdbc:postgresql://10.102.10.17:5432/ohdsi"
       DATA_OMOPCDM_USERNAME: $DATA_OMOPCDM_USERNAME
       DATA_OMOPCDM_PASSWORD: $DATA_OMOPCDM_PASSWORD
       DATA_OMOPCDM_SCHEMA: $DATA_OMOPCDM_SCHEMA
@@ -46,5 +60,11 @@ services:
       APP_WRITEMEDICATIONSTATEMENT_ENABLED: $APP_WRITEMEDICATIONSTATEMENT_ENABLED
       APP_STARTSINGLESTEP: $APP_STARTSINGLESTEP
       SPRING_CACHE_CAFFEINE_SPEC_MAXIMUMSIZE: $SPRING_CACHE_CAFFEINE_SPEC_MAXIMUMSIZE
-    volumes:
-      - ./cacerts:/etc/ssl/certs/java/cacerts
+    # volumes:
+      # - ./cacerts:/etc/ssl/certs/java/cacerts
+    depends_on:
+      omop-db-postgress:
+        condition: service_started
+
+volumes:
+  omop-postgress:

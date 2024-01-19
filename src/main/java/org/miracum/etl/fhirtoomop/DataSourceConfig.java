@@ -2,6 +2,7 @@ package org.miracum.etl.fhirtoomop;
 
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
+
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
@@ -17,6 +18,8 @@ import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.Database;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
+
+import java.util.Properties;
 
 /**
  * Configures all database connections that will be used in this job.
@@ -105,11 +108,14 @@ public class DataSourceConfig {
   public EntityManagerFactory entityManagerFactory() {
     var vendorAdapter = new HibernateJpaVendorAdapter();
     vendorAdapter.setDatabase(Database.POSTGRESQL);
-    vendorAdapter.setGenerateDdl(false);
+    vendorAdapter.setGenerateDdl(true);
     var factory = new LocalContainerEntityManagerFactoryBean();
     factory.setJpaVendorAdapter(vendorAdapter);
     factory.setPackagesToScan("org.miracum.etl.fhirtoomop.model");
     factory.setDataSource(writerDataSource());
+    Properties properties = new Properties();
+    properties.put("hibernate.default_schema", "cds_cdm");
+    factory.setJpaProperties(properties);
     factory.afterPropertiesSet();
     return factory.getObject();
   }
