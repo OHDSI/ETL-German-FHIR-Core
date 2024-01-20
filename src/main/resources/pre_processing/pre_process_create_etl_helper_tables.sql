@@ -24,7 +24,7 @@ $$;
 
 DO $$
 BEGIN
-CREATE materialized VIEW IF NOT EXISTS cds_etl_helper.snomed_vaccine_standard_lookup AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS cds_etl_helper.snomed_vaccine_standard_lookup AS
   SELECT c1.concept_code     AS snomed_code,
          c1.concept_id       AS snomed_concept_id,
          cr.concept_id_2     AS standard_vaccine_concept_id,
@@ -48,7 +48,7 @@ $$;
 --Create cds_etl_helper.snomed_race_standard_lookup materialized view
 DO $$
 BEGIN
-CREATE materialized VIEW IF NOT EXISTS cds_etl_helper.snomed_race_standard_lookup AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS cds_etl_helper.snomed_race_standard_lookup AS
   SELECT c1.concept_code AS snomed_code,
          c1.concept_id   AS snomed_concept_id,
          cr.concept_id_2 AS standard_race_concept_id
@@ -235,11 +235,11 @@ $$;
 --Refresh cds_etl_helper views
 DO $$
 BEGIN
-REFRESH MATERIALIZED VIEW cds_etl_helper.icd_snomed_domain_lookup WITH DATA;
-REFRESH MATERIALIZED VIEW cds_etl_helper.snomed_race_standard_lookup WITH DATA;
-REFRESH MATERIALIZED VIEW cds_etl_helper.snomed_vaccine_standard_lookup WITH DATA;
-REFRESH MATERIALIZED VIEW cds_etl_helper.ops_standard_domain_lookup WITH DATA;
-REFRESH MATERIALIZED VIEW cds_etl_helper.atc_standard_domain_lookup WITH DATA;
-REFRESH MATERIALIZED VIEW cds_etl_helper.loinc_standard_domain_lookup WITH DATA;
+--REFRESH MATERIALIZED VIEW cds_etl_helper.icd_snomed_domain_lookup WITH DATA;
+--REFRESH MATERIALIZED VIEW cds_etl_helper.ops_standard_domain_lookup WITH DATA;
+--REFRESH MATERIALIZED VIEW cds_etl_helper.snomed_vaccine_standard_lookup WITH DATA;
+--REFRESH MATERIALIZED VIEW cds_etl_helper.snomed_race_standard_lookup WITH DATA;
+--REFRESH MATERIALIZED VIEW cds_etl_helper.atc_standard_domain_lookup WITH DATA;
+--REFRESH MATERIALIZED VIEW cds_etl_helper.loinc_standard_domain_lookup WITH DATA;
 END
 $$;

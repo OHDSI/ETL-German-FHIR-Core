@@ -88,6 +88,18 @@ public class InitOmopDb implements Tasklet {
    */
   private void modifyingTable(StepContribution contribution) throws SQLException, IOException {
     ExecuteSqlScripts executeSqlScripts = new ExecuteSqlScripts(outputDataSource, contribution);
+    Resource addDDL = new ClassPathResource("pre_processing/pre_process_postgresql_5.3_ddl.sql");
+    executeSqlScripts.executeSQLScript(addDDL);
+
+    Resource addConstraints = new ClassPathResource("pre_processing/pre_process_postgresql_5.3_constraints.sql");
+    executeSqlScripts.executeSQLScript(addConstraints);
+
+    Resource addIndices = new ClassPathResource("pre_processing/pre_process_postgresql_5.3_indices.sql");
+    executeSqlScripts.executeSQLScript(addIndices);
+
+    Resource addPrimaryKeys = new ClassPathResource("pre_processing/pre_process_postgresql_5.3_primary_keys.sql");
+    executeSqlScripts.executeSQLScript(addPrimaryKeys);
+
     Resource addColumns = new ClassPathResource("pre_processing/pre_process_alter_tables.sql");
     Resource addIndex = new ClassPathResource("pre_processing/pre_process_add_index.sql");
     Resource alterMedicationIdMap =
