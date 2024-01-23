@@ -17,9 +17,6 @@ spring:
   #  active: dev
   application:
     name: "fhir-to-omop"
-  jpa:
-    hibernate.ddl-auto: create
-    generate-ddl: true
   cache.caffeine.spec.maximumSize: 5000
 
 data:

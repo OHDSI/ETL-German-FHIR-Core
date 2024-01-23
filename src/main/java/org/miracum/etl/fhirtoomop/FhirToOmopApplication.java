@@ -17,3 +17,4 @@ public class FhirToOmopApplication {
     System.exit(SpringApplication.exit(SpringApplication.run(FhirToOmopApplication.class, args)));
   }
 }
+

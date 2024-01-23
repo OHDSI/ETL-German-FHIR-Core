@@ -115,6 +115,7 @@ public class DataSourceConfig {
     factory.setDataSource(writerDataSource());
     Properties properties = new Properties();
     properties.put("hibernate.default_schema", "cds_cdm");
+//    properties.setProperty("hibernate.hbm2ddl.auto", "update");
     factory.setJpaProperties(properties);
     factory.afterPropertiesSet();
     return factory.getObject();

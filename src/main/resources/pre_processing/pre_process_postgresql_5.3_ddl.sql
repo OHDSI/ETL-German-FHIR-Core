@@ -2,6 +2,8 @@
 --HINT DISTRIBUTE ON KEY (person_id)
 Do $$
 BEGIN
+CREATE SCHEMA IF NOT EXIST cds_cdm;
+CREATE SCHEMA IF NOT EXIST cds_etl_helper;
 
 CREATE TABLE IF NOT EXISTS cds_cdm.person (
 			person_id integer NOT NULL,

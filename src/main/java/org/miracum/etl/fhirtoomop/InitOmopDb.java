@@ -88,19 +88,6 @@ public class InitOmopDb implements Tasklet {
    */
   private void modifyingTable(StepContribution contribution) throws SQLException, IOException {
     ExecuteSqlScripts executeSqlScripts = new ExecuteSqlScripts(outputDataSource, contribution);
-
-    Resource addDDL = new ClassPathResource("pre_processing/pre_process_postgresql_5.3_ddl.sql");
-    executeSqlScripts.executeSQLScript(addDDL);
-
-    Resource addConstraints = new ClassPathResource("pre_processing/pre_process_postgresql_5.3_constraints.sql");
-    executeSqlScripts.executeSQLScript(addConstraints);
-
-    Resource addIndices = new ClassPathResource("pre_processing/pre_process_postgresql_5.3_indices.sql");
-    executeSqlScripts.executeSQLScript(addIndices);
-
-    Resource addPrimaryKeys = new ClassPathResource("pre_processing/pre_process_postgresql_5.3_primary_keys.sql");
-    executeSqlScripts.executeSQLScript(addPrimaryKeys);
-
     Resource addData = new ClassPathResource("pre_processing/omop_load_vocab.sql");
     executeSqlScripts.executeSQLScript(addData);
 
@@ -109,7 +96,6 @@ public class InitOmopDb implements Tasklet {
     Resource alterMedicationIdMap =
         new ClassPathResource("pre_processing/pre_process_alter_medication_id_map.sql");
     Resource createEtlHelperTables =
-        new ClassPathResource("pre_processing/pre_process_create_etl_helper_tables.sql");
         new ClassPathResource("pre_processing/pre_process_create_etl_helper_tables.sql");
 
     executeSqlScripts.executeSQLScript(createEtlHelperTables);
