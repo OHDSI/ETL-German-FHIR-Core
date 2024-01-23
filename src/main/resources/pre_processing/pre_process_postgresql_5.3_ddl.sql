@@ -2,6 +2,7 @@
 --HINT DISTRIBUTE ON KEY (person_id)
 Do $$
 BEGIN
+
 CREATE TABLE IF NOT EXISTS cds_cdm.person (
 			person_id integer NOT NULL,
 			gender_concept_id integer NOT NULL,

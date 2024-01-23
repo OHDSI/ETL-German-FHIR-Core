@@ -118,7 +118,7 @@ public class FhirToOmopJobListener implements JobExecutionListener {
     var beginJob = "==== Begin to transfer data from FHIR to OMOP ====";
 
     // if (ifBulkLoad.equals(Boolean.TRUE) && Strings.isNullOrEmpty(startSingleStep)) {
-    insertCareSite(jobExecution);
+    //    insertCareSite(jobExecution);
     // }
 
     insertSourceToConceptMap(jobExecution);

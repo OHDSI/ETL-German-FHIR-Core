@@ -37,7 +37,7 @@ public class Constants {
 
   public static final String STAR_CROSS_CODING_REGEX = "[+†*!]*";
 
-  public static final String VOCABULARY_ICD10GM = "ICD10GM";
+  public static final String VOCABULARY_ICD10GM = "ICD10CM";
   public static final String VOCABULARY_ORPHA = "ORPHA";
   public static final String VOCABULARY_UCUM = "UCUM";
   public static final String VOCABULARY_LOINC = "LOINC";

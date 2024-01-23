@@ -50,6 +50,10 @@ public class Concept {
   @Column(name = "concept_class_id")
   private String conceptClassId;
 
+  /** The Standard concept. */
+  @Column(name = "standard_concept")
+  private String standardConcept;
+
   /** The concept code represents the identifier of the Concept in the source vocabulary. */
   @Column(name = "concept_code")
   private String conceptCode;
@@ -64,6 +68,10 @@ public class Concept {
    */
   @Column(name = "valid_end_date")
   private LocalDate validEndDate;
+
+  /** The reason why it is an invalid concpet. */
+  @Column(name = "invalid_reason")
+  private String invalidReason;
 
   public enum Domain {
     MEASUREMENT("Measurement"),

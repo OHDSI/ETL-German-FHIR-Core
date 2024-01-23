@@ -11,8 +11,9 @@ services:
       POSTGRES_DB: ohdsi
     volumes:
       - omop-postgress:/var/lib/postgresql/data
+      - ../omop-vocab:/home/vocab
     ports:
-      - "5432:5432"
+      - "5412:5432"
 
   ohdsi-germany:
     image: fhir-to-omop:latest
@@ -34,7 +35,7 @@ services:
       DATA_FHIRSERVER_TOKEN: $DATA_FHIRSERVER_TOKEN
       DATA_FHIRSERVER_CONNECTIONTIMEOUT: $DATA_FHIRSERVER_CONNECTIONTIMEOUT
       DATA_FHIRSERVER_SOCKETTIMEOUT: $DATA_FHIRSERVER_SOCKETTIMEOUT
-      DATA_OMOPCDM_JDBCURL: "jdbc:postgresql://10.102.10.17:5432/ohdsi"
+      DATA_OMOPCDM_JDBCURL: "jdbc:postgresql://127.0.0.1:5412/ohdsi"
       DATA_OMOPCDM_USERNAME: $DATA_OMOPCDM_USERNAME
       DATA_OMOPCDM_PASSWORD: $DATA_OMOPCDM_PASSWORD
       DATA_OMOPCDM_SCHEMA: $DATA_OMOPCDM_SCHEMA

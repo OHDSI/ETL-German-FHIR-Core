@@ -88,6 +88,7 @@ public class InitOmopDb implements Tasklet {
    */
   private void modifyingTable(StepContribution contribution) throws SQLException, IOException {
     ExecuteSqlScripts executeSqlScripts = new ExecuteSqlScripts(outputDataSource, contribution);
+
     Resource addDDL = new ClassPathResource("pre_processing/pre_process_postgresql_5.3_ddl.sql");
     executeSqlScripts.executeSQLScript(addDDL);
 
@@ -100,11 +101,15 @@ public class InitOmopDb implements Tasklet {
     Resource addPrimaryKeys = new ClassPathResource("pre_processing/pre_process_postgresql_5.3_primary_keys.sql");
     executeSqlScripts.executeSQLScript(addPrimaryKeys);
 
+    Resource addData = new ClassPathResource("pre_processing/omop_load_vocab.sql");
+    executeSqlScripts.executeSQLScript(addData);
+
     Resource addColumns = new ClassPathResource("pre_processing/pre_process_alter_tables.sql");
     Resource addIndex = new ClassPathResource("pre_processing/pre_process_add_index.sql");
     Resource alterMedicationIdMap =
         new ClassPathResource("pre_processing/pre_process_alter_medication_id_map.sql");
     Resource createEtlHelperTables =
+        new ClassPathResource("pre_processing/pre_process_create_etl_helper_tables.sql");
         new ClassPathResource("pre_processing/pre_process_create_etl_helper_tables.sql");
 
     executeSqlScripts.executeSQLScript(createEtlHelperTables);
@@ -219,7 +224,14 @@ public class InitOmopDb implements Tasklet {
 
   /** Updates the cdm_source table in OMOP CDM. */
   private void importToCdmSourceTable() {
+    log.info("Trying to create schema");
+    String createCdsSchema = "CREATE SCHEMA IF NOT EXISTS cds_cdm;";
+    jdbcTemplate.execute(createCdsSchema);
+
+    String createEtlSchema = "CREATE SCHEMA IF NOT EXISTS cds_etl_helper;";
+    jdbcTemplate.execute(createEtlSchema);
     log.info("Trying to create cdm_source");
+
     String createTable =
             "CREATE TABLE IF NOT EXISTS cdm_source (cdm_source_name varchar(255) NOT NULL, "
                     + "cdm_etl_reference varchar(255), "
