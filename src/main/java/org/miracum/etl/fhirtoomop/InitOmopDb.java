@@ -89,7 +89,7 @@ public class InitOmopDb implements Tasklet {
   private void modifyingTable(StepContribution contribution) throws SQLException, IOException {
     ExecuteSqlScripts executeSqlScripts = new ExecuteSqlScripts(outputDataSource, contribution);
     Resource addData = new ClassPathResource("pre_processing/omop_load_vocab.sql");
-    executeSqlScripts.executeSQLScript(addData);
+//    executeSqlScripts.executeSQLScript(addData);
 
     Resource addColumns = new ClassPathResource("pre_processing/pre_process_alter_tables.sql");
     Resource addIndex = new ClassPathResource("pre_processing/pre_process_add_index.sql");

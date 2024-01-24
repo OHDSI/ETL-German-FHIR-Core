@@ -27,7 +27,6 @@ import lombok.NoArgsConstructor;
 public class Person {
   /** A unique identifier for each person. */
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "person_id")
   private Long personId;
 
