@@ -1,4 +1,4 @@
-procedure_occurrence--postgresql CDM Foreign Key Constraints for OMOP Common Data Model 5.3
+--procedure_occurrence--postgresql CDM Foreign Key Constraints for OMOP Common Data Model 5.3
 ALTER TABLE cds_cdm.person ADD CONSTRAINT fpk_person_gender_concept_id FOREIGN KEY (gender_concept_id) REFERENCES cds_cdm.CONCEPT (CONCEPT_ID);
 ALTER TABLE cds_cdm.person ADD CONSTRAINT fpk_person_race_concept_id FOREIGN KEY (race_concept_id) REFERENCES cds_cdm.CONCEPT (CONCEPT_ID);
 ALTER TABLE cds_cdm.person ADD CONSTRAINT fpk_person_ethnicity_concept_id FOREIGN KEY (ethnicity_concept_id) REFERENCES cds_cdm.CONCEPT (CONCEPT_ID);

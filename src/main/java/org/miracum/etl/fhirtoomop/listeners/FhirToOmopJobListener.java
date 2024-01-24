@@ -121,7 +121,7 @@ public class FhirToOmopJobListener implements JobExecutionListener {
     //    insertCareSite(jobExecution);
     // }
 
-//    insertSourceToConceptMap(jobExecution);
+    insertSourceToConceptMap(jobExecution);
 
     log.info("=".repeat(beginJob.length()));
     log.info(beginJob);
