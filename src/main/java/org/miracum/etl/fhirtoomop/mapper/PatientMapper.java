@@ -207,7 +207,6 @@ public class PatientMapper implements FhirMapper<Patient> {
             .personSourceValue(personSourceValue == null ? null : personSourceValue.substring(4))
             .fhirLogicalId(patientLogicId)
             .fhirIdentifier(patientSourceIdentifier)
-            .personId(Long.parseLong(patientLogicId.split("-")[1]))
             .build();
     var gender = getGender(srcPatient);
     person.setGenderConceptId(getGenderConceptId(gender));

@@ -20,18 +20,18 @@ ALTER TABLE visit_detail DROP CONSTRAINT IF EXISTS fpk_v_detail_preceding;
 
 --Adds two new columns called fhir_logical_id and fhir_identifier to cds_etl_helper.post_process_map table
 ALTER TABLE IF EXISTS cds_etl_helper.post_process_map ADD COLUMN IF NOT EXISTS fhir_logical_id varchar(250) NULL, ADD COLUMN IF NOT EXISTS fhir_identifier varchar(250) NULL;
-
---Alter drug_exposure table to automatically increment drug_exposure_id
-CREATE SEQUENCE IF NOT EXISTS drug_exposure_id_seq INCREMENT BY 1 START WITH 1;
-ALTER TABLE drug_exposure ALTER COLUMN drug_exposure_id SET DEFAULT nextval('drug_exposure_id_seq');
-
---Alter visit_detail table to automatically increment visit_detail_id
-CREATE SEQUENCE IF NOT EXISTS visit_detail_id_seq INCREMENT BY 1 START WITH 1;
-ALTER TABLE visit_detail ALTER COLUMN visit_detail_id SET DEFAULT nextval('visit_detail_id_seq');
+--
+----Alter drug_exposure table to automatically increment drug_exposure_id
+--CREATE SEQUENCE IF NOT EXISTS drug_exposure_id_seq INCREMENT BY 1 START WITH 1;
+--ALTER TABLE drug_exposure ALTER COLUMN drug_exposure_id SET DEFAULT nextval('drug_exposure_id_seq');
+--
+----Alter visit_detail table to automatically increment visit_detail_id
+--CREATE SEQUENCE IF NOT EXISTS visit_detail_id_seq INCREMENT BY 1 START WITH 1;
+--ALTER TABLE visit_detail ALTER COLUMN visit_detail_id SET DEFAULT nextval('visit_detail_id_seq');
 
 --Alter device_exposure table to automatically increment device_exposure_id
-CREATE SEQUENCE IF NOT EXISTS device_exposure_id_seq INCREMENT BY 1 START WITH 1;
-ALTER TABLE device_exposure ALTER COLUMN device_exposure_id SET DEFAULT nextval('device_exposure_id_seq');
+--CREATE SEQUENCE IF NOT EXISTS device_exposure_id_seq INCREMENT BY 1 START WITH 1;
+--ALTER TABLE device_exposure ALTER COLUMN device_exposure_id SET DEFAULT nextval('device_exposure_id_seq');
 
 --Alter condition_era table to automatically increment condition_era_id
 CREATE SEQUENCE IF NOT EXISTS condition_era_id_seq INCREMENT BY 1 START WITH 1;
