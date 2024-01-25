@@ -17,9 +17,8 @@
     DATA_BEGINDATE=1800-01-01
     DATA_ENDDATE=2099-12-31
     ````
-6. Run docker compose up -d
-   How does he know that the data upload to  omop is done ?
-   Also in the PDF file there is an assumption of an existing omop database.. Do they need to install it or is it a container with ?
-7. Open a browser and login to http://domain:8888
+6. Run docker network create cloudbuild
+7. Run docker compose up -d
+8. Open a browser and login to http://domain:8888
 8. Open the jupyter notebook named ...
 9. Run the notebook after data is uploaded to omop from fhir.
