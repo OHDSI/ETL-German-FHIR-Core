@@ -25,5 +25,5 @@
 6. Run `docker network create cloudbuild` . The important part here is to make sure the omop conversion application is on the same network as the fhir server to detect it.
 7. Run `docker compose up -d`
 8. Open a browser and login to http://localhost:8888
-8. Open the jupyter notebook named ...
+8. Open the jupyter notebook named query/omop_queries.ipynb. The token can be found in docker-compose.yml. You can change it as per your need.
 9. Run the notebook after data is uploaded to omop from fhir.
