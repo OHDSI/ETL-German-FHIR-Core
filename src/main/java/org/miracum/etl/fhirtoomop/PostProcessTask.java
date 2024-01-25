@@ -163,7 +163,7 @@ public class PostProcessTask implements Tasklet {
           executeSqlScripts.executeSQLScript(datesOfHistoryOfTravel);
           executeSqlScripts.executeSQLScript(conditionEra);
           executeSqlScripts.executeSQLScript(drugEra);
-          executeSqlScripts.executeSQLScript(endLoad);
+//          executeSqlScripts.executeSQLScript(endLoad);
           break;
         default:
           return RepeatStatus.FINISHED;
