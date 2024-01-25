@@ -81,12 +81,6 @@ services:
     depends_on:
       omop-db-postgress:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "/home/health/check-status.sh"]
-      interval: 600s
-      timeout: 30s
-      start_period: 30s
-      retries: 5
     networks:
       - cloudbuild
       - default
