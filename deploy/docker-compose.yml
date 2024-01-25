@@ -25,6 +25,9 @@ services:
       timeout: 30s
       start_period: 30s
       retries: 5
+    networks:
+      - cloudbuild
+      - default
 
   ohdsi-germany:
     image: fhir-to-omop:latest
@@ -84,6 +87,9 @@ services:
       timeout: 30s
       start_period: 30s
       retries: 5
+    networks:
+      - cloudbuild
+      - default
 
   jupyter:
     container_name: jupyter_notebook
@@ -98,6 +104,14 @@ services:
     depends_on:
       ohdsi-germany:
         condition: service_healthy
+    networks:
+      - cloudbuild
+      - default
 
 volumes:
   omop-postgress:
+
+networks:
+  cloudbuild:
+    external: true
+    name: cloudbuild # Needed for Continuous integration
