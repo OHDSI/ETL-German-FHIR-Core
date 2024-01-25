@@ -6,6 +6,6 @@ BEGIN
     );
 
     INSERT INTO cds_cdm.load_status (write_status) VALUES ('started');
-    RAISE NOTICE "OMOP Vocab loaded - starting FHIR to OMOP conversion now!";
+    RAISE LOG "OMOP Vocab loaded - starting FHIR to OMOP conversion now!";
 END;
 $$;

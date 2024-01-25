@@ -2,7 +2,7 @@
 
 ## Setup development environment with data generated from synthea
 1. Clone the repo https://github.com/DigitalHealthIntegration/hapi-fhir-jpaserver-starter `git clone -b ss/synthea https://github.com/DigitalHealthIntegration/hapi-fhir-jpaserver-starter`
-2. Run `docker network create cloudbuild` . The important part here is to make sure the omop conversion application is on the same network as the fhir server to detect it.
+2. Run `docker network create cloudbuild` . The important part here is to make sure the omop conversion application is on the same network as the fhir server to detect it. Ignore if network already exists.
 3. Follow the [README](https://github.com/DigitalHealthIntegration/hapi-fhir-jpaserver-starter/blob/ss/synthea/README.md)
 
 ## Steps to run v1 of the data assessment tool in your env.
@@ -23,7 +23,8 @@
     DATA_BEGINDATE=1800-01-01
     DATA_ENDDATE=2099-12-31
     ````
-7. Run `docker compose up -d`
-8. Open a browser and login to http://localhost:8888
-9. Open the jupyter notebook named query/omop_queries.ipynb. The token can be found in docker-compose.yml. You can change it as per your need.
-10. Run the notebook after data is uploaded to omop from fhir.
+7. Run `docker network create cloudbuild` . The important part here is to make sure the omop conversion application is on the same network as the fhir server to detect it. Ignore if network already exists.
+8. Run `docker compose up -d`
+9. Open a browser and login to http://localhost:8888
+10. Open the jupyter notebook named query/omop_queries.ipynb. The token can be found in docker-compose.yml. You can change it as per your need.
+11. Run the notebook after data is uploaded to omop from fhir.
