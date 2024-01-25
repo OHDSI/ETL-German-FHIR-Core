@@ -458,7 +458,6 @@ public class TaskConfiguration {
     return new FlowBuilder<SimpleFlow>("bulkload")
         .start(stepProcessPatients)
         .next(stepProcessEncounterInstitutionContact)
-        .next(stepEncounterDepartmentCase)
         .next(medicationStepsFlow)
         .next(stepProcessConditions)
         .next(stepProcessObservations)

@@ -74,8 +74,8 @@ public class PostProcessTask implements Tasklet {
 //            new ClassPathResource("post_processing/post_process_visit_detail_in_other_table.sql");
     Resource visitDetailUpdates =
         new ClassPathResource("post_processing/post_process_visit_detail_updates.sql");
-    Resource locationUpdates =
-        new ClassPathResource("post_processing/post_process_location_updates.sql");
+//    Resource locationUpdates =
+//        new ClassPathResource("post_processing/post_process_location_updates.sql");
     Resource visitAdmDis = new ClassPathResource("post_processing/post_process_visit_adm_dis.sql");
     Resource death = new ClassPathResource("post_processing/post_process_death.sql");
     Resource cleanUpFactRelationship =
@@ -89,10 +89,11 @@ public class PostProcessTask implements Tasklet {
         new ClassPathResource("post_processing/post_process_history_of_travel.sql");
     Resource conditionEra = new ClassPathResource("post_processing/post_process_condition_era.sql");
     Resource drugEra = new ClassPathResource("post_processing/post_process_drug_era.sql");
+    Resource endLoad = new ClassPathResource("post_processing/post_process_drug_era.sql");
 
     if (ifBulkLoad.equals(Boolean.FALSE)) {
       executeSqlScripts.executeSQLScript(observationPeriod);
-      executeSqlScripts.executeSQLScript(locationUpdates);
+//      executeSqlScripts.executeSQLScript(locationUpdates);
       executeSqlScripts.executeSQLScript(visitAdmDis);
       executeSqlScripts.executeSQLScript(visitDetailUpdates);
 //       executeSqlScripts.executeSQLScript(visitDetailInOtherTable);
@@ -146,7 +147,7 @@ public class PostProcessTask implements Tasklet {
           break;
         case "":
           executeSqlScripts.executeSQLScript(observationPeriod);
-          executeSqlScripts.executeSQLScript(locationUpdates);
+//          executeSqlScripts.executeSQLScript(locationUpdates);
           executeSqlScripts.executeSQLScript(visitAdmDis);
           executeSqlScripts.executeSQLScript(visitDetailUpdates);
 //          executeSqlScripts.executeSQLScript(visitDetailInOtherTable);
@@ -162,7 +163,7 @@ public class PostProcessTask implements Tasklet {
           executeSqlScripts.executeSQLScript(datesOfHistoryOfTravel);
           executeSqlScripts.executeSQLScript(conditionEra);
           executeSqlScripts.executeSQLScript(drugEra);
-
+          executeSqlScripts.executeSQLScript(endLoad);
           break;
         default:
           return RepeatStatus.FINISHED;

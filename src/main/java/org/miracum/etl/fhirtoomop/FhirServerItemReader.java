@@ -89,11 +89,11 @@ public class FhirServerItemReader extends AbstractPagingItemReader<FhirPsqlResou
             .forResource(resourceTypeName)
             .returnBundle(Bundle.class)
             .count(getPageSize());
-    if (stepName.equals(STEP_ENCOUNTER_DEPARTMENT_KONTAKT)) {
-      return query.and(Encounter.TYPE.exactly().code("abteilungskontakt"));
-    } else if (stepName.equals(STEP_ENCOUNTER_INSTITUTION_KONTAKT)) {
-      return query.and(Encounter.TYPE.exactly().code("einrichtungskontakt"));
-    }
+//    if (stepName.equals(STEP_ENCOUNTER_DEPARTMENT_KONTAKT)) {
+//      return query.and(Encounter.TYPE.exactly().code("abteilungskontakt"));
+//    } else if (stepName.equals(STEP_ENCOUNTER_INSTITUTION_KONTAKT)) {
+//      return query.and(Encounter.TYPE.exactly().code("einrichtungskontakt"));
+//    }
     return query;
   }
 
