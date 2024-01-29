@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 if psql -U ohdsi_admin_user -d ohdsi -c "SELECT * FROM cds_cdm.load_status;" | grep -q "started";  then
   exit 0  # Table exists, return healthy
