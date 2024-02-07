@@ -112,6 +112,12 @@ fhir:
       - "https://miracum.org/fhir/CodeSystem/p21/observations"
       - "http://snomed.info/sct"
       - "https://www.netzwerk-universitaetsmedizin.de/fhir/CodeSystem/ecrf-parameter-codes"
+      - "http://iprd.org/guides/anc/CodeSystem/iprd-custom-codes"
+      - "http://fhir.org/guides/who/anc-cds/CodeSystem/anc-custom-codes"
+      - "http://iprdgroup.com/guides/anc/CodeSystem/iprd-custom-codes"
+      - "http://iprdsolutions.com/fhir/uv/anc/CodeSystem/iprd-custom-codes"
+      - "https://iprdgroup.com/custom-codes"
+      - "http://hl7.org/fhir/sid/icd-10"
     admission-reason:
       - "https://www.medizininformatik-initiative.de/fhir/core/CodeSystem/Aufnahmegrund"
       - "https://www.medizininformatik-initiative.de/fhir/modul-fall/core/CodeSystem/Aufnahmegrund"
@@ -135,6 +141,7 @@ fhir:
       - "http://fhir.de/CodeSystem/dimdi/atc"
       - "http://fhir.de/CodeSystem/bfarm/atc"
       - "http://snomed.info/sct"
+      - "http://www.nlm.nih.gov/research/umls/rxnorm"
     procedure-site-localization:
       - "https://fhir.kbv.de/CodeSystem/KBV_CS_SFHIR_ICD_SEITENLOKALISATION"
       - "https://applications.kbv.de/S_ICD_SEITENLOKALISATION_V1.00.xhtml"
@@ -147,14 +154,24 @@ fhir:
       - "http://fhir.de/CodeSystem/bfarm/icd-10-gm"
       - "http://snomed.info/sct"
       - "http://www.orpha.net"
+      - "http://iprd.org/guides/anc/CodeSystem/iprd-custom-codes"
+      - "http://fhir.org/guides/who/anc-cds/CodeSystem/anc-custom-codes"
+      - "http://iprdgroup.com/guides/anc/CodeSystem/iprd-custom-codes"
+      - "http://iprdsolutions.com/fhir/uv/anc/CodeSystem/iprd-custom-codes"
     vaccine-code:
       - "http://fhir.de/CodeSystem/dimdi/atc"
       - "http://fhir.de/CodeSystem/bfarm/atc"
       - "http://snomed.info/sct"
+      - "http://fhir.org/guides/who/anc-cds/CodeSystem/anc-custom-codes"
+      - "http://iprdgroup.com/guides/anc/CodeSystem/iprd-custom-codes"
+      - "http://iprd.org/guides/anc/CodeSystem/iprd-custom-codes"
+      - "http://iprdsolutions.com/fhir/uv/anc/CodeSystem/iprd-custom-codes"
     diagnostic-report-category:
       - "http://loinc.org"
       - "http://terminology.hl7.org/CodeSystem/v2-0074"
-
+    identifier-system:
+      - "http://iprdgroup.com/identifiers/ocl"
+      - "http://iprdgroup.com/identifiers/patient-card"
 opentracing:
   jaeger:
     enabled: false

@@ -688,6 +688,8 @@ public class FindOmopConcepts {
         return SOURCE_VOCABULARY_ID_ECRF_PARAMETER;
       case GECCOSOFASCORE:
         return SOURCE_VOCABULARY_SOFA_CATEGORY;
+      case DIAGNOSECODE:
+        return SOURCE_VOCABULARY_ID_DIAGNOSTIC_REPORT_CATEGORY;
       default:
         return null;
     }

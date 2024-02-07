@@ -55,6 +55,7 @@ public class FhirSystems {
   private static String geccoSofaScore;
   private static String geccoFrailtyScore;
   private static List<String> diagnosticReportCategory;
+  private static List<String> identifierSystem;
 
   public enum fhirEnum {
     LOINC(loinc),
@@ -90,7 +91,8 @@ public class FhirSystems {
     GECCOCOMPONENTS(geccoComponents),
     GECCOSOFASCORE(geccoSofaScore),
     GECCOFRAILTYSCORE(geccoFrailtyScore),
-    DIAGNOSTICREPORTCATEGORY(diagnosticReportCategory);
+    DIAGNOSTICREPORTCATEGORY(diagnosticReportCategory),
+    IDENTIFIERSYSTEM(identifierSystem);
 
     private String singleUrl;
     private List<String> multipleUrls;
@@ -439,5 +441,13 @@ public class FhirSystems {
 
   public void setDiagnosticReportCategory(List<String> diagnosticReportCategory) {
     FhirSystems.diagnosticReportCategory = diagnosticReportCategory;
+  }
+
+  public List<String> getIdentifierSystem() {
+    return identifierSystem;
+  }
+
+  public void setIdentifierSystem(List<String> identifierSystem) {
+    FhirSystems.identifierSystem = identifierSystem;
   }
 }

@@ -138,6 +138,16 @@ public class ResourceFhirReferenceUtils {
     var identifierList = fhirPath.evaluate(resource, identifierByTypePath, StringType.class);
 
     if (identifierList.isEmpty()) {
+      for (String identifierSystem : fhirSystems.getIdentifierSystem()) {
+        identifierByTypePath =
+            String.format("identifier.where(system='%s').value", identifierSystem);
+        identifierList = fhirPath.evaluate(resource, identifierByTypePath, StringType.class);
+        if (!identifierSystem.isEmpty()) {
+          break;
+        }
+      }
+    }
+    if (identifierList.isEmpty()) {
       return null;
     }
 
