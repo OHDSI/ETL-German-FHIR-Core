@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hl7.fhir.r4.model.Coding;
@@ -115,6 +117,10 @@ public class ConditionMapper implements FhirMapper<Condition> {
     var wrapper = new OmopModelWrapper();
 
     var conditionLogicId = fhirReferenceUtils.extractId(srcCondition);
+//    var result = Objects.equals(conditionLogicId, "con-ad38f601-28a0-4032-bcf6-25b9da11b54a");
+//    if(!result){
+//      return null;
+//    }
     var conditionSourceIdentifier = fhirReferenceUtils.extractResourceFirstIdentifier(srcCondition);
     if (Strings.isNullOrEmpty(conditionLogicId)
         && Strings.isNullOrEmpty(conditionSourceIdentifier)) {
@@ -435,7 +441,29 @@ public class ConditionMapper implements FhirMapper<Condition> {
       }
 
     } else {
-      return;
+      snomedConcept =
+              findOmopConcepts.getConcepts(
+                      diagnoseCoding,
+                      diagnoseOnset.getStartDateTime().toLocalDate(),
+                      bulkload,
+                      dbMappings,
+                      conditionId);
+
+      if (snomedConcept == null) {
+        return;
+      }
+
+      icdProcessor(
+              null,
+              snomedConcept,
+              null,
+              wrapper,
+              diagnoseOnset,
+              diagnosticConfidenceConcept,
+              conditionLogicId,
+              conditionSourceIdentifier,
+              personId,
+              visitOccId);
     }
 
     setBodySiteLocalization(
@@ -919,6 +947,10 @@ public class ConditionMapper implements FhirMapper<Condition> {
       Integer diagnoseConceptId,
       Integer diagnoseSourceConceptId,
       String domain) {
+    if(domain == null){
+      log.warn("fhirId = {}={}",conditionLogicId,domain);
+      return;
+    }
     switch (domain) {
       case OMOP_DOMAIN_CONDITION:
         var condition =

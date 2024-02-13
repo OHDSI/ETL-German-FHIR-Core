@@ -8,6 +8,7 @@ import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_OBSERVATION;
 import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_PROCEDURE;
 import static org.miracum.etl.fhirtoomop.Constants.SOURCE_VOCABULARY_ID_PROCEDURE_BODYSITE;
 import static org.miracum.etl.fhirtoomop.Constants.SOURCE_VOCABULARY_ID_PROCEDURE_DICOM;
+import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_IPRD;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_OPS;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_SNOMED;
 
@@ -20,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hl7.fhir.r4.model.CodeableConcept;
@@ -65,7 +68,7 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
   private final Boolean bulkload;
   private final DbMappings dbMappings;
   private final List<String> listOfProcedureVocabularyId =
-      Arrays.asList(SOURCE_VOCABULARY_ID_PROCEDURE_DICOM, VOCABULARY_OPS, VOCABULARY_SNOMED);
+      Arrays.asList(SOURCE_VOCABULARY_ID_PROCEDURE_DICOM, VOCABULARY_OPS, VOCABULARY_SNOMED, VOCABULARY_IPRD);
 
   private static final Counter noStartDateCounter =
       MapperMetrics.setNoStartDateCounter("stepProcessProcedures");
@@ -115,6 +118,10 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
     var wrapper = new OmopModelWrapper();
 
     var procedureLogicId = fhirReferenceUtils.extractId(srcProcedure);
+//    var result = Objects.equals(procedureLogicId, "pro-eacbd598-192d-4057-9822-0dabf4e2b720");
+//    if(!result){
+//      return null;
+//    }
     var procedureSourceIdentifier = fhirReferenceUtils.extractResourceFirstIdentifier(srcProcedure);
     if (Strings.isNullOrEmpty(procedureLogicId)
         && Strings.isNullOrEmpty(procedureSourceIdentifier)) {
@@ -434,6 +441,33 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
           personId,
           visitOccId,
           procedureId);
+    }else if (procedureVocabularyId.equals(VOCABULARY_IPRD)) {
+      // for IPRD codes
+
+      snomedConcept =
+              findOmopConcepts.getConcepts(
+                      procedureCoding,
+                      procedureStartDatetime.toLocalDate(),
+                      bulkload,
+                      dbMappings,
+                      procedureId);
+
+      if (snomedConcept == null) {
+        return;
+      }
+
+      procedureProcessor(
+              null,
+              snomedConcept,
+              null,
+              wrapper,
+              procedureBodySiteLocalization,
+              procedureStartDatetime,
+              procedureLogicId,
+              procedureSourceIdentifier,
+              personId,
+              visitOccId,
+              procedureId);
     }
   }
 
@@ -625,6 +659,10 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
       Integer procedureSourceConceptId,
       String domain,
       String procedureId) {
+    if(domain == null){
+      log.warn("fhirId = {}={}",procedureId,domain);
+      return;
+    }
     switch (domain) {
       case OMOP_DOMAIN_PROCEDURE:
         var procedure =

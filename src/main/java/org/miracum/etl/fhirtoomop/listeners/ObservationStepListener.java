@@ -1,5 +1,6 @@
 package org.miracum.etl.fhirtoomop.listeners;
 
+import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_IPRD;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_LOINC;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_SNOMED;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_UCUM;
@@ -115,6 +116,10 @@ public class ObservationStepListener implements StepExecutionListener {
           .getOmopConceptMapWrapper()
           .setFindValidLoincConcept(
               repositories.getConceptRepository().findValidConceptId(VOCABULARY_LOINC));
+      dbMappings
+              .getOmopConceptMapWrapper()
+              .setFindValidIPRDConcept(
+                      repositories.getConceptRepository().findValidConceptId(VOCABULARY_IPRD));
       dbMappings
           .getOmopConceptMapWrapper()
           .setFindValidUcumConcept(

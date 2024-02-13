@@ -1,5 +1,6 @@
 package org.miracum.etl.fhirtoomop.listeners;
 
+import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_IPRD;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_OPS;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_SNOMED;
 
@@ -118,6 +119,10 @@ public class ProcedureStepListener implements StepExecutionListener {
           .getOmopConceptMapWrapper()
           .setFindValidSnomedConcept(
               repositories.getConceptRepository().findValidConceptId(VOCABULARY_SNOMED));
+      dbMappings
+              .getOmopConceptMapWrapper()
+              .setFindValidIPRDConcept(
+                      repositories.getConceptRepository().findValidConceptId(VOCABULARY_IPRD));
     }
     dbMappings.setFindHardCodeConcept(
         repositories.getSourceToConceptRepository().sourceToConceptMap());

@@ -45,6 +45,7 @@ public class Constants {
   public static final String VOCABULARY_OPS = "OPS";
   public static final String VOCABULARY_SNOMED = "SNOMED";
   public static final String VOCABULARY_DOMAIN = "Domain";
+  public static final String VOCABULARY_IPRD = "IPRD";
 
   public static final String SOURCE_VOCABULARY_ID_GENDER = "Gender";
   public static final String SOURCE_VOCABULARY_ID_PROCEDURE_BODYSITE = "Procedure Bodysite";
