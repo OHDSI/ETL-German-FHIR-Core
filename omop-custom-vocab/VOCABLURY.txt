@@ -1,0 +1,2 @@
+vocabulary_id	vocabulary_name	vocabulary_reference	vocabulary_version	vocabulary_concept_id
+IPRD	Observation names and codes	https://iprd.org/fhir	IPRD 1.0	45756806

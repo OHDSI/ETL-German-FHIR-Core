@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+
 import lombok.extern.slf4j.Slf4j;
 import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.Encounter.EncounterLocationComponent;
@@ -106,6 +108,10 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
     var wrapper = new OmopModelWrapper();
 
     var departmentCaseLogicId = fhirReferenceUtils.extractId(srcDepartmentCaseEncounter);
+//    var result = Objects.equals(departmentCaseLogicId, "enc-d3f6b48d-07a6-4ec8-a3a4-358a991ab9bc");
+//    if(!result){
+//      return null;
+//    }
     var departmentCaseIdentifier =
         fhirReferenceUtils.extractIdentifier(srcDepartmentCaseEncounter, "VN");
     if (Strings.isNullOrEmpty(departmentCaseLogicId)

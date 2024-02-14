@@ -6,6 +6,7 @@ import static org.miracum.etl.fhirtoomop.Constants.FHIR_RESOURCE_ACCEPTABLE_EVEN
 import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_DRUG;
 import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_OBSERVATION;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_ATC;
+import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_IPRD;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_SNOMED;
 
 import com.google.common.base.Strings;
@@ -15,6 +16,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hl7.fhir.r4.model.Coding;
@@ -47,7 +50,7 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
   private final DbMappings dbMappings;
   private final Boolean bulkload;
   private final List<String> listOfImmunizationVocabularyId =
-      Arrays.asList(VOCABULARY_ATC, VOCABULARY_SNOMED);
+      Arrays.asList(VOCABULARY_ATC, VOCABULARY_SNOMED, VOCABULARY_IPRD);
 
   @Autowired OmopConceptServiceImpl omopConceptService;
   @Autowired ResourceFhirReferenceUtils fhirReferenceUtils;
@@ -81,6 +84,10 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
     var wrapper = new OmopModelWrapper();
 
     var immunizationLogicId = fhirReferenceUtils.extractId(srcImmunization);
+//    var result = Objects.equals(immunizationLogicId, "imm-02769f55-7a3b-49f5-8d96-2c2e07394c13");
+//    if(!result){
+//      return null;
+//    }
     var immunizationSourceIdentifier =
         fhirReferenceUtils.extractResourceFirstIdentifier(srcImmunization);
     if (Strings.isNullOrEmpty(immunizationLogicId)
@@ -277,6 +284,26 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
           personId,
           visitOccId,
           immunizationId);
+    }else if (immunizationVocabularyId.equals(VOCABULARY_IPRD)) {
+      // for SNOMED codes
+
+      var snomedCodingList = getSnomedCodingList(vaccineCoding);
+      var snomedStandardConcepts =
+              getSnomedConceptList(
+                      snomedCodingList, immunizationOnset, immunizationLogicId, immunizationId);
+
+      immunizationProcessor(
+              null,
+              snomedStandardConcepts,
+              wrapper,
+              dose,
+              route,
+              immunizationOnset,
+              immunizationLogicId,
+              immunizationSourceIdentifier,
+              personId,
+              visitOccId,
+              immunizationId);
     }
   }
 
@@ -472,6 +499,10 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
       Integer immunizationSourceConceptId,
       String domain,
       String immunizationId) {
+    if(domain == null){
+      log.warn("fhirId = {}={}",immunizationId,domain);
+      return;
+    }
     switch (domain) {
       case OMOP_DOMAIN_DRUG:
         var drug =
