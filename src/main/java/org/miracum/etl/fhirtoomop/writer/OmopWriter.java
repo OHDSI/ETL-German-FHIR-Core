@@ -73,6 +73,7 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
     writeMedicationIdMap(entries);
     writePostProcessMap(entries);
     writePerson(entries);
+    writeOrganization(entries);
     writeVisitDetail(entries);
     writeVisitOcc(entries);
     writeObservation(entries);
@@ -144,6 +145,19 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
       log.info("Inserting {} rows into person table", persons.size());
 
       repository.getPersonRepository().saveAll(persons);
+    }
+  }
+
+  private void writeOrganization(List<? extends OmopModelWrapper> entries) {
+    var organization =
+            entries.stream()
+                    .filter(entry -> entry.getCareSite() != null)
+                    .map(OmopModelWrapper::getCareSite)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+    if(!organization.isEmpty()){
+      log.info("Inserting {} rows into care_site table",organization.size());
+      repository.getCareSiteRepository().saveAll(organization);
     }
   }
 
