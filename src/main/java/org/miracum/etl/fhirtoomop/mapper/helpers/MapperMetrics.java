@@ -11,6 +11,13 @@ import io.micrometer.core.instrument.Metrics;
  */
 public class MapperMetrics {
 
+  public static Counter setStatusErrorCounter(String stepName){
+    return Counter.builder("resource.status.error")
+            .description("Status is not acceptable")
+            .tag("type", stepName)
+            .register(Metrics.globalRegistry);
+  }
+
   /**
    * Initialize a Counter for 'no start data found'
    *

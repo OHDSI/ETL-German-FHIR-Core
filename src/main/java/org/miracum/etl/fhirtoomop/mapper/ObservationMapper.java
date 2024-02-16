@@ -100,6 +100,9 @@ public class ObservationMapper implements FhirMapper<Observation> {
   private static final Counter deletedFhirReferenceCounter =
       MapperMetrics.setDeletedFhirRessourceCounter("stepProcessObservations");
 
+  private static final Counter statusErrorCounter =
+          MapperMetrics.setStatusErrorCounter("stepProcessObservations");
+
   /**
    * Constructor for objects of the class ObservationMapper.
    *
@@ -162,6 +165,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
           "The [status]: {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
           statusValue,
           observationId);
+      statusErrorCounter.increment();;
       return null;
     }
 

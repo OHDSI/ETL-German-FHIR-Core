@@ -25,6 +25,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -267,6 +268,7 @@ public class FhirToOmopJobListener implements JobExecutionListener {
     var exitStatus = jobExecution.getExitStatus();
     if (exitStatus.equals(ExitStatus.COMPLETED)) {
       logResults(jobExecution);
+      logSkippedReasons(jobExecution);
       //    logSkippedReasons(jobExecution);
       var endJob = "==== Job End ====";
       log.info("=".repeat(endJob.length()));
@@ -359,18 +361,28 @@ public class FhirToOmopJobListener implements JobExecutionListener {
     log.info(sepLine);
     log.info(header);
     log.info(sepLine);
+
+    String previousStep = null; // To keep track of the previous step
+
     for (var counter : getCounters(jobExecution)) {
       if ((int) counter.count() == 0) {
         continue;
       }
-      log.info(
-          String.format(
-              format,
-              counter.getId().getTag("type"),
-              counter.getId().getDescription(),
-              (int) counter.count()));
+
+      String currentStep = counter.getId().getTag("type"); // Current step
+
+      // Print current step only if it's different from the previous one
+      if (!Objects.equals(currentStep, previousStep)) {
+        log.info(String.format(format, currentStep, counter.getId().getDescription(), (int) counter.count()));
+      } else {
+        // If it's the same step, print an empty string for the step column
+        log.info(String.format(format, "", counter.getId().getDescription(), (int) counter.count()));
+      }
+
+      previousStep = currentStep; // Update previous step
     }
   }
+
 
   /**
    * Retrieve all Counters from global Metrics.
@@ -386,6 +398,7 @@ public class FhirToOmopJobListener implements JobExecutionListener {
       counters.add(Metrics.counter("invalid.code", "type", stepExecution.getStepName()));
       counters.add(Metrics.counter("no.source.code", "type", stepExecution.getStepName()));
       counters.add(Metrics.counter("no.fhir.reference", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("resource.status.error", "type", stepExecution.getStepName()));
     }
     return counters;
   }
