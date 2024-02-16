@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.Patient;
 import org.miracum.etl.fhirtoomop.mapper.FhirMapper;
+import org.miracum.etl.fhirtoomop.mapper.OrganizationMapper;
 import org.miracum.etl.fhirtoomop.model.FhirPsqlResource;
 import org.miracum.etl.fhirtoomop.model.OmopModelWrapper;
 
@@ -19,7 +20,7 @@ public class OrganizationProcessor extends ResourceProcessor<Organization> {
      * @param fhirParser parser which converts between the HAPI FHIR model/structure objects and their
      *                   respective String wire format (JSON)
      */
-    public OrganizationProcessor(FhirMapper<Organization> mapper, IParser fhirParser) {
+    public OrganizationProcessor(OrganizationMapper mapper, IParser fhirParser) {
         super(mapper, fhirParser);
     }
 

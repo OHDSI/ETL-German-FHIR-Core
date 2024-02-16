@@ -32,7 +32,7 @@ public interface CareSiteRepository extends PagingAndSortingRepository<CareSite,
    * @return a map with all records from care_site table using care_site_source_value as key
    */
   default Map<String, CareSite> careSitesMap() {
-    return findAll().stream().collect(Collectors.toMap(CareSite::getCareSiteName, v -> v));
+    return findAll().stream().collect(Collectors.toMap(CareSite::getCareSiteSourceValue, v -> v));
   }
 
   @Transactional

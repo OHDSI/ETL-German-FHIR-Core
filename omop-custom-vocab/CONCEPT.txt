@@ -26,129 +26,202 @@ concept_id	concept_name	domain_id	vocabulary_id	concept_class_id	standard_concep
 60000024	LLIN given	Observation	IPRD	Survey	s	llin-given	20120608	20991231	
 60000025	Associated problem	Observation	IPRD	Survey	s	IPRD.DE8	20120608	20991231	
 60000026	Outcome of visit	Observation	IPRD	Survey	s	outcome-of-visit	20120608	20991231	
-60000027	Last menstrual period (LMP) date	Observation	IPRD	Survey	s	ANC.B6.DE14	20120608	20991231
-60000028	Female Genital Mutilation	Procedure	IPRD	Surevy	s	IPRD.DE1	20120608	20991231		
-60000031	Foetal Position	Observation	IPRD	Survey	s	ANC.B8.DE111	20120608	20991231	
-60000032	foetal heart sound	Observation	IPRD	Survey	s	ANC.B8.DE106	20120608	20991231	
-60000033	Foetal Height	Measurement	IPRD	Survey	s	ANC.B6.DE21	20120608	20991231	
-60000034	Foetal Movement	Observation	IPRD	Survey	s	ANC-B7-DE98	20120608	20991231	
-60000035	Parity	Observation	IPRD	Survey	s	ANC.B6.DE32	20120608	20991231	
-60000036	Delivery date	Observation	IPRD	Survey	s	ANC.End.12	20120608	20991231	
-60000037	Delivery mode	Observation	IPRD	Survey	s	ANC.End.18	20120608	20991231	
-60000038	Delivery complications	Observation	IPRD	Survey	s	ANC.End.25	20120608	20991231	
-60000039	Counselling on postpartum family planning conducted	Observation	IPRD	Survey	s	ANC.B10.DE144	20120608	20991231	
-60000040	Birth weight	Measurement	IPRD	Survey	s	ANC.End.23	20120608	20991231	
-60000041	Preterm Birth	Observation	IPRD	Survey	s	ANC.End.17	20120608	20991231	
-60000042	Hematocrit [Volume Fraction] of Blood	Measurement	IPRD	Survey	s	20570-8	20120608	20991231	
-60000043	Reason Referred Out	Observation	IPRD	Survey	s	reason-referred-out	20120608	20991231	
-60000044	Family planning method selected	Observation	IPRD	Survey	s	ANC.B10.DE145	20120608	20991231	
-60000045	Birth Certificate Collection Date	Observation	IPRD	Survey	s	IPRD.DE187	20120608	20991231	
-60000046	Birth Certificate Issued Date	Observation	IPRD	Survey	s	IPRD.DE186	20120608	20991231	
-60000047	Bilateral Pitting Oedema	Observation	IPRD	Survey	s	IPRD.DE174	20120608	20991231	
-60000048	Infant Feeding	Observation	IPRD	Survey	s	IPRD.DE168	20120608	20991231	
-60000049	The client was referred for Oral Contraceptives	Observation	IPRD	Survey	s	IPRD.DE160	20120608	20991231	
-60000050	Biometric Data	Observation	IPRD	Survey	s	IPRD.DE156	20120608	20991231	
-60000051	Type of visit	Observation	IPRD	Survey	s	IPRD.DE155	20120608	20991231	
-60000052	Mid Upper Arm Circumference	Measurement	IPRD	Survey	s	IPRD.DE154	20120608	20991231	
-60000053	Outcome of Visit	Observation	IPRD	Survey	s	IPRD.DE125	20120608	20991231	
-60000054	KMC Status	Observation	IPRD	Survey	s	IPRD.DE116	20120608	20991231	
-60000055	Birth Day	Observation	IPRD	Survey	s	IPRD.DE108	20120608	20991231	
-60000056	Complementary Feeding	Observation	IPRD	Survey	s	IPRD.DE106	20120608	20991231	
-60000057	Delivery Day	Observation	IPRD	Survey	s	IPRD.DE101	20120608	20991231	
-60000058	Type of FP Client	Observation	IPRD	Survey	s	IPRD.DE97	20120608	20991231	
-60000059	First Time Modern FP User	Observation	IPRD	Survey	s	IPRD.DE96	20120608	20991231	
-60000060	Postnatal Clinic Attendance	Observation	IPRD	Survey	s	IPRD.DE90	20120608	20991231	
-60000061	Counselling on Family Planning	Observation	IPRD	Survey	s	IPRD.DE85	20120608	20991231	
-60000062	Counselling on Exclusive breastfeeding	Observation	IPRD	Survey	s	IPRD.DE78	20120608	20991231	
-60000063	Body Temperature at 1 hour	Measurement	IPRD	Survey	s	IPRD.DE77	20120608	20991231	
-60000064	Breastfeeding and thermal care	Observation	IPRD	Survey	s	IPRD.DE74	20120608	20991231	
-60000065	Chlorhexidine (CHX) gel application	Observation	IPRD	Survey	s	IPRD.DE71	20120608	20991231	
-60000066	Time cord was clamped	Observation	IPRD	Survey	s	IPRD.DE68	20120608	20991231	
-60000067	Baby Dead	Observation	IPRD	Survey	s	IPRD.DE67	20120608	20991231	
-60000068	Stillbirth Type	Observation	IPRD	Survey	s	IPRD.DE63	20120608	20991231	
-60000069	Resuscitated with bag & mask	Observation	IPRD	Survey	s	IPRD.DE62	20120608	20991231	
-60000070	Not breathing/crying at birth	Observation	IPRD	Survey	s	IPRD.DE61	20120608	20991231	
-60000071	Abortion Type	Observation	IPRD	Survey	s	IPRD.DE53	20120608	20991231	
-60000072	MDA Conducted	Observation	IPRD	Survey	s	IPRD.DE52	20120608	20991231	
-60000073	Mother Alive Indicator	Observation	IPRD	Survey	s	IPRD.DE51	20120608	20991231	
-60000074	Pregnant women admitted with Eclampsia who received MgSO4	Observation	IPRD	Survey	s	IPRD.DE50	20120608	20991231	
-60000075	Transportation	Observation	IPRD	Survey	s	IPRD.DE47	20120608	20991231	
-60000076	Decision in seeking care	Observation	IPRD	Survey	s	IPRD.DE42	20120608	20991231	
-60000077	Type of Client	Observation	IPRD	Survey	s	IPRD.DE39	20120608	20991231	
-60000078	Received Misoprotol - Administered	Observation	IPRD	Survey	s	IPRD.DE33	20120608	20991231	
-60000079	Received Oxytoxin - Administered	Observation	IPRD	Survey	s	IPRD.DE32	20120608	20991231	
-60000080	Partograph Image	Observation	IPRD	Survey	s	IPRD.DE31	20120608	20991231	
-60000081	Birth Certificate Image	Observation	IPRD	Survey	s	IPRD.DE22	20120608	20991231	
-60000082	Admission Outcome	Observation	IPRD	Survey	s	IPRD.DE188	20120608	20991231	
-60000083	Gender Based Violence	Observation	IPRD	Survey	s	IPRD.DE193	20120608	20991231	
-60000084	Female Genital Mutilation	Procedure	IPRD	Survey	s	IPRD.DE1	20120608	20991231	
-60000085	Family Planning	Procedure	IPRD	Survey	s	IPRD.DE2	20120608	20991231	
-60000086	Maternal nutrition	Procedure	IPRD	Survey	s	IPRD.DE3	20120608	20991231	
-60000087	Exclusive breastfeeding	Procedure	IPRD	Survey	s	IPRD.DE13	20120608	20991231	
-60000088	HIV testing services	Procedure	IPRD	Survey	s	IPRD.DE14	20120608	20991231	
-60000089	HIV test conducted	Procedure	IPRD	Survey	s	IPRD.DE15	20120608	20991231	
-60000090	Counselling on postpartum family planning not conducted	Procedure	IPRD	Survey	s	IPRD.DE81	20120608	20991231	
-60000091	Counselling on Family Planning	Procedure	IPRD	Survey	s	IPRD.DE85	20120608	20991231	
-60000092	Complementary Feeding	Procedure	IPRD	Survey	s	IPRD.DE106	20120608	20991231	
-60000093	Infection Prevention	Procedure	IPRD	Survey	s	IPRD.DE107	20120608	20991231	
-60000094	Vaginal Examination	Procedure	IPRD	Survey	s	IPRD.DE119	20120608	20991231	
-60000095	Post exposure prophylaxis PEP test conducted	Procedure	IPRD	Survey	s	IPRD.DE231	20120608	20991231	
-60000096	STD/STI test conducted	Procedure	IPRD	Survey	s	IPRD.DE232	20120608	20991231	
-60000097	General Counselling conducted	Procedure	IPRD	Survey	s	IPRD.DE233	20120608	20991231	
-60000098	Heart	Condition	IPRD	Survey	s	IPRD.DE9	20120608	20991231	
-60000099	YAWS	Condition	IPRD	Survey	s	IPRD.DE10	20120608	20991231	
-60000100	Diarrhoea in the newborn	Condition	IPRD	Survey	s	IPRD.DE93	20120608	20991231	
-60000101	Mastitis of the left breast	Condition	IPRD	Survey	s	IPRD.DE94	20120608	20991231	
-60000102	Fast Breathing (above 60 breaths per minute)	Condition	IPRD	Survey	s	IPRD.DE109	20120608	20991231	
-60000103	Chest In-drawing	Condition	IPRD	Survey	s	IPRD.DE110	20120608	20991231	
-60000104	Temperature (less 35.5oC or more than 37.5oC)	Condition	IPRD	Survey	s	IPRD.DE111	20120608	20991231	
-60000105	Not Feeding	Condition	IPRD	Survey	s	IPRD.DE112	20120608	20991231	
-60000106	No Movement and Convulsion	Condition	IPRD	Survey	s	IPRD.DE113	20120608	20991231	
-60000107	Tetanus	Condition	IPRD	Survey	s	IPRD.DE114	20120608	20991231	
-60000108	Jaundice	Condition	IPRD	Survey	s	IPRD.DE115	20120608	20991231	
-60000109	Malaria	Condition	IPRD	Survey	s	IPRD.DE221	20120608	20991231	
-60000110	Tuberculosis	Condition	IPRD	Survey	s	IPRD.DE222	20120608	20991231	
-60000111	Diabetes	Condition	IPRD	Survey	s	IPRD.DE223	20120608	20991231	
-60000112	Cholera	Condition	IPRD	Survey	s	IPRD.DE224	20120608	20991231	
-60000113	Typhoid	Condition	IPRD	Survey	s	IPRD.DE225	20120608	20991231	
-60000114	Long-lasting Insecticidal Nets (LLINs)	Drug	IPRD	Survey	s	IPRD.DE20	20120608	20991231	
-60000115	IPTp-SP dose 4 provided	Drug	IPRD	Survey	s	IPRD.DE45	20120608	20991231	
-60000116	IPTp-SP dose 5 provided	Drug	IPRD	Survey	s	IPRD.DE46	20120608	20991231	
-60000117	IPTp-SP dose 6 provided	Drug	IPRD	Survey	s	IPRD.DE82	20120608	20991231	
-60000118	IPTp-SP dose 7 provided	Drug	IPRD	Survey	s	IPRD.DE83	20120608	20991231	
-60000119	IPTp-SP dose 8 provided	Drug	IPRD	Survey	s	IPRD.DE84	20120608	20991231	
-60000120	TD1	Drug	IPRD	Survey	s	IPRD.DE120	20120608	20991231	
-60000121	TD2	Drug	IPRD	Survey	s	IPRD.DE121	20120608	20991231	
-60000122	TD3	Drug	IPRD	Survey	s	IPRD.DE122	20120608	20991231	
-60000123	TD4	Drug	IPRD	Survey	s	IPRD.DE123	20120608	20991231	
-60000124	TD5	Drug	IPRD	Survey	s	IPRD.DE124	20120608	20991231	
-60000125	Human papillomavirus	Drug	IPRD	Survey	s	IPRD.DE131	20120608	20991231	
-60000126	Measles 1	Drug	IPRD	Survey	s	IPRD.DE132	20120608	20991231	
-60000127	Measles 2	Drug	IPRD	Survey	s	IPRD.DE133	20120608	20991231	
-60000128	Measles 2	Drug	IPRD	Survey	s	IPRD.DE133	20120608	20991231	
-60000129	MenAfrivac	Drug	IPRD	Survey	s	IPRD.DE134	20120608	20991231	
-60000130	Yellow Fever	Drug	IPRD	Survey	s	IPRD.DE135	20120608	20991231	
-60000131	Vitamin A1	Drug	IPRD	Survey	s	IPRD.DE136	20120608	20991231	
-60000132	Vitamin A2	Drug	IPRD	Survey	s	IPRD.DE137	20120608	20991231	
-60000133	OPV 0	Drug	IPRD	Survey	s	IPRD.DE138	20120608	20991231	
-60000134	OPV 1	Drug	IPRD	Survey	s	IPRD.DE139	20120608	20991231	
-60000135	OPV 2	Drug	IPRD	Survey	s	IPRD.DE140	20120608	20991231	
-60000136	OPV 3	Drug	IPRD	Survey	s	IPRD.DE141	20120608	20991231	
-60000137	IPV	Drug	IPRD	Survey	s	IPRD.DE142	20120608	20991231	
-60000138	Penta 1	Drug	IPRD	Survey	s	IPRD.DE143	20120608	20991231	
-60000139	Penta 2	Drug	IPRD	Survey	s	IPRD.DE144	20120608	20991231	
-60000140	Penta 3	Drug	IPRD	Survey	s	IPRD.DE145	20120608	20991231	
-60000141	PCV 1	Drug	IPRD	Survey	s	IPRD.DE146	20120608	20991231	
-60000142	PCV 2	Drug	IPRD	Survey	s	IPRD.DE147	20120608	20991231	
-60000143	PCV 3	Drug	IPRD	Survey	s	IPRD.DE148	20120608	20991231	
-60000144	Rota 1	Drug	IPRD	Survey	s	IPRD.DE149	20120608	20991231	
-60000145	Rota 2	Drug	IPRD	Survey	s	IPRD.DE150	20120608	20991231	
-60000146	Rota 3	Drug	IPRD	Survey	s	IPRD.DE151	20120608	20991231	
-60000147	BCG	Drug	IPRD	Survey	s	IPRD.DE152	20120608	20991231	
-60000148	Hep B 0(Birth)	Drug	IPRD	Survey	s	IPRD.DE153	20120608	20991231	
-60000152	Diabetes	Condition	IPRD	Survey	s	ANC.B6.DE90	20120608	20991231	
-60000153	Kidney	Condition	IPRD	Survey	s	ANC.B6.DE97	20120608	20991231	
-60000154	Operation/Surgery	Condition	IPRD	Survey	s	ANC.B6.DE72	20120608	20991231	
+60000027	Last menstrual period (LMP) date	Observation	IPRD	Survey	s	ANC.B6.DE14	20120608	20991231	
+60000028	Female Genital Mutilation	Procedure	IPRD	Survey	s	IPRD.DE1	20120608	20991231	
+60000201	Blood type-B	Observation	IPRD	Survey	s	ANC.B9.DE26	20120608	20991231	
+60000202	Blood type-AB	Observation	IPRD	Survey	s	ANC.B9.DE27	20120608	20991231	
+60000203	HIV negetive	Observation	IPRD	Survey	s	ANC.B9.DE43	20120608	20991231	
+60000204	Protien ++	Observation	IPRD	Survey	s	ANC.B9.DE147	20120608	20991231	
+60000205	Protien +++	Observation	IPRD	Survey	s	ANC.B9.DE148	20120608	20991231	
+60000206	Protien ++++	Observation	IPRD	Survey	s	ANC.B9.DE149	20120608	20991231	
+60000207	Sugar ++	Observation	IPRD	Survey	s	ANC.B9.DE153	20120608	20991231	
+60000208	Sugar +++	Observation	IPRD	Survey	s	ANC.B9.DE154	20120608	20991231	
+60000209	Sugarn ++++	Observation	IPRD	Survey	s	ANC.B9.DE155	20120608	20991231	
+60000210	Type of client - Un-bokked	Observation	IPRD	Survey	s	IPRD.DE41	20120608	20991231	
+60000211	Transportation In Others (includes bicycles,animal carriers, monocycles)	Observation	IPRD	Survey	s	IPRD.DE49	20120608	20991231	
+60000212	Cord clamped/cut 5 seconds after birth (i.e. immediately after birth)	Observation	IPRD	Survey	s	IPRD.DE70	20120608	20991231	
+60000213	Cord cleaned with methylated spirit and 4% CHX gel not applied	Observation	IPRD	Survey	s	IPRD.DE73	20120608	20991231	
+60000214	Baby put to breast in skin-to-skin with mother after 1 hour of birth	Observation	IPRD	Survey	s	IPRD.DE76	20120608	20991231	
+60000215	Had three pregnancies carried to term but one was still birth	Observation	IPRD	Survey	s	IPRD.DE87	20120608	20991231	
+60000216	Had six pregnancies, delivered four times but had two miscarriages at 12 and 26 weeks	Observation	IPRD	Survey	s	IPRD.DE88	20120608	20991231	
+60000217	Had three pregnancies, delivered three times but had two sets of twins	Observation	IPRD	Survey	s	IPRD.DE89	20120608	20991231	
+60000218	Cycle Beads	Observation	IPRD	Survey	s	IPRD.DE95	20120608	20991231	
+60000219	Post-Partum Family Planning	Observation	IPRD	Survey	s	IPRD.DE99	20120608	20991231	
+60000220	Post Abortion Care	Observation	IPRD	Survey	s	IPRD.DE100	20120608	20991231	
+60000221	Delivery Value - 2-3 Days	Observation	IPRD	Survey	s	IPRD.DE103	20120608	20991231	
+60000222	>7 Days	Observation	IPRD	Survey	s	IPRD.DE105	20120608	20991231	
+60000223	Baby on KMC now weighs >2.5kg and stable, is discharged from KMC	Observation	IPRD	Survey	s	IPRD.DE118	20120608	20991231	
+60000224	Outcome of Visit - Treated	Observation	IPRD	Survey	s	IPRD.DE127	20120608	20991231	
+60000225	Outcome of Visit - Admitted	Observation	IPRD	Survey	s	IPRD.DE128	20120608	20991231	
+60000226	Transportation out - Ambulance	Observation	IPRD	Survey	s	IPRD.DE130	20120608	20991231	
+60000227	The client was referred for Injectable	Observation	IPRD	Survey	s	IPRD.DE162	20120608	20991231	
+60000228	The client was referred for Implants	Observation	IPRD	Survey	s	IPRD.DE163	20120608	20991231	
+60000229	The client was referred for Intrauterine Device	Observation	IPRD	Survey	s	IPRD.DE164	20120608	20991231	
+60000230	The client was referred for surgical procedure (sterilization)	Observation	IPRD	Survey	s	IPRD.DE165	20120608	20991231	
+60000231	The client was referred for Medical Conditions relating to FP	Observation	IPRD	Survey	s	IPRD.DE166	20120608	20991231	
+60000232	Community Based Distributor	Observation	IPRD	Survey	s	IPRD.DE167	20120608	20991231	
+60000233	BreastFeeding + Water	Observation	IPRD	Survey	s	IPRD.DE170	20120608	20991231	
+60000234	Not BreastFeeding	Observation	IPRD	Survey	s	IPRD.DE172	20120608	20991231	
+60000235	Not Started Complementary Feedin	Observation	IPRD	Survey	s	IPRD.DE173	20120608	20991231	
+60000236	Bilateral Pitting Oedema	Observation	IPRD	Survey	s	IPRD.DE175	20120608	20991231	
+60000237	Grade 1 or (+): oedema is present in both feet	Observation	IPRD	Survey	s	IPRD.DE175	20120608	20991231	
+60000238	Vitamin A Supplement	Observation	IPRD	Survey	s	IPRD.DE179	20120608	20991231	
+60000239	Deworming Tablet	Observation	IPRD	Survey	s	IPRD.DE180	20120608	20991231	
+60000240	Micronutrient Powder	Observation	IPRD	Survey	s	IPRD.DE181	20120608	20991231	
+60000241	R - Referred	Observation	IPRD	Survey	s	IPRD.DE191	20120608	20991231	
+60000242	Rape/Sexual abuse	Observation	IPRD	Survey	s	IPRD.DE194	20120608	20991231	
+60000243	Physical/Emotional abuse	Observation	IPRD	Survey	s	IPRD.DE195	20120608	20991231	
+60000244	Fever	Observation	IPRD	Survey	s	IPRD.DE196	20120608	20991231	
+60000245	Cough	Observation	IPRD	Survey	s	IPRD.DE197	20120608	20991231	
+60000246	Headache	Observation	IPRD	Survey	s	IPRD.DE198	20120608	20991231	
+60000247	Chills	Observation	IPRD	Survey	s	IPRD.DE199	20120608	20991231	
+60000248	Fatigue	Observation	IPRD	Survey	s	IPRD.DE200	20120608	20991231	
+60000249	Nausea	Observation	IPRD	Survey	s	IPRD.DE201	20120608	20991231	
+60000250	Rashness	Observation	IPRD	Survey	s	IPRD.DE202	20120608	20991231	
+60000251	Abdominal Pain	Observation	IPRD	Survey	s	IPRD.DE203	20120608	20991231	
+60000252	Body Ache	Observation	IPRD	Survey	s	IPRD.DE204	20120608	20991231	
+60000253	Dizziness	Observation	IPRD	Survey	s	IPRD.DE205	20120608	20991231	
+60000254	Others	Observation	IPRD	Survey	s	others	20120608	20991231	
+60000255	Cannot be made out	Observation	IPRD	Survey	s	ANC.B8.DE112	20120608	20991231	
+60000256	Oblique	Observation	IPRD	Survey	s	ANC.B8.DE116	20120608	20991231	
+60000257	Transverse	Observation	IPRD	Survey	s	ANC.B8.DE115	20120608	20991231	
+60000258	Breech	Observation	IPRD	Survey	s	ANC.B8.DE114	20120608	20991231	
+60000259	C-section	Observation	IPRD	Survey	s	ANC.End.22	20120608	20991231	
+60000260	Urine test conducted	Procedure	IPRD	Survey	s	ANC.B9.DE114	20120608	20991231	
+60000261	IPTp-SP dose 1 provided	Drug	IPRD	Survey	s	ANC.B10.DE245	20120608	20991231	
+60000262	IPTp-SP dose 2 provided	Drug	IPRD	Survey	s	ANC.B10.DE247	20120608	20991231	
+60000263	IPTp-SP dose 3 provided	Drug	IPRD	Survey	s	ANC.B10.DE249	20120608	20991231	
+60000264	Tetanus toxoid (TT) 2 immunization provided	Drug	IPRD	Survey	s	ANC.B10.DE167	20120608	20991231	
+60000265	Tetanus toxoid (TT) 1 immunization provided	Drug	IPRD	Survey	s	ANC.B10.DE165	20120608	20991231	
+60000266	Tetanus toxoid (TT) 3 immunization provided	Drug	IPRD	Survey	s	ANC.End.22	20120608	ANC.B10.DE169	
+60000267	Tetanus toxoid (TT) 4 immunization provided	Drug	IPRD	Survey	s	ANC.B10.DE171	20120608	20991231	
+60000268	Tetanus toxoid (TT) 5 immunization provided	Drug	IPRD	Survey	s	ANC.B10.DE173	20120608	20991231	
+60000269	Reason syphilis test not done	Observation	IPRD	Survey	s	ANC.B9.DE102	20120608	20991231	
+60000270	Hepatitis B test result - Other reason test not conducted (specify)	Observation	IPRD	Survey	s	ANC.B9.DE69	20120608	20991231	
+60000271	Reason Hepatitis C test not done	Observation	IPRD	Survey	s	ANC.B9.DE84	20120608	20991231	
+60000272	Reason iron and folic acid not prescribed	Observation	IPRD	Survey	s	ANC.B10.DE96	20120608	20991231	
+60000273	Reason calcium not prescribed	IPRD	Survey	s	ANC.B10.DE108	20120608	20991231	
+70000031	Foetal Position	Observation	IPRD	Survey	s	ANC.B8.DE111	20120608	20991231	
+70000032	foetal heart sound	Observation	IPRD	Survey	s	ANC.B8.DE106	20120608	20991231	
+70000033	Foetal Height	Measurement	IPRD	Survey	s	ANC.B6.DE21	20120608	20991231	
+70000034	Foetal Movement	Observation	IPRD	Survey	s	ANC-B7-DE98	20120608	20991231	
+70000035	Parity	Observation	IPRD	Survey	s	ANC.B6.DE32	20120608	20991231	
+70000036	Delivery date	Observation	IPRD	Survey	s	ANC.End.12	20120608	20991231	
+70000037	Delivery mode	Observation	IPRD	Survey	s	ANC.End.18	20120608	20991231	
+70000038	Delivery complications	Observation	IPRD	Survey	s	ANC.End.25	20120608	20991231	
+70000039	Counselling on postpartum family planning conducted	Observation	IPRD	Survey	s	ANC.B10.DE144	20120608	20991231	
+70000040	Birth weight	Measurement	IPRD	Survey	s	ANC.End.23	20120608	20991231	
+70000041	Preterm Birth	Observation	IPRD	Survey	s	ANC.End.17	20120608	20991231	
+70000042	Hematocrit [Volume Fraction] of Blood	Measurement	IPRD	Survey	s	20570-8	20120608	20991231	
+70000043	Reason Referred Out	Observation	IPRD	Survey	s	reason-referred-out	20120608	20991231	
+70000044	Family planning method selected	Observation	IPRD	Survey	s	ANC.B10.DE145	20120608	20991231	
+70000082	Admission Outcome	Observation	IPRD	Survey	s	IPRD.DE188	20120608	20991231	
+70000045	Birth Certificate Collection Date	Observation	IPRD	Survey	s	IPRD.DE187	20120608	20991231	
+70000046	Birth Certificate Issued Date	Observation	IPRD	Survey	s	IPRD.DE186	20120608	20991231	
+70000047	Bilateral Pitting Oedema	Observation	IPRD	Survey	s	IPRD.DE174	20120608	20991231	
+70000048	Infant Feeding	Observation	IPRD	Survey	s	IPRD.DE168	20120608	20991231	
+70000049	The client was referred for Oral Contraceptives	Observation	IPRD	Survey	s	IPRD.DE160	20120608	20991231	
+70000050	Biometric Data	Observation	IPRD	Survey	s	IPRD.DE156	20120608	20991231	
+70000051	Type of visit	Observation	IPRD	Survey	s	IPRD.DE155	20120608	20991231	
+70000052	Mid Upper Arm Circumference	Measurement	IPRD	Survey	s	IPRD.DE154	20120608	20991231	
+70000053	Outcome of Visit	Observation	IPRD	Survey	s	IPRD.DE125	20120608	20991231	
+70000054	KMC Status	Observation	IPRD	Survey	s	IPRD.DE116	20120608	20991231	
+70000055	Birth Day	Observation	IPRD	Survey	s	IPRD.DE108	20120608	20991231	
+70000056	Complementary Feeding	Observation	IPRD	Survey	s	IPRD.DE106	20120608	20991231	
+70000057	Delivery Day	Observation	IPRD	Survey	s	IPRD.DE101	20120608	20991231	
+70000058	Type of FP Client	Observation	IPRD	Survey	s	IPRD.DE97	20120608	20991231	
+70000059	First Time Modern FP User	Observation	IPRD	Survey	s	IPRD.DE96	20120608	20991231	
+70000060	Postnatal Clinic Attendance	Observation	IPRD	Survey	s	IPRD.DE90	20120608	20991231	
+70000061	Counselling on Family Planning	Observation	IPRD	Survey	s	IPRD.DE85	20120608	20991231	
+70000062	Counselling on Exclusive breastfeeding	Observation	IPRD	Survey	s	IPRD.DE78	20120608	20991231	
+70000063	Body Temperature at 1 hour	Measurement	IPRD	Survey	s	IPRD.DE77	20120608	20991231	
+70000064	Breastfeeding and thermal care	Observation	IPRD	Survey	s	IPRD.DE74	20120608	20991231	
+70000065	Chlorhexidine (CHX) gel application	Observation	IPRD	Survey	s	IPRD.DE71	20120608	20991231	
+70000066	Time cord was clamped	Observation	IPRD	Survey	s	IPRD.DE68	20120608	20991231	
+70000067	Baby Dead	Observation	IPRD	Survey	s	IPRD.DE67	20120608	20991231	
+70000068	Stillbirth Type	Observation	IPRD	Survey	s	IPRD.DE63	20120608	20991231	
+70000069	Resuscitated with bag & mask	Observation	IPRD	Survey	s	IPRD.DE62	20120608	20991231	
+70000070	Not breathing/crying at birth	Observation	IPRD	Survey	s	IPRD.DE61	20120608	20991231	
+70000071	Abortion Type	Observation	IPRD	Survey	s	IPRD.DE53	20120608	20991231	
+70000072	MDA Conducted	Observation	IPRD	Survey	s	IPRD.DE52	20120608	20991231	
+70000073	Mother Alive Indicator	Observation	IPRD	Survey	s	IPRD.DE51	20120608	20991231	
+70000074	Pregnant women admitted with Eclampsia who received MgSO4	Observation	IPRD	Survey	s	IPRD.DE50	20120608	20991231	
+70000075	Transportation	Observation	IPRD	Survey	s	IPRD.DE47	20120608	20991231	
+70000076	Decision in seeking care	Observation	IPRD	Survey	s	IPRD.DE42	20120608	20991231	
+70000077	Type of Client	Observation	IPRD	Survey	s	IPRD.DE39	20120608	20991231	
+70000078	Received Misoprotol - Administered	Observation	IPRD	Survey	s	IPRD.DE33	20120608	20991231	
+70000079	Received Oxytoxin - Administered	Observation	IPRD	Survey	s	IPRD.DE32	20120608	20991231	
+70000080	Partograph Image	Observation	IPRD	Survey	s	IPRD.DE31	20120608	20991231	
+70000081	Birth Certificate Image	Observation	IPRD	Survey	s	IPRD.DE22	20120608	20991231	
+70000083	Gender Based Violence	Observation	IPRD	Survey	s	IPRD.DE193	20120608	20991231	
+70000084	Female Genital Mutilation	Procedure	IPRD	Survey	s	IPRD.DE1	20120608	20991231	
+70000085	Family Planning	Procedure	IPRD	Survey	s	IPRD.DE2	20120608	20991231	
+70000086	Maternal nutrition	Procedure	IPRD	Survey	s	IPRD.DE3	20120608	20991231	
+70000087	Exclusive breastfeeding	Procedure	IPRD	Survey	s	IPRD.DE13	20120608	20991231	
+70000088	HIV testing services	Procedure	IPRD	Survey	s	IPRD.DE14	20120608	20991231	
+70000089	HIV test conducted	Procedure	IPRD	Survey	s	IPRD.DE15	20120608	20991231	
+70000090	Counselling on postpartum family planning not conducted	Procedure	IPRD	Survey	s	IPRD.DE81	20120608	20991231	
+70000091	Counselling on Family Planning	Procedure	IPRD	Survey	s	IPRD.DE85	20120608	20991231	
+70000092	Complementary Feeding	Procedure	IPRD	Survey	s	IPRD.DE106	20120608	20991231	
+70000093	Infection Prevention	Procedure	IPRD	Survey	s	IPRD.DE107	20120608	20991231	
+70000094	Vaginal Examination	Procedure	IPRD	Survey	s	IPRD.DE119	20120608	20991231	
+70000095	Post exposure prophylaxis PEP test conducted	Procedure	IPRD	Survey	s	IPRD.DE231	20120608	20991231	
+70000096	STD/STI test conducted	Procedure	IPRD	Survey	s	IPRD.DE232	20120608	20991231	
+70000097	General Counselling conducted	Procedure	IPRD	Survey	s	IPRD.DE233	20120608	20991231	
+70000098	Heart	Condition	IPRD	Survey	s	IPRD.DE9	20120608	20991231	
+70000099	YAWS	Condition	IPRD	Survey	s	IPRD.DE10	20120608	20991231	
+70000100	Diarrhoea in the newborn	Condition	IPRD	Survey	s	IPRD.DE93	20120608	20991231	
+70000101	Mastitis of the left breast	Condition	IPRD	Survey	s	IPRD.DE94	20120608	20991231	
+70000102	Fast Breathing (above 60 breaths per minute)	Condition	IPRD	Survey	s	IPRD.DE109	20120608	20991231	
+70000103	Chest In-drawing	Condition	IPRD	Survey	s	IPRD.DE110	20120608	20991231	
+70000104	Temperature (less 35.5oC or more than 37.5oC)	Condition	IPRD	Survey	s	IPRD.DE111	20120608	20991231	
+70000105	Not Feeding	Condition	IPRD	Survey	s	IPRD.DE112	20120608	20991231	
+70000106	No Movement and Convulsion	Condition	IPRD	Survey	s	IPRD.DE113	20120608	20991231	
+70000107	Tetanus	Condition	IPRD	Survey	s	IPRD.DE114	20120608	20991231	
+70000108	Jaundice	Condition	IPRD	Survey	s	IPRD.DE115	20120608	20991231	
+70000109	Malaria	Condition	IPRD	Survey	s	IPRD.DE221	20120608	20991231	
+70000110	Tuberculosis	Condition	IPRD	Survey	s	IPRD.DE222	20120608	20991231	
+70000111	Diabetes	Condition	IPRD	Survey	s	IPRD.DE223	20120608	20991231	
+70000112	Cholera	Condition	IPRD	Survey	s	IPRD.DE224	20120608	20991231	
+70000113	Typhoid	Condition	IPRD	Survey	s	IPRD.DE225	20120608	20991231	
+70000114	Long-lasting Insecticidal Nets (LLINs)	Drug	IPRD	Survey	s	IPRD.DE20	20120608	20991231	
+70000115	IPTp-SP dose 4 provided	Drug	IPRD	Survey	s	IPRD.DE45	20120608	20991231	
+70000116	IPTp-SP dose 5 provided	Drug	IPRD	Survey	s	IPRD.DE46	20120608	20991231	
+70000117	IPTp-SP dose 6 provided	Drug	IPRD	Survey	s	IPRD.DE82	20120608	20991231	
+70000118	IPTp-SP dose 7 provided	Drug	IPRD	Survey	s	IPRD.DE83	20120608	20991231	
+70000119	IPTp-SP dose 8 provided	Drug	IPRD	Survey	s	IPRD.DE84	20120608	20991231	
+70000120	TD1	Drug	IPRD	Survey	s	IPRD.DE120	20120608	20991231	
+70000121	TD2	Drug	IPRD	Survey	s	IPRD.DE121	20120608	20991231	
+70000122	TD3	Drug	IPRD	Survey	s	IPRD.DE122	20120608	20991231	
+70000123	TD4	Drug	IPRD	Survey	s	IPRD.DE123	20120608	20991231	
+70000124	TD5	Drug	IPRD	Survey	s	IPRD.DE124	20120608	20991231	
+70000125	Human papillomavirus	Drug	IPRD	Survey	s	IPRD.DE131	20120608	20991231	
+70000126	Measles 1	Drug	IPRD	Survey	s	IPRD.DE132	20120608	20991231	
+70000127	Measles 2	Drug	IPRD	Survey	s	IPRD.DE133	20120608	20991231	
+70000128	Measles 2	Drug	IPRD	Survey	s	IPRD.DE133	20120608	20991231	
+70000129	MenAfrivac	Drug	IPRD	Survey	s	IPRD.DE134	20120608	20991231	
+70000130	Yellow Fever	Drug	IPRD	Survey	s	IPRD.DE135	20120608	20991231	
+70000131	Vitamin A1	Drug	IPRD	Survey	s	IPRD.DE136	20120608	20991231	
+70000132	Vitamin A2	Drug	IPRD	Survey	s	IPRD.DE137	20120608	20991231	
+70000133	OPV 0	Drug	IPRD	Survey	s	IPRD.DE138	20120608	20991231	
+70000134	OPV 1	Drug	IPRD	Survey	s	IPRD.DE139	20120608	20991231	
+70000135	OPV 2	Drug	IPRD	Survey	s	IPRD.DE140	20120608	20991231	
+70000136	OPV 3	Drug	IPRD	Survey	s	IPRD.DE141	20120608	20991231	
+70000137	IPV	Drug	IPRD	Survey	s	IPRD.DE142	20120608	20991231	
+70000138	Penta 1	Drug	IPRD	Survey	s	IPRD.DE143	20120608	20991231	
+70000139	Penta 2	Drug	IPRD	Survey	s	IPRD.DE144	20120608	20991231	
+70000140	Penta 3	Drug	IPRD	Survey	s	IPRD.DE145	20120608	20991231	
+70000141	PCV 1	Drug	IPRD	Survey	s	IPRD.DE146	20120608	20991231	
+70000142	PCV 2	Drug	IPRD	Survey	s	IPRD.DE147	20120608	20991231	
+70000143	PCV 3	Drug	IPRD	Survey	s	IPRD.DE148	20120608	20991231	
+70000144	Rota 1	Drug	IPRD	Survey	s	IPRD.DE149	20120608	20991231	
+70000145	Rota 2	Drug	IPRD	Survey	s	IPRD.DE150	20120608	20991231	
+70000146	Rota 3	Drug	IPRD	Survey	s	IPRD.DE151	20120608	20991231	
+70000147	BCG	Drug	IPRD	Survey	s	IPRD.DE152	20120608	20991231	
+70000148	Hep B 0(Birth)	Drug	IPRD	Survey	s	IPRD.DE153	20120608	20991231	
+70000152	Diabetes	Condition	IPRD	Survey	s	ANC.B6.DE90	20120608	20991231	
+70000153	Kidney	Condition	IPRD	Survey	s	ANC.B6.DE97	20120608	20991231	
+70000154	Operation/Surgery	Condition	IPRD	Survey	s	ANC.B6.DE72	20120608	20991231	
 80000001	Booked	Observation	IPRD	Survey	s	IPRD.DE40	20120608	20991231	
 80000002	<24hrs	Observation	IPRD	Survey	s	IPRD.DE43	20120608	20991231	
 80000003	Vehicle (includes cars, buses, tricycle)	Observation	IPRD	Survey	s	IPRD.DE48	20120608	20991231	
@@ -231,3 +304,9 @@ concept_id	concept_name	domain_id	vocabulary_id	concept_class_id	standard_concep
 80000107	Sickle test conducted	Procedure	IPRD	Survey	s	sickle-cell-test-conducted	20120608	20991231	
 80000108	HbsAg test conducted	Procedure	IPRD	Survey	s	hbsAg-test-conducted	20120608	20991231	
 80000109	Urine test conducted	Procedure	IPRD	Survey	s	completed	20120608	20991231	
+90000001	Organization value	Metadata	Concept Class	Concept Class		OMOP generated	19700101	20991231	
+90000002	Organization-Country	Visit	IPRD	Organization		country	20020131	20991231	
+90000003	Organization-State	Visit	IPRD	Organization		state	20020131	20991231	
+90000004	Organization-Lga	Visit	IPRD	Organization		lga	20020131	20991231	
+90000005	Organization-Ward	Visit	IPRD	Organization		ward	20020131	20991231	
+90000006	Organization-facility	Visit	IPRD	Organization		facility	20020131	20991231	

@@ -78,12 +78,11 @@ public class OrganizationMapper implements FhirMapper<Organization> {
         }
 
         String organizationId = "";
-        if(!Strings.isNullOrEmpty(organizationId)){
+        if(!Strings.isNullOrEmpty(organizationLogicId)){
             organizationId = srcOrganization.getId();
         }
 
         var organizationName = srcOrganization.getName();
-
 
         var organizationTag = srcOrganization.getMeta().getTag().stream().findFirst();
         if (organizationTag.isEmpty()) {
@@ -92,12 +91,14 @@ public class OrganizationMapper implements FhirMapper<Organization> {
         var organizationMetaCoding =organizationTag.get();
         var concept = findOmopConcepts.getConcepts(organizationMetaCoding, null,bulkload,dbMappings,organizationId);
         var placeOfService = concept.getConceptId();
-        int generatedLong = new Random().nextInt();
+        Random random = new Random();
+        int generatedPositiveLong = Math.abs(random.nextInt());
 
         var newCareSite = CareSite.builder()
-                        .careSiteId((long) generatedLong).
-                careSiteName(organizationName).
-                placeOfServiceConceptId(placeOfService).build();
+                        .careSiteId((long) generatedPositiveLong)
+                .careSiteName(organizationName)
+                .careSiteSourceValue(organizationLogicId)
+                .placeOfServiceConceptId(placeOfService).build();
         wrapper.setCareSite(newCareSite);
         return wrapper;
     }
