@@ -34,6 +34,7 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.checkerframework.checker.units.qual.C;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Enumerations.ResourceType;
@@ -99,9 +100,28 @@ public class ObservationMapper implements FhirMapper<Observation> {
       MapperMetrics.setNoFhirReferenceCounter("stepProcessObservations");
   private static final Counter deletedFhirReferenceCounter =
       MapperMetrics.setDeletedFhirRessourceCounter("stepProcessObservations");
-
   private static final Counter statusErrorCounter =
           MapperMetrics.setStatusErrorCounter("stepProcessObservations");
+  private static final Counter noMatchingEncounterCounter =
+          MapperMetrics.setNoMatchingEncounterCount("stepProcessObservations");
+  private static final Counter noResultHistoryOfTravelCounter =
+          MapperMetrics.setNoResultHistoryTravelFoundCount("stepProcessObservations");
+  private static final Counter noAcceptableResultHistoryOfTravelCounter =
+          MapperMetrics.setNoAcceptableResultHistoryOfTravelFoundCount("stepProcessObservations");
+  private static final Counter noAvailableInfoHistoryOfTravelCounter =
+          MapperMetrics.setAvailableInfoHistoryOfTravelNotFoundCount("stepProcessObservations");
+  private static final Counter noValueCounter =
+          MapperMetrics.setValueNotFoundCount("stepProcessObservations");
+  private static final Counter noInterpretationCounter =
+          MapperMetrics.setNoInterpretationFoundCount("stepProcessObservations");
+  private static final Counter noReferenceRangeCounter =
+          MapperMetrics.setNoReferenceRangeFoundCount("stepProcessObservations");
+  private static final Counter missingHighRangeCounter =
+          MapperMetrics.setMissingHighRangeCount("stepProcessObservations");
+  private static final Counter missingLowRangeCounter =
+          MapperMetrics.setMissingLowRangeCount("stepProcessObservations");
+  private static final Counter noCategoryCount =
+          MapperMetrics.setCategoryNotFoundCount("stepProcessObservations");
 
   /**
    * Constructor for objects of the class ObservationMapper.
@@ -165,7 +185,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
           "The [status]: {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
           statusValue,
           observationId);
-      statusErrorCounter.increment();;
+      statusErrorCounter.increment();
       return null;
     }
 
@@ -245,6 +265,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
             encounterReferenceIdentifier, encounterReferenceLogicalId, personId, observationId);
     if (visitOccId == null) {
       log.debug("No matching [Encounter] found for [Observation]: {}.", observationId);
+      noMatchingEncounterCounter.increment();
     }
 
     return visitOccId;
@@ -312,6 +333,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
       log.debug(
           "No [result for History-of-travel] found in [Observation]: {}. Skip resource.",
           observationId);
+      noResultHistoryOfTravelCounter.increment();
       return;
     }
     var value =
@@ -325,12 +347,14 @@ public class ObservationMapper implements FhirMapper<Observation> {
       log.debug(
           "No [acceptable result for History-of-travel] found in [Observation]: {}. Skip resource.",
           observationId);
+      noAcceptableResultHistoryOfTravelCounter.increment();
       return;
     }
     if (!srcObservation.hasComponent()) {
       log.debug(
           "No [available information for History-of-travel] found in [Observation]: {}. Skip resource.",
           observationId);
+      noAvailableInfoHistoryOfTravelCounter.increment();
       return;
     }
 
@@ -339,6 +363,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
       log.debug(
           "No [available information for History-of-travel] found in [Observation]: {}. Skip resource.",
           observationId);
+      noAvailableInfoHistoryOfTravelCounter.increment();
       return;
     }
 
@@ -788,6 +813,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
       log.debug(
           "No [ValueQuantity] or [ValueCodeableConcept] found for [Observation]: {}. Skip resource.",
           observationId);
+      noValueCounter.increment();
       return null;
     }
     if (valueQuantity != null) {
@@ -861,6 +887,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
       log.debug(
           "No [ValueQuantity] or [ValueCodeableConcept] found for [Observation]: {}. Skip resource.",
           observationId);
+      noValueCounter.increment();
       return null;
     }
     if (valueQuantity != null) {
@@ -1138,6 +1165,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
   private String getInterpretation(Observation srcObservation, String observationId) {
     if (!srcObservation.hasInterpretation() || srcObservation.getInterpretation().isEmpty()) {
       log.debug("No [Interpretation] found in [Observation]: {}.", observationId);
+      noInterpretationCounter.increment();
       return null;
     }
     var interpretation =
@@ -1147,6 +1175,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
 
     if (interpretation.isEmpty()) {
       log.debug("No [Interpretation] found in [Observation]: {}.", observationId);
+      noInterpretationCounter.increment();
       return null;
     }
     return interpretation.get().getCode();
@@ -1217,6 +1246,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
       log.debug(
           "No [ValueQuantity] or [ValueCodeableConcept] found for [Observation]: {}. Skip resource.",
           observationId);
+      noValueCounter.increment();
       return null;
     }
     if (valueQuantity != null) {
@@ -1656,6 +1686,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
 
     if (referenceRange == null) {
       log.debug("No [Reference Range] found in [Observation]: {}.", observationId);
+      noReferenceRangeCounter.increment();
       return;
     }
 
@@ -1663,12 +1694,14 @@ public class ObservationMapper implements FhirMapper<Observation> {
       newLabMeasurement.setRangeHigh(referenceRange.getHigh().getValue());
     } else {
       log.debug("Missing [high range] for [Observation]: {}.", observationId);
+      missingHighRangeCounter.increment();
     }
 
     if (referenceRange.hasLow() && referenceRange.getLow() != null) {
       newLabMeasurement.setRangeLow(referenceRange.getLow().getValue());
     } else {
       log.debug("Missing [low range] for [Observation]: {}.", observationId);
+      missingLowRangeCounter.increment();
     }
   }
 
@@ -1697,6 +1730,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
       log.warn(
           "No [Category] found for [Observation]: {}. Invalid resource. Please Check.",
           observationId);
+      noCategoryCount.increment();
       return null;
     }
     var categories = srcObservation.getCategory();

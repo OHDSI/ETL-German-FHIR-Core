@@ -80,6 +80,16 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
       MapperMetrics.setNoFhirReferenceCounter("stepProcessMedicationAdministrations");
   private static final Counter deletedFhirReferenceCounter =
       MapperMetrics.setDeletedFhirRessourceCounter("stepProcessMedicationAdministrations");
+  private static final Counter statusNotAcceptableCounter =
+          MapperMetrics.setStatusNotAcceptableCounter("stepProcessMedicationAdministrations");
+  private static final Counter noMatchingEncounterCounter =
+          MapperMetrics.setNoMatchingEncounterCount("stepProcessMedicationAdministrations");
+  private static final Counter invalidDoesCounter =
+          MapperMetrics.setInvalidDoseCounter("stepProcessMedicationAdministrations");
+  private static final Counter invalidDosageCounter =
+          MapperMetrics.setInvalidDosageCounter("stepProcessMedicationAdministrations");
+  private static final Counter invalidRouteValueCounter =
+          MapperMetrics.setInvalidRouteValueCounter("stepProcessMedicationAdministrations");
   /**
    * Constructor for objects of the class MedicationAdministrationMapper.
    *
@@ -152,6 +162,7 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
           "The [status]: {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
           statusValue,
           medicationAdministrationId);
+      statusNotAcceptableCounter.increment();
       return null;
     }
 
@@ -352,6 +363,7 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
       log.debug(
           "No matching [Encounter] found for [MedicationAdministration]: {}.",
           medicationAdministrationId);
+      noMatchingEncounterCounter.increment();
     }
     return visitOccId;
   }
@@ -761,7 +773,7 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
     log.debug(
         "Unable to determine the [dose] for [MedicationAdministration]: {}.",
         medicationAdministrationId);
-
+    invalidDoesCounter.increment();
     return null;
   }
 
@@ -778,6 +790,7 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
       log.debug(
           "Unable to determine the [dosage] for [MedicationAdministration]: {}.",
           medicationAdministrationId);
+      invalidDosageCounter.increment();
       return null;
     }
     return dosage;
@@ -806,7 +819,7 @@ public class MedicationAdministrationMapper implements FhirMapper<MedicationAdmi
     log.debug(
         "Unable to determine the [route value] for [MedicationAdministration]: {}.",
         medicationAdministrationId);
-
+    invalidRouteValueCounter.increment();
     return null;
   }
 

@@ -79,7 +79,10 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
       MapperMetrics.setNoFhirReferenceCounter("stepProcessProcedures");
   private static final Counter deletedFhirReferenceCounter =
       MapperMetrics.setDeletedFhirRessourceCounter("stepProcessProcedures");
-
+  private static final Counter statusNotAcceptableCounter =
+          MapperMetrics.setStatusNotAcceptableCounter("stepProcessProcedures");
+  private static final Counter noMatchingEncounterCounter =
+          MapperMetrics.setNoMatchingEncounterCount("stepProcessProcedures");
   @Autowired OmopConceptServiceImpl omopConceptService;
   @Autowired ResourceOmopReferenceUtils omopReferenceUtils;
   @Autowired ProcedureMapperServiceImpl procedureService;
@@ -145,6 +148,7 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
           "The [status]: {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
           statusValue,
           procedureId);
+      statusNotAcceptableCounter.increment();
       return null;
     }
 
@@ -906,6 +910,7 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
 
     if (visitOccId == null) {
       log.debug("No matching [Encounter] found for [Procedure]: {}.", procedureId);
+      noMatchingEncounterCounter.increment();
     }
 
     return visitOccId;
