@@ -1016,6 +1016,9 @@ public class ConditionMapper implements FhirMapper<Condition> {
         wrapper.getMeasurement().add(measurement);
 
         break;
+      case "Spec Anatomic Site":
+        log.warn("fhirId = {}={}",conditionLogicId,domain);
+        break;
       default:
         throw new UnsupportedOperationException(String.format("Unsupported domain %s", domain));
     }

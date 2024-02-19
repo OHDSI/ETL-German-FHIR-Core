@@ -42,6 +42,8 @@ public class OmopConceptMapWrapper {
         return findValidUcumConcept;
       case VOCABULARY_ICD10GM:
         return findValidIcd10GmConcept;
+      case VOCABULARY_LOINC:
+        return findValidLoincConcept;
       default:
         return Collections.emptyMap();
     }

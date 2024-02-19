@@ -208,6 +208,7 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
    * @param entries list of elements to be written to OMOP CDM
    */
   private void writeObservation(List<? extends OmopModelWrapper> entries) {
+    log.info("write------------{}",entries.size());
     var observations =
         entries.stream()
             .filter(entry -> entry.getObservation() != null)

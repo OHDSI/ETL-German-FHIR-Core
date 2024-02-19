@@ -136,7 +136,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
     var wrapper = new OmopModelWrapper();
 
     var observationLogicId = fhirReferenceUtils.extractId(srcObservation);
-//    var result = Objects.equals(observationLogicId, "obs-673b57d3-b424-4100-b93c-45f2ad6a567b");
+//    var result = Objects.equals(observationLogicId, "obs-40d8f6de-0e05-4c83-9535-b5dcdbd0b642");
 //    if(!result){
 //      return null;
 //    }
@@ -894,7 +894,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
     var valueStringType = getValueStringType(srcObservation);
     var valueDateTimeType = getValueDateTimeType(srcObservation);
 
-    if (valueQuantity == null && valueCodeableConcept == null) {
+    if (valueQuantity == null && valueCodeableConcept == null && valueIntegerType == null && valueStringType == null && valueDateTimeType == null) {
       log.debug(
           "No [ValueQuantity] or [ValueCodeableConcept] found for [Observation]: {}. Skip resource.",
           observationId);
@@ -903,11 +903,18 @@ public class ObservationMapper implements FhirMapper<Observation> {
     if (valueQuantity != null) {
       setValueQuantityInObservation(
           effectiveDateTime, observations, basisObservation, valueQuantity, observationId);
-    } else {
+    } else if (valueCodeableConcept != null) {
       setValueCodeableConceptInObservation(
           effectiveDateTime, observations, basisObservation, valueCodeableConcept, observationId);
+    } else if(valueIntegerType != null){
+      var integerToBigDecimal = new BigDecimal(String.valueOf(valueIntegerType));
+      basisObservation.setValueAsNumber(integerToBigDecimal);
+    } else if(valueStringType != null){
+      basisObservation.setValueAsString(String.valueOf(valueStringType));
+    } else {
+      var localDateTime = new Timestamp(valueDateTimeType.getValue().getTime()).toLocalDateTime();
+      basisObservation.setValueAsDateTime(localDateTime);
     }
-
     return basisObservation;
   }
 

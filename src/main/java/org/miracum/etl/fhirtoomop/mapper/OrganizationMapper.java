@@ -83,7 +83,7 @@ public class OrganizationMapper implements FhirMapper<Organization> {
         }
 
         var organizationName = srcOrganization.getName();
-
+        var sourceValue  = srcOrganization.getIdElement().getIdPart();
         var organizationTag = srcOrganization.getMeta().getTag().stream().findFirst();
         if (organizationTag.isEmpty()) {
             return null;
@@ -97,8 +97,11 @@ public class OrganizationMapper implements FhirMapper<Organization> {
         var newCareSite = CareSite.builder()
                         .careSiteId((long) generatedPositiveLong)
                 .careSiteName(organizationName)
-                .careSiteSourceValue(organizationLogicId)
-                .placeOfServiceConceptId(placeOfService).build();
+                .careSiteSourceValue(sourceValue)
+                .placeOfServiceConceptId(placeOfService)
+                .fhirLogicalId(organizationLogicId)
+                .fhirIdentifier(organizationIdentifier)
+                .build();
         wrapper.setCareSite(newCareSite);
         return wrapper;
     }

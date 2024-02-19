@@ -53,4 +53,12 @@ public class CareSite {
   /** The source code for the Place of Service as it appears in the source data. */
   @Column(name = "place_of_service_source_value")
   private String placeOfServiceSourceValue;
+
+  /** The logical id of the FHIR resource. */
+  @Column(name = "fhir_logical_id", nullable = true)
+  private String fhirLogicalId;
+
+  /** The identifier for the source data in the FHIR resource. */
+  @Column(name = "fhir_identifier", nullable = true)
+  private String fhirIdentifier;
 }
