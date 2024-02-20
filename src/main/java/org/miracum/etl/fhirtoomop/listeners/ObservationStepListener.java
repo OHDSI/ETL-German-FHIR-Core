@@ -111,7 +111,7 @@ public class ObservationStepListener implements StepExecutionListener {
             repositories.getVisitOccRepository().getFhirIdentifierAndVisitOccId());
       }
       dbMappings.setFindLoincStandardMapping(
-          repositories.getLoincStandardRepository().getLoincStandardMap());
+          repositories.getStandardRepository().getStandardMap());
       dbMappings
           .getOmopConceptMapWrapper()
           .setFindValidLoincConcept(

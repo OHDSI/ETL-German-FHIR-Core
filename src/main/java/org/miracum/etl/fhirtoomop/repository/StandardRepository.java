@@ -3,7 +3,7 @@ package org.miracum.etl.fhirtoomop.repository;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.miracum.etl.fhirtoomop.model.LoincStandardDomainLookup;
+import org.miracum.etl.fhirtoomop.model.StandardDomainLookup;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 /**
@@ -13,8 +13,8 @@ import org.springframework.data.repository.PagingAndSortingRepository;
  * @author Elisa Henke
  * @author Yuan Peng
  */
-public interface LoincStandardRepository
-    extends PagingAndSortingRepository<LoincStandardDomainLookup, Long> {
+public interface StandardRepository
+    extends PagingAndSortingRepository<StandardDomainLookup, Long> {
 
   /**
    * Retrieves a list of all records from loinc_standard_domain_lookup view in OMOP CDM.
@@ -22,7 +22,7 @@ public interface LoincStandardRepository
    * @return list of all records from loinc_standard_domain_lookup view in OMOP CDM
    */
   @Override
-  List<LoincStandardDomainLookup> findAll();
+  List<StandardDomainLookup> findAll();
 
   /**
    * Formats the list of all records from loinc_standard_domain_lookup view in OMOP CDM as a map.
@@ -30,9 +30,9 @@ public interface LoincStandardRepository
    *
    * @return a map with all records from loinc_standard_domain_lookup view using source_code as key
    */
-  default Map<String, List<LoincStandardDomainLookup>> getLoincStandardMap() {
+  default Map<String, List<StandardDomainLookup>> getStandardMap() {
     return findAll().stream()
-        .collect(Collectors.groupingBy(LoincStandardDomainLookup::getSourceCode));
+        .collect(Collectors.groupingBy(StandardDomainLookup::getSourceCode));
   }
 
   /**
@@ -43,7 +43,7 @@ public interface LoincStandardRepository
    * @return list of records from loinc_standard_domain_lookup view in OMOP CDM based on a specific
    *     source_code (LOINC)
    */
-  List<LoincStandardDomainLookup> findBySourceCode(String sourceCode);
+  List<StandardDomainLookup> findBySourceCode(String sourceCode);
 
   /**
    * Formats the list of records from loinc_standard_domain_lookup view in OMOP CDM based on a
@@ -53,9 +53,9 @@ public interface LoincStandardRepository
    * @return a map with all records from loinc_standard_domain_lookup view in OMOP CDM based on a
    *     specific source_code (LOINC)
    */
-  default Map<String, List<LoincStandardDomainLookup>> getLoincStandardMapBySourceCode(
+  default Map<String, List<StandardDomainLookup>> getStandardMapBySourceCode(
       String sourceCode) {
     return findBySourceCode(sourceCode).stream()
-        .collect(Collectors.groupingBy(LoincStandardDomainLookup::getSourceCode));
+        .collect(Collectors.groupingBy(StandardDomainLookup::getSourceCode));
   }
 }

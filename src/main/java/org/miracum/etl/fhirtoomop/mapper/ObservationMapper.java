@@ -32,11 +32,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
@@ -56,7 +56,7 @@ import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceCheckDataAbsentReason;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceFhirReferenceUtils;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceOmopReferenceUtils;
 import org.miracum.etl.fhirtoomop.mapper.helpers.ResourceOnset;
-import org.miracum.etl.fhirtoomop.model.LoincStandardDomainLookup;
+import org.miracum.etl.fhirtoomop.model.StandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.OmopModelWrapper;
 import org.miracum.etl.fhirtoomop.model.PostProcessMap;
 import org.miracum.etl.fhirtoomop.model.omop.Concept;
@@ -545,7 +545,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
       String observationSourceIdentifier,
       String observationId) {
     Concept observationCodeConcept = null;
-    List<Pair<String, List<LoincStandardDomainLookup>>> loincStandardMapPairList = null;
+    List<Pair<String, List<StandardDomainLookup>>> loincStandardMapPairList = null;
 
     var observationVocabularyId =
         findOmopConcepts.getOmopVocabularyId(observationCoding.getSystem());
@@ -590,7 +590,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
       // for LOINC
 
       loincStandardMapPairList =
-          getValidLoincCodes(observationCoding, effectiveDateTime.toLocalDate(), observationId);
+          getValidCodes(observationCoding, effectiveDateTime.toLocalDate(), observationId);
 
       if (loincStandardMapPairList.isEmpty()) {
         return;
@@ -613,7 +613,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
       // for IPRD
 
       loincStandardMapPairList =
-              getValidLoincCodes(observationCoding, effectiveDateTime.toLocalDate(), observationId);
+              getValidCodes(observationCoding, effectiveDateTime.toLocalDate(), observationId);
 
       if (loincStandardMapPairList.isEmpty()) {
         return;
@@ -635,7 +635,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
   }
 
   private void observationProcessor(
-      @Nullable Pair<String, List<LoincStandardDomainLookup>> loincStandardPair,
+      @Nullable Pair<String, List<StandardDomainLookup>> loincStandardPair,
       @Nullable Concept observationCodeConcept,
       Observation srcObservation,
       Long personId,
@@ -889,10 +889,11 @@ public class ObservationMapper implements FhirMapper<Observation> {
     var valueIntegerType = getValueInteger(srcObservation);
     var valueStringType = getValueStringType(srcObservation);
     var valueDateTimeType = getValueDateTimeType(srcObservation);
+    var valueBooleanType = getValueBooleanType(srcObservation);
 
-    if (valueQuantity == null && valueCodeableConcept == null && valueIntegerType == null && valueStringType == null && valueDateTimeType == null) {
+    if (valueQuantity == null && valueCodeableConcept == null && valueIntegerType == null && valueStringType == null && valueDateTimeType == null && valueBooleanType == null) {
       log.debug(
-          "No [ValueQuantity] or [ValueCodeableConcept] found for [Observation]: {}. Skip resource.",
+          "No [Value] found for [Observation]: {}. Skip resource.",
           observationId);
       return null;
     }
@@ -908,6 +909,8 @@ public class ObservationMapper implements FhirMapper<Observation> {
       basisObservation.setValueAsNumber(integerToBigDecimal);
     } else if(valueStringType != null){
       basisObservation.setValueAsString(String.valueOf(valueStringType.getValue()));
+    } else if(valueBooleanType != null){
+      basisObservation.setValueAsBoolean(valueBooleanType.getValue());
     } else {
       var localDateTime = new Timestamp(valueDateTimeType.getValue().getTime()).toLocalDateTime();
       basisObservation.setValueAsDateTime(localDateTime);
@@ -1774,28 +1777,28 @@ public class ObservationMapper implements FhirMapper<Observation> {
   /**
    * Extract valid pairs of LOINC code and its OMOP concept_id and domain information as a list
    *
-   * @param loincCoding
+   * @param coding
    * @param observationDate the date of observation
    * @return a list of valid pairs of LOINC code and its OMOP concept_id and domain information
    */
-  private List<Pair<String, List<LoincStandardDomainLookup>>> getValidLoincCodes(
-      Coding loincCoding, LocalDate observationDate, String observationId) {
-    if (loincCoding == null) {
+  private List<Pair<String, List<StandardDomainLookup>>> getValidCodes(
+      Coding coding, LocalDate observationDate, String observationId) {
+    if (coding == null) {
       return Collections.emptyList();
     }
 
-    List<Pair<String, List<LoincStandardDomainLookup>>> validLoincStandardConceptMaps =
+    List<Pair<String, List<StandardDomainLookup>>> validStandardConceptMaps =
         new ArrayList<>();
-    List<LoincStandardDomainLookup> loincStandardMap =
-        findOmopConcepts.getLoincStandardConcepts(
-            loincCoding, observationDate, bulkload, dbMappings, observationId);
-    if (loincStandardMap.isEmpty()) {
+    List<StandardDomainLookup> standardMap =
+        findOmopConcepts.getStandardConcepts(
+            coding, observationDate, bulkload, dbMappings, observationId);
+    if (standardMap.isEmpty()) {
       return Collections.emptyList();
     }
 
-    validLoincStandardConceptMaps.add(Pair.of(loincCoding.getCode(), loincStandardMap));
+    validStandardConceptMaps.add(Pair.of(coding.getCode(), standardMap));
 
-    return validLoincStandardConceptMaps;
+    return validStandardConceptMaps;
   }
 
   private IntegerType getValueInteger(Observation srcObservation) {
@@ -1815,6 +1818,13 @@ public class ObservationMapper implements FhirMapper<Observation> {
   private DateTimeType getValueDateTimeType(Observation srcObservation) {
     if (srcObservation.hasValueDateTimeType() && srcObservation.getValueDateTimeType() != null) {
       return srcObservation.getValueDateTimeType();
+    }
+    return null;
+  }
+
+  private BooleanType getValueBooleanType(Observation srcObservation) {
+    if (srcObservation.hasValueBooleanType() && srcObservation.getValueBooleanType() != null) {
+      return srcObservation.getValueBooleanType();
     }
     return null;
   }

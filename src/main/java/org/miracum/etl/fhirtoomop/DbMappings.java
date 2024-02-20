@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.miracum.etl.fhirtoomop.model.AtcStandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.IcdSnomedDomainLookup;
-import org.miracum.etl.fhirtoomop.model.LoincStandardDomainLookup;
+import org.miracum.etl.fhirtoomop.model.StandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.MedicationIdMap;
 import org.miracum.etl.fhirtoomop.model.OpsStandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.OrphaSnomedMapping;
@@ -61,7 +61,7 @@ public class DbMappings {
   private Map<String, List<OrphaSnomedMapping>> findOrphaSnomedMapping;
   private Map<String, List<OpsStandardDomainLookup>> findOpsStandardMapping;
   private Map<String, List<AtcStandardDomainLookup>> findAtcStandardMapping;
-  private Map<String, List<LoincStandardDomainLookup>> findLoincStandardMapping;
+  private Map<String, List<StandardDomainLookup>> findLoincStandardMapping;
 
   private Map<Long, List<VisitDetail>> findAllVisitDetails;
   private Map<Long, List<ConditionOccurrence>> findConditionOccurrence;

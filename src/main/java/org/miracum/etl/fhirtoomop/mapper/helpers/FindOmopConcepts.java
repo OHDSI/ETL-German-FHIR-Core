@@ -38,7 +38,7 @@ import org.miracum.etl.fhirtoomop.DbMappings;
 import org.miracum.etl.fhirtoomop.config.FhirSystems;
 import org.miracum.etl.fhirtoomop.model.AtcStandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.IcdSnomedDomainLookup;
-import org.miracum.etl.fhirtoomop.model.LoincStandardDomainLookup;
+import org.miracum.etl.fhirtoomop.model.StandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.OpsStandardDomainLookup;
 import org.miracum.etl.fhirtoomop.model.OrphaSnomedMapping;
 import org.miracum.etl.fhirtoomop.model.SnomedRaceStandardLookup;
@@ -552,7 +552,7 @@ public class FindOmopConcepts {
   /**
    * Search for OMOP concept in LOINC_STANDARD_DOMAIN_LOOKUP view for LOINC code
    *
-   * @param loincCoding LOINC Coding element from FHIR resource
+   * @param coding LOINC Coding element from FHIR resource
    * @param observationDate the date from FHIR resource
    * @param bulkLoad parameter which indicates whether the Job should be run as bulk load or
    *     incremental load
@@ -560,30 +560,30 @@ public class FindOmopConcepts {
    * @param observationId logical id of the Observation FHIR resource
    * @return a list of LOINC_STANDARD_DOMAIN_LOOKUP models
    */
-  public List<LoincStandardDomainLookup> getLoincStandardConcepts(
-      Coding loincCoding,
+  public List<StandardDomainLookup> getStandardConcepts(
+      Coding coding,
       LocalDate observationDate,
       Boolean bulkLoad,
       DbMappings dbMappings,
       String observationId) {
-    if (loincCoding.isEmpty()) {
+    if (coding.isEmpty()) {
       return Collections.emptyList();
     }
 
-    String loincCode = loincCoding.getCode();
+    String loincCode = coding.getCode();
     if (loincCode == null) {
       return Collections.emptyList();
     }
 
-    String version = getCodeVersion(loincCoding);
+    String version = getCodeVersion(coding);
     var codeValidDate = getValidDate(version, observationDate);
 
-    Map<String, List<LoincStandardDomainLookup>> loincStandardMap;
+    Map<String, List<StandardDomainLookup>> loincStandardMap;
 
     if (bulkLoad.equals(Boolean.TRUE)) {
       loincStandardMap = dbMappings.getFindLoincStandardMapping();
     } else {
-      loincStandardMap = omopConceptService.getLoincStandardMap(loincCode);
+      loincStandardMap = omopConceptService.getStandardMap(loincCode);
     }
 
     for (var entry : loincStandardMap.entrySet()) {
@@ -630,7 +630,7 @@ public class FindOmopConcepts {
               observationId);
           var defaultInvalidLoincStandardMapping =
               defaultLoincStandardDomainLookup(
-                  loincCoding, codeValidDate, bulkLoad, dbMappings, observationId);
+                  coding, codeValidDate, bulkLoad, dbMappings, observationId);
           return List.of(defaultInvalidLoincStandardMapping);
         }
         // valid LOINC to Standard mapping
@@ -640,7 +640,7 @@ public class FindOmopConcepts {
     // LOINC code not present in loinc_standard_domain_lookup
     var defaultLoincStandardDomainLookup =
         defaultLoincStandardDomainLookup(
-            loincCoding, codeValidDate, bulkLoad, dbMappings, observationId);
+            coding, codeValidDate, bulkLoad, dbMappings, observationId);
     if (defaultLoincStandardDomainLookup == null) {
       return Collections.emptyList();
     }
@@ -968,7 +968,7 @@ public class FindOmopConcepts {
    * @param loincCoding LOINC Coding element from FHIR resource
    * @return the default OMOP loinc_standard_domain_lookup model
    */
-  private LoincStandardDomainLookup defaultLoincStandardDomainLookup(
+  private StandardDomainLookup defaultLoincStandardDomainLookup(
       Coding loincCoding,
       LocalDate observationDate,
       Boolean bulkLoad,
@@ -978,7 +978,7 @@ public class FindOmopConcepts {
     if (omopConcept == null) {
       return null;
     }
-    return LoincStandardDomainLookup.builder()
+    return StandardDomainLookup.builder()
         .sourceCode(loincCoding.getCode())
         .sourceConceptId(omopConcept.getConceptId())
         .standardConceptId(CONCEPT_NO_MATCHING_CONCEPT)
