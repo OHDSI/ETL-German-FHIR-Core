@@ -32,15 +32,8 @@ public class OrganizationMapper implements FhirMapper<Organization> {
     private final IFhirPath fhirPath;
     private final Boolean bulkload;
     private final DbMappings dbMappings;
-
-    @Autowired
-    ResourceOmopReferenceUtils omopReferenceUtils;
     @Autowired
     ResourceFhirReferenceUtils fhirReferenceUtils;
-    @Autowired
-    PatientMapperServiceImpl patientService;
-    @Autowired
-    ResourceCheckDataAbsentReason checkDataAbsentReason;
     @Autowired
     FindOmopConcepts findOmopConcepts;
 

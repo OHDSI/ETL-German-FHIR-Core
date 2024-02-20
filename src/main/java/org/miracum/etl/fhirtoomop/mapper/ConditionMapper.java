@@ -117,10 +117,6 @@ public class ConditionMapper implements FhirMapper<Condition> {
     var wrapper = new OmopModelWrapper();
 
     var conditionLogicId = fhirReferenceUtils.extractId(srcCondition);
-//    var result = Objects.equals(conditionLogicId, "con-ad38f601-28a0-4032-bcf6-25b9da11b54a");
-//    if(!result){
-//      return null;
-//    }
     var conditionSourceIdentifier = fhirReferenceUtils.extractResourceFirstIdentifier(srcCondition);
     if (Strings.isNullOrEmpty(conditionLogicId)
         && Strings.isNullOrEmpty(conditionSourceIdentifier)) {

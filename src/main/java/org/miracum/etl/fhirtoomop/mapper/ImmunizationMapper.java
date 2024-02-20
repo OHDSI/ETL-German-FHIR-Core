@@ -84,10 +84,6 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
     var wrapper = new OmopModelWrapper();
 
     var immunizationLogicId = fhirReferenceUtils.extractId(srcImmunization);
-//    var result = Objects.equals(immunizationLogicId, "imm-02769f55-7a3b-49f5-8d96-2c2e07394c13");
-//    if(!result){
-//      return null;
-//    }
     var immunizationSourceIdentifier =
         fhirReferenceUtils.extractResourceFirstIdentifier(srcImmunization);
     if (Strings.isNullOrEmpty(immunizationLogicId)

@@ -431,6 +431,7 @@ public class TaskConfiguration {
    * Defines the processing logic including the processing order for bulk load with all FHIR
    * resource types.
    *
+   * @param  stepProcessOrganization which transforms FHIR Patient resources to OMOP CDM
    * @param patientProcessor processor which maps FHIR Patient resources to OMOP CDM
    * @param encounterProcessor processor which maps FHIR Encounter (administrative case/supply case
    *     resources to OMOP CDM
@@ -572,7 +573,8 @@ public class TaskConfiguration {
    * Defines the processing logic including the processing order for incremental load with all FHIR
    * resource types.
    *
-   * @param stepProcessPatients Step which transforms FHIR Patient resources to OMOP CDM
+   * @param  stepProcessOrganization which transforms FHIR Patient resources to OMOP CDM
+   *  @param stepProcessPatients Step which transforms FHIR Patient resources to OMOP CDM
    * @param stepProcessEncounterInstitutionContact processor which transforms FHIR Encounter
    *     (administrative case/supply case resources to OMOP CDM
    * @param stepProcessConditions Step which transforms FHIR Condition resources to OMOP CDM
@@ -1469,6 +1471,15 @@ public class TaskConfiguration {
     }
     return fhirServerItemReader(client, fhirParser, ResourceType.ORGANIZATION.getDisplay(), "");
   }
+
+  /**
+   * Defines the step for processing FHIR Organization resources. This step loads and processes Organization
+   * resources from FHIR Gateway and writes them to OMOP CDM.
+   *
+   * @param organizationProcessor processor which maps FHIR Patient resources to OMOP CDM
+   * @param writer the writer which writes the data to OMOP CDM
+   * @return step for processing FHIR Patient resources
+   */
   @Bean
   public Step stepProcessOrganization(
           OrganizationProcessor organizationProcessor,
@@ -1494,7 +1505,7 @@ public class TaskConfiguration {
 
   /**
    * Defines the processor for FHIR Organization resources. The OrganizationProcessor contains the business
-   * logic to map FHIR Patient resources to OMOP CDM.
+   * logic to map FHIR Organization resources to OMOP CDM.
    *
    * @param parser parser which converts between the HAPI FHIR model/structure objects and their
    *     respective String wire format (JSON)

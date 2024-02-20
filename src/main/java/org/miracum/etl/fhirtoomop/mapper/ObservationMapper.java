@@ -136,10 +136,6 @@ public class ObservationMapper implements FhirMapper<Observation> {
     var wrapper = new OmopModelWrapper();
 
     var observationLogicId = fhirReferenceUtils.extractId(srcObservation);
-//    var result = Objects.equals(observationLogicId, "obs-40d8f6de-0e05-4c83-9535-b5dcdbd0b642");
-//    if(!result){
-//      return null;
-//    }
     var observationSourceIdentifier =
         fhirReferenceUtils.extractResourceFirstIdentifier(srcObservation);
     if (StringUtils.isBlank(observationLogicId)
@@ -907,10 +903,11 @@ public class ObservationMapper implements FhirMapper<Observation> {
       setValueCodeableConceptInObservation(
           effectiveDateTime, observations, basisObservation, valueCodeableConcept, observationId);
     } else if(valueIntegerType != null){
-      var integerToBigDecimal = new BigDecimal(String.valueOf(valueIntegerType));
+      log.info("value = {} - observation id = {}",valueIntegerType,observationId);
+      var integerToBigDecimal = new BigDecimal(String.valueOf(valueIntegerType.getValue()));
       basisObservation.setValueAsNumber(integerToBigDecimal);
     } else if(valueStringType != null){
-      basisObservation.setValueAsString(String.valueOf(valueStringType));
+      basisObservation.setValueAsString(String.valueOf(valueStringType.getValue()));
     } else {
       var localDateTime = new Timestamp(valueDateTimeType.getValue().getTime()).toLocalDateTime();
       basisObservation.setValueAsDateTime(localDateTime);
