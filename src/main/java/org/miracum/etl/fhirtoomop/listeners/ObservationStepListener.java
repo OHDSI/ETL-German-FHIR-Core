@@ -1,9 +1,11 @@
 package org.miracum.etl.fhirtoomop.listeners;
 
+import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_ICD10GM;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_IPRD;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_LOINC;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_SNOMED;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_UCUM;
+import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_WHO;
 
 import com.google.common.base.Strings;
 import java.io.IOException;
@@ -128,6 +130,9 @@ public class ObservationStepListener implements StepExecutionListener {
           .getOmopConceptMapWrapper()
           .setFindValidSnomedConcept(
               repositories.getConceptRepository().findValidConceptId(VOCABULARY_SNOMED));
+      dbMappings.getOmopConceptMapWrapper().setFindValidWHOConcept(
+              repositories.getConceptRepository().findValidConceptId(VOCABULARY_WHO)
+      );
     }
     dbMappings.setFindHardCodeConcept(
         repositories.getSourceToConceptRepository().sourceToConceptMap());

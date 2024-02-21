@@ -1,7 +1,9 @@
 package org.miracum.etl.fhirtoomop.listeners;
 
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_ATC;
+import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_IPRD;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_SNOMED;
+import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_WHO;
 
 import com.google.common.base.Strings;
 import java.io.IOException;
@@ -121,6 +123,13 @@ public class ImmunizationStepListener implements StepExecutionListener {
               repositories.getConceptRepository().findValidConceptId(VOCABULARY_SNOMED));
       dbMappings.setFindAtcStandardMapping(
           repositories.getAtcStandardRepository().getAtcStandardMap());
+      dbMappings.getOmopConceptMapWrapper().setFindValidWHOConcept(
+              repositories.getConceptRepository().findValidConceptId(VOCABULARY_WHO)
+      );
+      dbMappings
+              .getOmopConceptMapWrapper()
+              .setFindValidIPRDConcept(
+                      repositories.getConceptRepository().findValidConceptId(VOCABULARY_IPRD));
     }
   }
 

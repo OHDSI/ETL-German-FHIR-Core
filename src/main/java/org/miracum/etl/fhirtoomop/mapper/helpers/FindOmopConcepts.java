@@ -23,6 +23,7 @@ import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_OPS;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_ORPHA;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_SNOMED;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_UCUM;
+import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_WHO;
 
 import com.google.common.base.Strings;
 import java.time.LocalDate;
@@ -689,8 +690,10 @@ public class FindOmopConcepts {
         return SOURCE_VOCABULARY_ID_ECRF_PARAMETER;
       case GECCOSOFASCORE:
         return SOURCE_VOCABULARY_SOFA_CATEGORY;
-      case DIAGNOSECODE:
+      case IPRDSYSTEM:
         return VOCABULARY_IPRD;
+      case WHOSYSTEM:
+        return VOCABULARY_WHO;
       default:
         return null;
     }

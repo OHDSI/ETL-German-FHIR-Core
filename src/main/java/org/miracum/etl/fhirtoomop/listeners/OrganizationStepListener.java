@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_IPRD;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_SNOMED;
+import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_WHO;
 
 @Slf4j
 @Component
@@ -55,6 +56,9 @@ public class OrganizationStepListener implements StepExecutionListener {
                 .getOmopConceptMapWrapper()
                 .setFindValidIPRDConcept(
                         repositories.getConceptRepository().findValidConceptId(VOCABULARY_IPRD));
+        dbMappings.getOmopConceptMapWrapper().setFindValidWHOConcept(
+                repositories.getConceptRepository().findValidConceptId(VOCABULARY_WHO)
+        );
     }
 
     @Override

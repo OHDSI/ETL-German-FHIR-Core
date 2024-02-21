@@ -8,6 +8,7 @@ import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_OBSERVATION;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_ATC;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_IPRD;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_SNOMED;
+import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_WHO;
 
 import com.google.common.base.Strings;
 import io.micrometer.core.instrument.Counter;
@@ -50,7 +51,7 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
   private final DbMappings dbMappings;
   private final Boolean bulkload;
   private final List<String> listOfImmunizationVocabularyId =
-      Arrays.asList(VOCABULARY_ATC, VOCABULARY_SNOMED, VOCABULARY_IPRD);
+      Arrays.asList(VOCABULARY_ATC, VOCABULARY_SNOMED, VOCABULARY_IPRD, VOCABULARY_WHO);
 
   @Autowired OmopConceptServiceImpl omopConceptService;
   @Autowired ResourceFhirReferenceUtils fhirReferenceUtils;
@@ -281,6 +282,26 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
           visitOccId,
           immunizationId);
     }else if (immunizationVocabularyId.equals(VOCABULARY_IPRD)) {
+      // for SNOMED codes
+
+      var snomedCodingList = getSnomedCodingList(vaccineCoding);
+      var snomedStandardConcepts =
+              getSnomedConceptList(
+                      snomedCodingList, immunizationOnset, immunizationLogicId, immunizationId);
+
+      immunizationProcessor(
+              null,
+              snomedStandardConcepts,
+              wrapper,
+              dose,
+              route,
+              immunizationOnset,
+              immunizationLogicId,
+              immunizationSourceIdentifier,
+              personId,
+              visitOccId,
+              immunizationId);
+    }else if (immunizationVocabularyId.equals(VOCABULARY_WHO)) {
       // for SNOMED codes
 
       var snomedCodingList = getSnomedCodingList(vaccineCoding);

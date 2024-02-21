@@ -61,7 +61,6 @@ public class OrganizationMapper implements FhirMapper<Organization> {
     @Override
     public OmopModelWrapper map(Organization srcOrganization, boolean isDeleted) {
         var wrapper = new OmopModelWrapper();
-
         var organizationIdentifier = fhirReferenceUtils.extractIdentifier(srcOrganization,"MR");
         var organizationLogicId = fhirReferenceUtils.extractId(srcOrganization);
         if (Strings.isNullOrEmpty(organizationLogicId) && Strings.isNullOrEmpty(organizationIdentifier)) {
@@ -83,6 +82,11 @@ public class OrganizationMapper implements FhirMapper<Organization> {
         }
         var organizationMetaCoding =organizationTag.get();
         var concept = findOmopConcepts.getConcepts(organizationMetaCoding, null,bulkload,dbMappings,organizationId);
+        if(concept == null){
+            log.warn("concept is not present for Organization {}",organizationId);
+            noFhirReferenceCounter.increment();
+            return null;
+        }
         var placeOfService = concept.getConceptId();
         Random random = new Random();
         int generatedPositiveLong = Math.abs(random.nextInt());

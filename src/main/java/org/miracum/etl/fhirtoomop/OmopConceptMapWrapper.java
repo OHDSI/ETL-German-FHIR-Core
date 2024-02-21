@@ -7,6 +7,7 @@ import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_LOINC;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_OPS;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_SNOMED;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_UCUM;
+import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_WHO;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +29,8 @@ public class OmopConceptMapWrapper {
   private Map<String, List<Concept>> findValidIcd10GmConcept;
   private Map<String, List<Concept>> findValidIPRDConcept;
 
+  private Map<String, List<Concept>> findValidWHOConcept;
+
   public Map<String, List<Concept>> getValidConcepts(String vocabularyId) {
     switch (vocabularyId) {
       case VOCABULARY_OPS:
@@ -44,6 +47,8 @@ public class OmopConceptMapWrapper {
         return findValidIcd10GmConcept;
       case VOCABULARY_LOINC:
         return findValidLoincConcept;
+      case VOCABULARY_WHO:
+        return findValidWHOConcept;
       default:
         return Collections.emptyMap();
     }

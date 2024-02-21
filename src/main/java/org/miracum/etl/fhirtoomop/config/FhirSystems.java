@@ -56,8 +56,12 @@ public class FhirSystems {
   private static String geccoFrailtyScore;
   private static List<String> diagnosticReportCategory;
   private static List<String> identifierSystem;
+  private static List<String> iprdSystem;
+  private static List<String> whoSystem;
 
   public enum fhirEnum {
+    IPRDSYSTEM(iprdSystem),
+    WHOSYSTEM(whoSystem),
     LOINC(loinc),
     ADMISSIONREASON(admissionReason),
     DISCHARGEREASON(dischargeReason),
@@ -131,6 +135,21 @@ public class FhirSystems {
     }
   }
 
+  public void setIprdSystem(List<String> iprdSystem) {
+    FhirSystems.iprdSystem = iprdSystem;
+  }
+
+  public List<String> getIprdSystem() {
+    return iprdSystem;
+  }
+
+  public void setWhoSystem(List<String> whoSystem) {
+    FhirSystems.whoSystem = whoSystem;
+  }
+
+  public List<String> getWhoSystem() {
+    return whoSystem;
+  }
   public String getLoinc() {
     return loinc;
   }
