@@ -1,2 +1,3 @@
 vocabulary_id	vocabulary_name	vocabulary_reference	vocabulary_version	vocabulary_concept_id
-IPRD	Observation names and codes	https://iprd.org/fhir	IPRD 1.0	45756806
+IPRD	IPRD-custom names and codes	https://iprd.org/fhir	IPRD 1.0	70000001
+WHO	ANC-custom names and codes	http://fhir.org/guides/who/anc-cds/CodeSystem/anc-custom-codes	WHO 1.0	70000002

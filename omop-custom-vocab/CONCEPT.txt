@@ -1,42 +1,42 @@
 concept_id	concept_name	domain_id	vocabulary_id	concept_class_id	standard_concept	concept_code	valid_start_date	valid_end_date	invalid_reason
-70000001	Logical Observation Identifiers Names and Codes (Regenstrief Institute)	Metadata	Vocabulary	Vocabulary		OMOP generated	19700101	20991231	
+70000001	Logical IPRD Identifiers Names and Codes (Regenstrief Institute)	Metadata	Vocabulary	Vocabulary		OMOP generated	19700101	20991231	
+70000002	Logical WHO Identifiers Names and Codes (Regenstrief Institute)	Metadata	Vocabulary	Vocabulary		OMOP generated	19700101	20991231	
 60000001	Previous-pregnancies	Observation	IPRD	Survey	s	IPRD.DE12	20120608	20991231	
-60000002	Systolic blood pressure	Observation	IPRD	Survey	s	ANC.B8.DE17	20120608	20991231	
-60000003	Diastolic blood pressure	Observation	IPRD	Survey	s	ANC.B8.DE19	20120608	20991231	
-60000004	Current  weight	Observation	IPRD	Survey	s	ANC.B8.DE3	20120608	20991231	
-60000005	Height	Observation	IPRD	Survey	s	ANC.B8.DE1	20120608	20991231	
-60000006	BMI	Observation	IPRD	Survey	s	ANC.B8.DE4	20120608	20991231	
-60000007	Blood type	Observation	IPRD	Survey	s	ANC.B9.DE24	20120608	20991231	
-60000008	Rh factor	Observation	IPRD	Survey	s	ANC.B9.DE29	20120608	20991231	
-60000009	Hepatitis B test result	Observation	IPRD	Survey	s	ANC.B9.DE66	20120608	20991231	
-60000010	hepatitis C test result	Observation	IPRD	Survey	s	ANC.B9.DE89	20120608	20991231	
-60000011	Syphilis test result	Observation	IPRD	Survey	s	ANC.B9.DE107	20120608	20991231	
-60000012	HIV test result	Observation	IPRD	Survey	s	ANC.B9.DE41	20120608	20991231	
-60000013	Unspecified malaria	Observation	IPRD	Survey	s	B54	20120608	20991231	
-60000014	Blood haemoglobin test result	Observation	IPRD	Survey	s	ANC.B9.DE186	20120608	20991231	
+60000002	Systolic blood pressure	Observation	WHO	Survey	s	ANC.B8.DE17	20120608	20991231	
+60000003	Diastolic blood pressure	Observation	WHO	Survey	s	ANC.B8.DE19	20120608	20991231	
+60000004	Current  weight	Observation	WHO	Survey	s	ANC.B8.DE3	20120608	20991231	
+60000005	Height	Observation	WHO	Survey	s	ANC.B8.DE1	20120608	20991231	
+60000006	BMI	Observation	WHO	Survey	s	ANC.B8.DE4	20120608	20991231	
+60000007	Blood type	Observation	WHO	Survey	s	ANC.B9.DE24	20120608	20991231	
+60000008	Rh factor	Observation	WHO	Survey	s	ANC.B9.DE29	20120608	20991231	
+60000009	Hepatitis B test result	Observation	WHO	Survey	s	ANC.B9.DE66	20120608	20991231	
+60000010	hepatitis C test result	Observation	WHO	Survey	s	ANC.B9.DE89	20120608	20991231	
+60000011	Syphilis test result	Observation	WHO	Survey	s	ANC.B9.DE107	20120608	20991231	
+60000012	HIV test result	Observation	WHO	Survey	s	ANC.B9.DE41	20120608	20991231	
+60000014	Blood haemoglobin test result	Observation	WHO	Survey	s	ANC.B9.DE186	20120608	20991231	
 60000015	Blood PCV test result	Observation	IPRD	Survey	s	blood-pcv	20120608	20991231	
 60000016	HbsAg test result	Observation	IPRD	Survey	s	hbsAg-test-result	20120608	20991231	
 60000017	sickle cell test result	Observation	IPRD	Survey	s	sickle-cell-test-result	20120608	20991231	
 60000018	Gestational Diabetes Blood Test	Observation	IPRD	Survey	s	gestational-diabetes-blood-test	20120608	20991231	
-60000019	Gestational Diabetes Blood Test	Observation	IPRD	Survey	s	ANC.B9.DE168	20120608	20991231	
-60000020	Urine dipstick result - protein	Observation	IPRD	Survey	s	ANC.B9.DE144	20120608	20991231	
-60000021	Urine dipstick result - glucose	Observation	IPRD	Survey	s	ANC.B9.DE150	20120608	20991231	
-60000022	Given iron and folic acid	Observation	IPRD	Survey	s	ANC.B10.DE92	20120608	20991231	
+60000019	Gestational Diabetes Blood Test	Observation	WHO	Survey	s	ANC.B9.DE168	20120608	20991231	
+60000020	Urine dipstick result - protein	Observation	WHO	Survey	s	ANC.B9.DE144	20120608	20991231	
+60000021	Urine dipstick result - glucose	Observation	WHO	Survey	s	ANC.B9.DE150	20120608	20991231	
+60000022	Given iron and folic acid	Observation	WHO	Survey	s	ANC.B10.DE92	20120608	20991231	
 60000023	Given calcium tablet	Observation	IPRD	Survey	s	calcium-tablet-given	20120608	20991231	
 60000024	LLIN given	Observation	IPRD	Survey	s	llin-given	20120608	20991231	
 60000025	Associated problem	Observation	IPRD	Survey	s	IPRD.DE8	20120608	20991231	
 60000026	Outcome of visit	Observation	IPRD	Survey	s	outcome-of-visit	20120608	20991231	
-60000027	Last menstrual period (LMP) date	Observation	IPRD	Survey	s	ANC.B6.DE14	20120608	20991231	
+60000027	Last menstrual period (LMP) date	Observation	WHO	Survey	s	ANC.B6.DE14	20120608	20991231	
 60000028	Female Genital Mutilation	Procedure	IPRD	Survey	s	IPRD.DE1	20120608	20991231	
-60000201	Blood type-B	Observation	IPRD	Survey	s	ANC.B9.DE26	20120608	20991231	
-60000202	Blood type-AB	Observation	IPRD	Survey	s	ANC.B9.DE27	20120608	20991231	
-60000203	HIV negetive	Observation	IPRD	Survey	s	ANC.B9.DE43	20120608	20991231	
-60000204	Protien ++	Observation	IPRD	Survey	s	ANC.B9.DE147	20120608	20991231	
-60000205	Protien +++	Observation	IPRD	Survey	s	ANC.B9.DE148	20120608	20991231	
-60000206	Protien ++++	Observation	IPRD	Survey	s	ANC.B9.DE149	20120608	20991231	
-60000207	Sugar ++	Observation	IPRD	Survey	s	ANC.B9.DE153	20120608	20991231	
-60000208	Sugar +++	Observation	IPRD	Survey	s	ANC.B9.DE154	20120608	20991231	
-60000209	Sugarn ++++	Observation	IPRD	Survey	s	ANC.B9.DE155	20120608	20991231	
+60000201	Blood type-B	Observation	WHO	Survey	s	ANC.B9.DE26	20120608	20991231	
+60000202	Blood type-AB	Observation	WHO	Survey	s	ANC.B9.DE27	20120608	20991231	
+60000203	HIV negetive	Observation	WHO	Survey	s	ANC.B9.DE43	20120608	20991231	
+60000204	Protien ++	Observation	WHO	Survey	s	ANC.B9.DE147	20120608	20991231	
+60000205	Protien +++	Observation	WHO	Survey	s	ANC.B9.DE148	20120608	20991231	
+60000206	Protien ++++	Observation	WHO	Survey	s	ANC.B9.DE149	20120608	20991231	
+60000207	Sugar ++	Observation	WHO	Survey	s	ANC.B9.DE153	20120608	20991231	
+60000208	Sugar +++	Observation	WHO	Survey	s	ANC.B9.DE154	20120608	20991231	
+60000209	Sugarn ++++	Observation	WHO	Survey	s	ANC.B9.DE155	20120608	20991231	
 60000210	Type of client - Un-bokked	Observation	IPRD	Survey	s	IPRD.DE41	20120608	20991231	
 60000211	Transportation In Others (includes bicycles,animal carriers, monocycles)	Observation	IPRD	Survey	s	IPRD.DE49	20120608	20991231	
 60000212	Cord clamped/cut 5 seconds after birth (i.e. immediately after birth)	Observation	IPRD	Survey	s	IPRD.DE70	20120608	20991231	
@@ -63,7 +63,7 @@ concept_id	concept_name	domain_id	vocabulary_id	concept_class_id	standard_concep
 60000233	BreastFeeding + Water	Observation	IPRD	Survey	s	IPRD.DE170	20120608	20991231	
 60000234	Not BreastFeeding	Observation	IPRD	Survey	s	IPRD.DE172	20120608	20991231	
 60000235	Not Started Complementary Feedin	Observation	IPRD	Survey	s	IPRD.DE173	20120608	20991231	
-60000236	Bilateral Pitting Oedema	Observation	IPRD	Survey	s	IPRD.DE175	20120608	20991231	
+60000236	Bilateral Pitting Oedema	Observation	IPRD	Survey	s	IPRD.DE174	20120608	20991231	
 60000237	Grade 1 or (+): oedema is present in both feet	Observation	IPRD	Survey	s	IPRD.DE175	20120608	20991231	
 60000238	Vitamin A Supplement	Observation	IPRD	Survey	s	IPRD.DE179	20120608	20991231	
 60000239	Deworming Tablet	Observation	IPRD	Survey	s	IPRD.DE180	20120608	20991231	
@@ -82,39 +82,46 @@ concept_id	concept_name	domain_id	vocabulary_id	concept_class_id	standard_concep
 60000252	Body Ache	Observation	IPRD	Survey	s	IPRD.DE204	20120608	20991231	
 60000253	Dizziness	Observation	IPRD	Survey	s	IPRD.DE205	20120608	20991231	
 60000254	Others	Observation	IPRD	Survey	s	others	20120608	20991231	
-60000255	Cannot be made out	Observation	IPRD	Survey	s	ANC.B8.DE112	20120608	20991231	
-60000256	Oblique	Observation	IPRD	Survey	s	ANC.B8.DE116	20120608	20991231	
-60000257	Transverse	Observation	IPRD	Survey	s	ANC.B8.DE115	20120608	20991231	
-60000258	Breech	Observation	IPRD	Survey	s	ANC.B8.DE114	20120608	20991231	
-60000259	C-section	Observation	IPRD	Survey	s	ANC.End.22	20120608	20991231	
-60000260	Urine test conducted	Procedure	IPRD	Survey	s	ANC.B9.DE114	20120608	20991231	
-60000261	IPTp-SP dose 1 provided	Drug	IPRD	Survey	s	ANC.B10.DE245	20120608	20991231	
-60000262	IPTp-SP dose 2 provided	Drug	IPRD	Survey	s	ANC.B10.DE247	20120608	20991231	
-60000263	IPTp-SP dose 3 provided	Drug	IPRD	Survey	s	ANC.B10.DE249	20120608	20991231	
-60000264	Tetanus toxoid (TT) 2 immunization provided	Drug	IPRD	Survey	s	ANC.B10.DE167	20120608	20991231	
-60000265	Tetanus toxoid (TT) 1 immunization provided	Drug	IPRD	Survey	s	ANC.B10.DE165	20120608	20991231	
-60000266	Tetanus toxoid (TT) 3 immunization provided	Drug	IPRD	Survey	s	ANC.End.22	20120608	ANC.B10.DE169	
-60000267	Tetanus toxoid (TT) 4 immunization provided	Drug	IPRD	Survey	s	ANC.B10.DE171	20120608	20991231	
-60000268	Tetanus toxoid (TT) 5 immunization provided	Drug	IPRD	Survey	s	ANC.B10.DE173	20120608	20991231	
-60000269	Reason syphilis test not done	Observation	IPRD	Survey	s	ANC.B9.DE102	20120608	20991231	
-60000270	Hepatitis B test result - Other reason test not conducted (specify)	Observation	IPRD	Survey	s	ANC.B9.DE69	20120608	20991231	
-60000271	Reason Hepatitis C test not done	Observation	IPRD	Survey	s	ANC.B9.DE84	20120608	20991231	
-60000272	Reason iron and folic acid not prescribed	Observation	IPRD	Survey	s	ANC.B10.DE96	20120608	20991231	
-60000273	Reason calcium not prescribed	IPRD	Survey	s	ANC.B10.DE108	20120608	20991231	
-70000031	Foetal Position	Observation	IPRD	Survey	s	ANC.B8.DE111	20120608	20991231	
-70000032	foetal heart sound	Observation	IPRD	Survey	s	ANC.B8.DE106	20120608	20991231	
-70000033	Foetal Height	Measurement	IPRD	Survey	s	ANC.B6.DE21	20120608	20991231	
-70000034	Foetal Movement	Observation	IPRD	Survey	s	ANC-B7-DE98	20120608	20991231	
-70000035	Parity	Observation	IPRD	Survey	s	ANC.B6.DE32	20120608	20991231	
-70000036	Delivery date	Observation	IPRD	Survey	s	ANC.End.12	20120608	20991231	
-70000037	Delivery mode	Observation	IPRD	Survey	s	ANC.End.18	20120608	20991231	
-70000038	Delivery complications	Observation	IPRD	Survey	s	ANC.End.25	20120608	20991231	
-70000039	Counselling on postpartum family planning conducted	Observation	IPRD	Survey	s	ANC.B10.DE144	20120608	20991231	
-70000040	Birth weight	Measurement	IPRD	Survey	s	ANC.End.23	20120608	20991231	
-70000041	Preterm Birth	Observation	IPRD	Survey	s	ANC.End.17	20120608	20991231	
+60000255	Cannot be made out	Observation	WHO	Survey	s	ANC.B8.DE112	20120608	20991231	
+60000256	Oblique	Observation	WHO	Survey	s	ANC.B8.DE116	20120608	20991231	
+60000257	Transverse	Observation	WHO	Survey	s	ANC.B8.DE115	20120608	20991231	
+60000258	Breech	Observation	WHO	Survey	s	ANC.B8.DE114	20120608	20991231	
+60000259	C-section	Observation	WHO	Survey	s	ANC.End.22	20120608	20991231	
+60000260	Urine test conducted	Procedure	WHO	Survey	s	ANC.B9.DE114	20120608	20991231	
+60000261	IPTp-SP dose 1 provided	Drug	WHO	Survey	s	ANC.B10.DE245	20120608	20991231	
+60000262	IPTp-SP dose 2 provided	Drug	WHO	Survey	s	ANC.B10.DE247	20120608	20991231	
+60000263	IPTp-SP dose 3 provided	Drug	WHO	Survey	s	ANC.B10.DE249	20120608	20991231	
+60000264	Tetanus toxoid (TT) 2 immunization provided	Drug	WHO	Survey	s	ANC.B10.DE167	20120608	20991231	
+60000265	Tetanus toxoid (TT) 1 immunization provided	Drug	WHO	Survey	s	ANC.B10.DE165	20120608	20991231	
+60000266	Tetanus toxoid (TT) 3 immunization provided	Drug	WHO	Survey	s	ANC.B10.DE169	20120608	20991231	
+60000267	Tetanus toxoid (TT) 4 immunization provided	Drug	WHO	Survey	s	ANC.B10.DE171	20120608	20991231	
+60000268	Tetanus toxoid (TT) 5 immunization provided	Drug	WHO	Survey	s	ANC.B10.DE173	20120608	20991231	
+60000269	Reason syphilis test not done	Observation	WHO	Survey	s	ANC.B9.DE102	20120608	20991231	
+60000270	Hepatitis B test result - Other reason test not conducted (specify)	Observation	WHO	Survey	s	ANC.B9.DE69	20120608	20991231	
+60000271	Reason Hepatitis C test not done	Observation	WHO	Survey	s	ANC.B9.DE84	20120608	20991231	
+60000272	Reason iron and folic acid not prescribed	Observation	WHO	Survey	s	ANC.B10.DE96	20120608	20991231	
+60000273	Reason calcium not prescribed	Observation	WHO	Survey	s	ANC.B10.DE108	20120608	20991231	
+60000274	HbsAg test result - Reactive	Observation	IPRD	Survey	s	hbsAg-reactive	20120608	20991231	
+60000275	HbsAg test result - Non - Reactive	Observation	IPRD	Survey	s	hbsAg-non-reactive	20120608	20991231	
+60000276	Sickle cell disease	Observation	IPRD	Survey	s	IPRD.DE4	20120608	20991231	
+60000277	Induced Abortion	Observation	IPRD	Survey	s	IPRD.DE54	20120608	20991231	
+60000278	not-done	Procedure	WHO	Survey	s	not-done	20120608	20991231	
+60000279	Foetal Movement	Observation	WHO	Survey	s	ANC-B7-DE98	20120608	20991231	
+60000280	Sickle cell disease not suspected	Observation	IPRD	Survey	s	IPRD.DE5	20120608	20991231	
+70000031	Foetal Position	Observation	WHO	Survey	s	ANC.B8.DE111	20120608	20991231	
+70000032	foetal heart sound	Observation	WHO	Survey	s	ANC.B8.DE106	20120608	20991231	
+70000033	Foetal Height	Measurement	WHO	Survey	s	ANC.B6.DE21	20120608	20991231	
+70000034	Foetal Movement	Observation	WHO	Survey	s	ANC.B7.DE98	20120608	20991231	
+70000035	Parity	Observation	WHO	Survey	s	ANC.B6.DE32	20120608	20991231	
+70000036	Delivery date	Observation	WHO	Survey	s	ANC.End.12	20120608	20991231	
+70000037	Delivery mode	Observation	WHO	Survey	s	ANC.End.18	20120608	20991231	
+70000038	Delivery complications	Observation	WHO	Survey	s	ANC.End.25	20120608	20991231	
+70000039	Counselling on postpartum family planning conducted	Procedure	WHO	Survey	s	ANC.B10.DE144	20120608	20991231	
+70000040	Birth weight	Measurement	WHO	Survey	s	ANC.End.23	20120608	20991231	
+70000041	Preterm Birth	Observation	WHO	Survey	s	ANC.End.17	20120608	20991231	
 70000042	Hematocrit [Volume Fraction] of Blood	Measurement	IPRD	Survey	s	20570-8	20120608	20991231	
 70000043	Reason Referred Out	Observation	IPRD	Survey	s	reason-referred-out	20120608	20991231	
-70000044	Family planning method selected	Observation	IPRD	Survey	s	ANC.B10.DE145	20120608	20991231	
+70000044	Family planning method selected	Observation	WHO	Survey	s	ANC.B10.DE145	20120608	20991231	
 70000082	Admission Outcome	Observation	IPRD	Survey	s	IPRD.DE188	20120608	20991231	
 70000045	Birth Certificate Collection Date	Observation	IPRD	Survey	s	IPRD.DE187	20120608	20991231	
 70000046	Birth Certificate Issued Date	Observation	IPRD	Survey	s	IPRD.DE186	20120608	20991231	
@@ -219,35 +226,35 @@ concept_id	concept_name	domain_id	vocabulary_id	concept_class_id	standard_concep
 70000146	Rota 3	Drug	IPRD	Survey	s	IPRD.DE151	20120608	20991231	
 70000147	BCG	Drug	IPRD	Survey	s	IPRD.DE152	20120608	20991231	
 70000148	Hep B 0(Birth)	Drug	IPRD	Survey	s	IPRD.DE153	20120608	20991231	
-70000152	Diabetes	Condition	IPRD	Survey	s	ANC.B6.DE90	20120608	20991231	
-70000153	Kidney	Condition	IPRD	Survey	s	ANC.B6.DE97	20120608	20991231	
-70000154	Operation/Surgery	Condition	IPRD	Survey	s	ANC.B6.DE72	20120608	20991231	
+70000152	Diabetes	Condition	WHO	Survey	s	ANC.B6.DE90	20120608	20991231	
+70000153	Kidney	Condition	WHO	Survey	s	ANC.B6.DE97	20120608	20991231	
+70000154	Operation/Surgery	Condition	WHO	Survey	s	ANC.B6.DE72	20120608	20991231	
 80000001	Booked	Observation	IPRD	Survey	s	IPRD.DE40	20120608	20991231	
 80000002	<24hrs	Observation	IPRD	Survey	s	IPRD.DE43	20120608	20991231	
 80000003	Vehicle (includes cars, buses, tricycle)	Observation	IPRD	Survey	s	IPRD.DE48	20120608	20991231	
-80000004	Decreased	Observation	IPRD	Survey	s	ANC.B7.DE100	20120608	20991231	
-80000005	Vertex	Observation	IPRD	Survey	s	ANC.B8.DE113	20120608	20991231	
-80000006	Normal	Observation	IPRD	Survey	s	ANC.End.19	20120608	20991231	
+80000004	Decreased	Observation	WHO	Survey	s	ANC.B7.DE100	20120608	20991231	
+80000005	Vertex	Observation	WHO	Survey	s	ANC.B8.DE113	20120608	20991231	
+80000006	Normal	Observation	WHO	Survey	s	ANC.End.19	20120608	20991231	
 80000007	4% Chlorhexidine (CHX) gel applied to cord	Observation	IPRD	Survey	s	IPRD.DE72	20120608	20991231	
 80000008	Baby put to breast in skin-to-skin with mother within 1 hour of birth	Observation	IPRD	Survey	s	IPRD.DE75	20120608	20991231	
 80000009	Cord clamped/cut 1 minute	Observation	IPRD	Survey	s	IPRD.DE69	20120608	20991231	
-80000011	Positive	Observation	IPRD	Survey	s	ANC.B9.DE30	20120608	20991231	
-80000012	Hepatitis C positive	Observation	IPRD	Survey	s	ANC.B9.DE75	20120608	20991231	
-80000013	Hepatitis B negative	Observation	IPRD	Survey	s	ANC.B9.DE73	20120608	20991231	
-80000014	Syphilis negative	Observation	IPRD	Survey	s	ANC.B9.DE109	20120608	20991231	
-80000015	+	Observation	IPRD	Survey	s	ANC.B9.DE152	20120608	20991231	
-80000016	0	Observation	IPRD	Survey	s	ANC.B9.DE145	20120608	20991231	
-80000017	Convulsions	Observation	IPRD	Survey	s	ANC.B6.DE41	20120608	20991231	
+80000011	Positive	Observation	WHO	Survey	s	ANC.B9.DE30	20120608	20991231	
+80000012	Hepatitis C positive	Observation	WHO	Survey	s	ANC.B9.DE75	20120608	20991231	
+80000013	Hepatitis B negative	Observation	WHO	Survey	s	ANC.B9.DE73	20120608	20991231	
+80000014	Syphilis negative	Observation	WHO	Survey	s	ANC.B9.DE109	20120608	20991231	
+80000015	+	Observation	WHO	Survey	s	ANC.B9.DE152	20120608	20991231	
+80000016	0	Observation	WHO	Survey	s	ANC.B9.DE145	20120608	20991231	
+80000017	Convulsions	Observation	WHO	Survey	s	ANC.B6.DE41	20120608	20991231	
 80000018	D - Dead	Observation	IPRD	Survey	s	IPRD.DE192	20120608	20991231	
 80000019	Birth weight <2.5kg and admitted on KMC	Observation	IPRD	Survey	s	IPRD.DE117	20120608	20991231	
-80000020	Syphilis positive	Observation	IPRD	Survey	s	ANC.B9.DE108	20120608	20991231	
-80000021	A	Observation	IPRD	Survey	s	ANC.B9.DE25	20120608	20991231	
-80000022	Hepatitis C negative	Observation	IPRD	Survey	s	ANC.B9.DE76	20120608	20991231	
-80000023	0	Observation	IPRD	Survey	s	ANC.B9.DE151	20120608	20991231	
-80000024	Negative	Observation	IPRD	Survey	s	ANC.B9.DE31	20120608	20991231	
-80000025	Hepatitis B positive	Observation	IPRD	Survey	s	ANC.B9.DE72	20120608	20991231	
-80000026	Antepartum haemorrhage	Observation	IPRD	Survey	s	ANC.End.28	20120608	20991231	
-80000027	HIV positive	Observation	IPRD	Survey	s	ANC.B9.DE42	20120608	20991231	
+80000020	Syphilis positive	Observation	WHO	Survey	s	ANC.B9.DE108	20120608	20991231	
+80000021	A	Observation	WHO	Survey	s	ANC.B9.DE25	20120608	20991231	
+80000022	Hepatitis C negative	Observation	WHO	Survey	s	ANC.B9.DE76	20120608	20991231	
+80000023	0	Observation	WHO	Survey	s	ANC.B9.DE151	20120608	20991231	
+80000024	Negative	Observation	WHO	Survey	s	ANC.B9.DE31	20120608	20991231	
+80000025	Hepatitis B positive	Observation	WHO	Survey	s	ANC.B9.DE72	20120608	20991231	
+80000026	Antepartum haemorrhage	Observation	WHO	Survey	s	ANC.End.28	20120608	20991231	
+80000027	HIV positive	Observation	WHO	Survey	s	ANC.B9.DE42	20120608	20991231	
 80000028	Fresh	Observation	IPRD	Survey	s	IPRD.DE64	20120608	20991231	
 80000029	Had four pregnancies carried to term	Observation	IPRD	Survey	s	IPRD.DE86	20120608	20991231	
 80000030	Revisit	Observation	IPRD	Survey	s	IPRD.DE92	20120608	20991231	
@@ -255,12 +262,12 @@ concept_id	concept_name	domain_id	vocabulary_id	concept_class_id	standard_concep
 80000032	DC - Discharged	Observation	IPRD	Survey	s	IPRD.DE190	20120608	20991231	
 80000033	1 Day	Observation	IPRD	Survey	s	IPRD.DE102	20120608	20991231	
 80000034	RO - Referred Out	Observation	IPRD	Survey	s	IPRD.DE129	20120608	20991231	
-80000035	Absent	Observation	IPRD	Survey	s	ANC.B7.DE101	20120608	20991231	
+80000035	Absent	Observation	WHO	Survey	s	ANC.B7.DE101	20120608	20991231	
 80000036	>24hrs	Observation	IPRD	Survey	s	IPRD.DE44	20120608	20991231	
-80000037	O	Observation	IPRD	Survey	s	ANC.B9.DE28	20120608	20991231	
+80000037	O	Observation	WHO	Survey	s	ANC.B9.DE28	20120608	20991231	
 80000038	Assisted Delivery	Observation	IPRD	Survey	s	IPRD.DE30	20120608	20991231	
 80000039	Retained Product of Conception	Observation	IPRD	Survey	s	IPRD.DE34	20120608	20991231	
-80000040	Foul smelling discharge	Observation	IPRD	Survey	s	ANC.B5.DE6	20120608	20991231	
+80000040	Foul smelling discharge	Observation	WHO	Survey	s	ANC.B5.DE6	20120608	20991231	
 80000042	Not Treated	Observation	IPRD	Survey	s	IPRD.DE126	20120608	20991231	
 80000043	The client was referred for Oral Contraceptives	Observation	IPRD	Survey	s	IPRD.DE161	20120608	20991231	
 80000044	Mother was counselled but declined	Observation	IPRD	Survey	s	IPRD.DE80	20120608	20991231	
@@ -272,38 +279,38 @@ concept_id	concept_name	domain_id	vocabulary_id	concept_class_id	standard_concep
 80000051	ABC - Absconded	Observation	IPRD	Survey	s	IPRD.DE189	20120608	20991231	
 80000052	Exclusive breastfeeding	Observation	IPRD	Survey	s	IPRD.DE13	20120608	20991231	
 80000053	Bilateral Pitting Oedem - Not Present	Observation	IPRD	Survey	s	IPRD.DE178	20120608	20991231	
-80000054	Postpartum haemorrhage	Observation	IPRD	Survey	s	ANC.End.27	20120608	20991231	
+80000054	Postpartum haemorrhage	Observation	WHO	Survey	s	ANC.End.27	20120608	20991231	
 80000055	BreastFeeding with other food	Observation	IPRD	Survey	s	IPRD.DE171	20120608	20991231	
-80000056	Usual	Observation	IPRD	Survey	s	ANC.B7.DE.99	20120608	20991231	
+80000056	Usual	Observation	WHO	Survey	s	ANC.B7.DE.99	20120608	20991231	
 80000057	Grade 3 or (+++): oedema in both feet, in legs, hands or face (generalized)	Observation	IPRD	Survey	s	IPRD.DE177	20120608	20991231	
-80000058	Extreme Vomiting	Observation	IPRD	Survey	s	ANC.B7.DE42	20120608	20991231	
-80000060	Eclampsia	Observation	IPRD	Survey	s	ANC.End.35	20120608	20991231	
-80000061	Obstructed labour	Observation	IPRD	Survey	s	ANC.End.32	20120608	20991231	
-80000062	Fever	Observation	IPRD	Survey	s	ANC.B5.DE17	20120608	20991231	
-80000063	Bleeding PV	Observation	IPRD	Survey	s	ANC.B5.DE41	20120608	20991231	
-80000064	Breathlessness	Observation	IPRD	Survey	s	ANC.B7.DE22	20120608	20991231	
-80000065	+	Observation	IPRD	Survey	s	ANC.B9.DE146	20120608	20991231	
+80000058	Extreme Vomiting	Observation	WHO	Survey	s	ANC.B7.DE42	20120608	20991231	
+80000060	Eclampsia	Observation	WHO	Survey	s	ANC.End.35	20120608	20991231	
+80000061	Obstructed labour	Observation	WHO	Survey	s	ANC.End.32	20120608	20991231	
+80000062	Fever	Observation	WHO	Survey	s	ANC.B5.DE17	20120608	20991231	
+80000063	Bleeding PV	Observation	WHO	Survey	s	ANC.B5.DE41	20120608	20991231	
+80000064	Breathlessness	Observation	WHO	Survey	s	ANC.B7.DE22	20120608	20991231	
+80000065	+	Observation	WHO	Survey	s	ANC.B9.DE146	20120608	20991231	
 80000066	Abnormal Biochemical Parameters	Observation	IPRD	Survey	s	IPRD.DE7	20120608	20991231	
-80000067	Swelling of legs	Observation	IPRD	Survey	s	ANC.B8.DE99	20120608	20991231	
-80000068	Pre-eclampsia	Observation	IPRD	Survey	s	ANC.End.34	20120608	20991231	
+80000067	Swelling of legs	Observation	WHO	Survey	s	ANC.B8.DE99	20120608	20991231	
+80000068	Pre-eclampsia	Observation	WHO	Survey	s	ANC.End.34	20120608	20991231	
 80000069	Prolonged Labour	Observation	IPRD	Survey	s	IPRD.DE35	20120608	20991231	
 80000070	Mother was counselled and chose Depo-Provera	Observation	IPRD	Survey	s	IPRD.DE79	20120608	20991231	
 80000071	Sepsis	Observation	IPRD	Survey	s	IPRD.DE37	20120608	20991231	
 80000072	Ruptured Uterus	Observation	IPRD	Survey	s	IPRD.DE36	20120608	20991231	
 80000073	Abortion	Observation	IPRD	Survey	s	IPRD.DE38	20120608	20991231	
-80000097	Syphilis test conducted	Procedure	IPRD	Survey	s	ANC.B9.DE96	20120608	20991231	
-80000098	Hepatitis B test conducted	Procedure	IPRD	Survey	s	ANC.B9.DE60	20120608	20991231	
-80000099	Blood haemoglobin test conducted	Procedure	IPRD	Survey	s	ANC.B9.DE175	20120608	20991231	
-80000100	hepatitis C test conducted	Procedure	IPRD	Survey	s	ANC.B9.DE78	20120608	20991231	
-80000101	Counselling conducted on hepatitis B positive	Procedure	IPRD	Survey	s	ANC.B10.DE79	20120608	20991231	
-80000102	Syphilis counselling, treatment and further testing	Procedure	IPRD	Survey	s	ANC.B10.DE82	20120608	20991231	
-80000103	Counselling conducted on hepatitis C positive	Procedure	IPRD	Survey	s	ANC.B10.DE80	20120608	20991231	
-80000104	Early initiation of breastfeeding	Procedure	IPRD	Survey	s	ANC.B10.DE164	20120608	20991231	
+80000097	Syphilis test conducted	Procedure	WHO	Survey	s	ANC.B9.DE96	20120608	20991231	
+80000098	Hepatitis B test conducted	Procedure	WHO	Survey	s	ANC.B9.DE60	20120608	20991231	
+80000099	Blood haemoglobin test conducted	Procedure	WHO	Survey	s	ANC.B9.DE175	20120608	20991231	
+80000100	hepatitis C test conducted	Procedure	WHO	Survey	s	ANC.B9.DE78	20120608	20991231	
+80000101	Counselling conducted on hepatitis B positive	Procedure	WHO	Survey	s	ANC.B10.DE79	20120608	20991231	
+80000102	Syphilis counselling, treatment and further testing	Procedure	WHO	Survey	s	ANC.B10.DE82	20120608	20991231	
+80000103	Counselling conducted on hepatitis C positive	Procedure	WHO	Survey	s	ANC.B10.DE80	20120608	20991231	
+80000104	Early initiation of breastfeeding	Procedure	WHO	Survey	s	ANC.B10.DE164	20120608	20991231	
 80000105	HIV test conducted	Procedure	IPRD	Survey	s	hiv-test-conducted	20120608	20991231	
 80000106	Malaria test conducted	Procedure	IPRD	Survey	s	Malaria-test-conducted	20120608	20991231	
 80000107	Sickle test conducted	Procedure	IPRD	Survey	s	sickle-cell-test-conducted	20120608	20991231	
 80000108	HbsAg test conducted	Procedure	IPRD	Survey	s	hbsAg-test-conducted	20120608	20991231	
-80000109	Urine test conducted	Procedure	IPRD	Survey	s	completed	20120608	20991231	
+80000109	Urine test conducted	Procedure	WHO	Survey	s	completed	20120608	20991231	
 90000001	Organization value	Metadata	Concept Class	Concept Class		OMOP generated	19700101	20991231	
 90000002	Organization-Country	Visit	IPRD	Organization		country	20020131	20991231	
 90000003	Organization-State	Visit	IPRD	Organization		state	20020131	20991231	
