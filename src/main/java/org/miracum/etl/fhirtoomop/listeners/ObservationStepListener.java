@@ -133,6 +133,9 @@ public class ObservationStepListener implements StepExecutionListener {
       dbMappings.getOmopConceptMapWrapper().setFindValidWHOConcept(
               repositories.getConceptRepository().findValidConceptId(VOCABULARY_WHO)
       );
+      dbMappings.getOmopConceptMapWrapper().setFindValidIcd10GmConcept(
+              repositories.getConceptRepository().findValidConceptId(VOCABULARY_ICD10GM)
+      );
     }
     dbMappings.setFindHardCodeConcept(
         repositories.getSourceToConceptRepository().sourceToConceptMap());

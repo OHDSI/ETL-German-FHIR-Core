@@ -143,6 +143,10 @@ public class ObservationMapper implements FhirMapper<Observation> {
     var wrapper = new OmopModelWrapper();
 
     var observationLogicId = fhirReferenceUtils.extractId(srcObservation);
+//    var result = Objects.equals(observationLogicId, "obs-4283158f-7e61-436e-bb3d-67558e677cb5");
+//    if(!result){
+//      return null;
+//    }
     var observationSourceIdentifier =
         fhirReferenceUtils.extractResourceFirstIdentifier(srcObservation);
     if (StringUtils.isBlank(observationLogicId)
