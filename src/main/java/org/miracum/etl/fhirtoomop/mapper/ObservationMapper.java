@@ -849,6 +849,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
                         observationSourceConceptId,
                         observationCode,
                         personId,
+                        visitOccId,
                         observationLogicId,
                         observationSourceIdentifier,
                         srcObservation);
@@ -869,6 +870,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
           Integer diagnoseSourceConceptId,
           String rawIcdCode,
           Long personId,
+          Long visitOccId,
           String conditionLogicId,
           String conditionSourceIdentifier,
           Observation srcObservation) {
@@ -880,6 +882,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
     }
     return ConditionOccurrence.builder()
             .personId(personId)
+            .visitOccurrenceId(visitOccId)
             .conditionStartDate(effectiveDateTime.toLocalDate())
             .conditionStartDatetime(effectiveDateTime)
             .conditionSourceConceptId(diagnoseSourceConceptId)
