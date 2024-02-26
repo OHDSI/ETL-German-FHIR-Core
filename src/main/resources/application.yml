@@ -71,6 +71,18 @@ fhir:
     #medication-statement-id: "https://diz.uniklinikum-dresden.de/fhir/core/NamingSystem/MedicationStatementId"
     #observation-id: "https://miracum.org/fhir/NamingSystem/identifier/P21SurrogateObservationId"
     #condition-id: "https://miracum.org/fhir/NamingSystem/identifier/P21SurrogateConditionId"
+    iprd-system:
+      - "http://iprd.org/guides/anc/CodeSystem/iprd-custom-codes"
+      - "http://iprdgroup.com/guides/anc/CodeSystem/iprd-custom-codes"
+      - "http://iprdsolutions.com/fhir/uv/anc/CodeSystem/iprd-custom-codes"
+      - "https://iprdgroup.com/custom-codes"
+      - "https://www.iprdgroup.com/ValueSet/OrganizationType/tags"
+      - "http://iprdgroup.com/custom-codes/gestational-diabestes-blood-test"
+      - "http://iprdgroup.com/outcome-of-visit"
+      - "http://iprdgroup.com/custom-codes"
+      - "http://iprdgroup.com/custom-codes/gestational-diabestes"
+    who-system:
+      - "http://fhir.org/guides/who/anc-cds/CodeSystem/anc-custom-codes"
     loinc: "http://loinc.org"
     diagnostic-confidence: "http://fhir.de/StructureDefinition/icd-10-gm-diagnosesicherheit"
     diagnosis-use: "http://terminology.hl7.org/CodeSystem/diagnosis-role"
@@ -117,7 +129,11 @@ fhir:
       - "http://iprdgroup.com/guides/anc/CodeSystem/iprd-custom-codes"
       - "http://iprdsolutions.com/fhir/uv/anc/CodeSystem/iprd-custom-codes"
       - "https://iprdgroup.com/custom-codes"
+      - "http://iprdgroup.com/custom-codes"
+      - "http://iprdgroup.com/outcome-of-visit"
       - "http://hl7.org/fhir/sid/icd-10"
+      - "http://iprdgroup.com/custom-codes/gestational-diabestes"
+      - "http://iprdgroup.com/custom-codes/gestational-diabestes-blood-test"
     admission-reason:
       - "https://www.medizininformatik-initiative.de/fhir/core/CodeSystem/Aufnahmegrund"
       - "https://www.medizininformatik-initiative.de/fhir/modul-fall/core/CodeSystem/Aufnahmegrund"
@@ -158,6 +174,8 @@ fhir:
       - "http://fhir.org/guides/who/anc-cds/CodeSystem/anc-custom-codes"
       - "http://iprdgroup.com/guides/anc/CodeSystem/iprd-custom-codes"
       - "http://iprdsolutions.com/fhir/uv/anc/CodeSystem/iprd-custom-codes"
+      - "https://iprdgroup.com/custom-codes"
+      - "https://www.iprdgroup.com/ValueSet/OrganizationType/tags"
     vaccine-code:
       - "http://fhir.de/CodeSystem/dimdi/atc"
       - "http://fhir.de/CodeSystem/bfarm/atc"
@@ -170,8 +188,9 @@ fhir:
       - "http://loinc.org"
       - "http://terminology.hl7.org/CodeSystem/v2-0074"
     identifier-system:
-      - "http://iprdgroup.com/identifiers/ocl"
-      - "http://iprdgroup.com/identifiers/patient-card"
+#      - "http://iprdgroup.com/identifiers/ocl"
+#      - "http://iprdgroup.com/identifiers/patient-card"
+
 opentracing:
   jaeger:
     enabled: false
