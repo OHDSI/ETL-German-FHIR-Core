@@ -123,4 +123,12 @@ public class OmopObservation {
   /** The identifier for the source data in the FHIR resource. */
   @Column(name = "fhir_identifier", nullable = true)
   private String fhirIdentifier;
+
+  /** The identifier for the source data in the FHIR resource. */
+  @Column(name = "value_as_dateTime", nullable = true)
+  private LocalDateTime valueAsDateTime;
+
+  /** The identifier for the source data in the FHIR resource. */
+  @Column(name = "value_as_boolean", nullable = true)
+  private Boolean valueAsBoolean;
 }

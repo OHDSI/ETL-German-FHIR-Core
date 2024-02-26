@@ -26,7 +26,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @IdClass(LoincStandardId.class)
 @Table(name = "loinc_standard_domain_lookup", schema = "cds_etl_helper")
-public class LoincStandardDomainLookup {
+public class StandardDomainLookup {
 
   /** An LOINC code. */
   @Column(name = "source_code")

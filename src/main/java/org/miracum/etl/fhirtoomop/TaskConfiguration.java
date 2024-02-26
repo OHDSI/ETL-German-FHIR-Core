@@ -39,6 +39,7 @@ import org.miracum.etl.fhirtoomop.listeners.MedicationAdministrationStepListener
 import org.miracum.etl.fhirtoomop.listeners.MedicationStatementStepListener;
 import org.miracum.etl.fhirtoomop.listeners.MedicationStepListener;
 import org.miracum.etl.fhirtoomop.listeners.ObservationStepListener;
+import org.miracum.etl.fhirtoomop.listeners.OrganizationStepListener;
 import org.miracum.etl.fhirtoomop.listeners.PatientStepListener;
 import org.miracum.etl.fhirtoomop.listeners.ProcedureStepListener;
 import org.miracum.etl.fhirtoomop.mapper.ConditionMapper;
@@ -53,6 +54,7 @@ import org.miracum.etl.fhirtoomop.mapper.MedicationStatementMapper;
 import org.miracum.etl.fhirtoomop.mapper.ObservationMapper;
 import org.miracum.etl.fhirtoomop.mapper.PatientMapper;
 import org.miracum.etl.fhirtoomop.mapper.ProcedureMapper;
+import org.miracum.etl.fhirtoomop.mapper.OrganizationMapper;
 import org.miracum.etl.fhirtoomop.model.FhirPsqlResource;
 import org.miracum.etl.fhirtoomop.model.OmopModelWrapper;
 import org.miracum.etl.fhirtoomop.processor.ConditionProcessor;
@@ -65,6 +67,7 @@ import org.miracum.etl.fhirtoomop.processor.MedicationAdministrationProcessor;
 import org.miracum.etl.fhirtoomop.processor.MedicationProcessor;
 import org.miracum.etl.fhirtoomop.processor.MedicationStatementProcessor;
 import org.miracum.etl.fhirtoomop.processor.ObservationProcessor;
+import org.miracum.etl.fhirtoomop.processor.OrganizationProcessor;
 import org.miracum.etl.fhirtoomop.processor.PatientProcessor;
 import org.miracum.etl.fhirtoomop.processor.ProcedureProcessor;
 import org.miracum.etl.fhirtoomop.repository.OmopRepository;
@@ -428,6 +431,7 @@ public class TaskConfiguration {
    * Defines the processing logic including the processing order for bulk load with all FHIR
    * resource types.
    *
+   * @param  stepProcessOrganization which transforms FHIR Patient resources to OMOP CDM
    * @param patientProcessor processor which maps FHIR Patient resources to OMOP CDM
    * @param encounterProcessor processor which maps FHIR Encounter (administrative case/supply case
    *     resources to OMOP CDM
@@ -446,6 +450,7 @@ public class TaskConfiguration {
   @Bean
   public Flow fullLoadFlow(
       Step stepProcessPatients,
+      Step stepProcessOrganization,
       Step stepProcessEncounterInstitutionContact,
       Step stepProcessConditions,
       Step stepProcessObservations,
@@ -456,8 +461,10 @@ public class TaskConfiguration {
       Step stepProcessDiagnosticReport,
       Flow medicationStepsFlow) {
     return new FlowBuilder<SimpleFlow>("bulkload")
-        .start(stepProcessPatients)
+        .start(stepProcessOrganization)
+            .next(stepProcessPatients)
         .next(stepProcessEncounterInstitutionContact)
+            .next(stepEncounterDepartmentCase)
         .next(medicationStepsFlow)
         .next(stepProcessConditions)
         .next(stepProcessObservations)
@@ -566,7 +573,8 @@ public class TaskConfiguration {
    * Defines the processing logic including the processing order for incremental load with all FHIR
    * resource types.
    *
-   * @param stepProcessPatients Step which transforms FHIR Patient resources to OMOP CDM
+   * @param  stepProcessOrganization which transforms FHIR Patient resources to OMOP CDM
+   *  @param stepProcessPatients Step which transforms FHIR Patient resources to OMOP CDM
    * @param stepProcessEncounterInstitutionContact processor which transforms FHIR Encounter
    *     (administrative case/supply case resources to OMOP CDM
    * @param stepProcessConditions Step which transforms FHIR Condition resources to OMOP CDM
@@ -581,6 +589,7 @@ public class TaskConfiguration {
   @Bean
   public Flow incrementalLoadFlow(
       Step stepProcessPatients,
+      Step stepProcessOrganization,
       Step stepProcessEncounterInstitutionContact,
       Step stepProcessConditions,
       Step stepProcessObservations,
@@ -592,6 +601,7 @@ public class TaskConfiguration {
       Flow medicationStepsFlow) {
     return new FlowBuilder<SimpleFlow>("incrementalLoad")
         .start(stepProcessPatients)
+        .next(stepProcessOrganization)
         .next(stepProcessEncounterInstitutionContact)
         .next(stepEncounterDepartmentCase)
         .next(medicationStepsFlow)
@@ -1445,6 +1455,69 @@ public class TaskConfiguration {
       IParser parser, DiagnosticReportMapper diagnosticReportMapper) {
 
     return new DiagnosticReportProcessor(diagnosticReportMapper, parser);
+  }
+
+  @Bean
+  @StepScope
+  public ItemStreamReader<FhirPsqlResource> readerPsqlOrganization(
+          @Qualifier("readerDataSource") final DataSource dataSource,
+          IGenericClient client,
+          IParser fhirParser) {
+    var resourceType = "Organization";
+    log.info(FETCH_RESOURCES_LOG, resourceType);
+
+    if (StringUtils.isBlank(fhirBaseUrl)) {
+      return createResourceReader(resourceType, dataSource);
+    }
+    return fhirServerItemReader(client, fhirParser, ResourceType.ORGANIZATION.getDisplay(), "");
+  }
+
+  /**
+   * Defines the step for processing FHIR Organization resources. This step loads and processes Organization
+   * resources from FHIR Gateway and writes them to OMOP CDM.
+   *
+   * @param organizationProcessor processor which maps FHIR Patient resources to OMOP CDM
+   * @param writer the writer which writes the data to OMOP CDM
+   * @return step for processing FHIR Patient resources
+   */
+  @Bean
+  public Step stepProcessOrganization(
+          OrganizationProcessor organizationProcessor,
+          OrganizationStepListener listener,
+          ItemStreamReader<FhirPsqlResource> readerPsqlOrganization,
+          ItemWriter<OmopModelWrapper> writer) {
+
+    var stepOrganizationBuilder =
+            stepBuilderFactory
+                    .get("stepProcessOrganization")
+                    .listener(listener)
+                    .<FhirPsqlResource, OmopModelWrapper>chunk(batchChunkSize)
+                    .reader(readerPsqlOrganization)
+                    .processor(organizationProcessor)
+                    .listener(new FhirResourceProcessListener())
+                    .writer(writer);
+    if (StringUtils.isBlank(fhirBaseUrl)) {
+
+      stepOrganizationBuilder.throttleLimit(throttleLimit).taskExecutor(taskExecutor());
+    }
+    return stepOrganizationBuilder.build();
+  }
+
+  /**
+   * Defines the processor for FHIR Organization resources. The OrganizationProcessor contains the business
+   * logic to map FHIR Organization resources to OMOP CDM.
+   *
+   * @param parser parser which converts between the HAPI FHIR model/structure objects and their
+   *     respective String wire format (JSON)
+   * @param fhirSystems reference to naming and coding systems used in FHIR resources
+   * @param fhirPath FhirPath engine to evaluate path expressions over FHIR resources
+   * @param idMappings reference to internal id mappings
+   * @return processor for FHIR Patient resources
+   */
+  @Bean
+  public OrganizationProcessor OrganizationProcessor(IParser parser, OrganizationMapper organizationMapper) {
+
+    return new OrganizationProcessor(organizationMapper, parser);
   }
 
   /**

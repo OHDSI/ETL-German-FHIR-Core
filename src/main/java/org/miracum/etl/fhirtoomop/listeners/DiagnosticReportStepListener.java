@@ -1,7 +1,9 @@
 package org.miracum.etl.fhirtoomop.listeners;
 
+import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_IPRD;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_LOINC;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_SNOMED;
+import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_WHO;
 
 import com.google.common.base.Strings;
 import java.io.IOException;
@@ -117,6 +119,13 @@ public class DiagnosticReportStepListener implements StepExecutionListener {
           .getOmopConceptMapWrapper()
           .setFindValidLoincConcept(
               repositories.getConceptRepository().findValidConceptId(VOCABULARY_LOINC));
+      dbMappings
+              .getOmopConceptMapWrapper()
+              .setFindValidIPRDConcept(
+                      repositories.getConceptRepository().findValidConceptId(VOCABULARY_IPRD));
+      dbMappings.getOmopConceptMapWrapper().setFindValidWHOConcept(
+              repositories.getConceptRepository().findValidConceptId(VOCABULARY_WHO)
+      );
     }
     dbMappings.setFindHardCodeConcept(
         repositories.getSourceToConceptRepository().sourceToConceptMap());

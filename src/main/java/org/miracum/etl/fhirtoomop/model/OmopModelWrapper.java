@@ -5,6 +5,7 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.miracum.etl.fhirtoomop.model.omop.CareSite;
 import org.miracum.etl.fhirtoomop.model.omop.ConditionOccurrence;
 import org.miracum.etl.fhirtoomop.model.omop.DeviceExposure;
 import org.miracum.etl.fhirtoomop.model.omop.DrugExposure;
@@ -38,6 +39,7 @@ public class OmopModelWrapper {
 
   private List<MedicationIdMap> medicationIdMap = new ArrayList<>();
   private List<PostProcessMap> postProcessMap = new ArrayList<>();
+  private CareSite careSite;
 
   /**
    * Enumeration of all OMOP CDM table names which can be filled by the ETL process.
@@ -58,7 +60,8 @@ public class OmopModelWrapper {
     MEASUREMENT("measurement"),
     PROCEDUREOCCURRENCE("procedure_occurrence"),
     DEVICEEXPOSURE("device_exposure"),
-    DRUGEXPOSURE("drug_exposure");
+    DRUGEXPOSURE("drug_exposure"),
+    CARESITE("care_site");
 
     private final String label;
 

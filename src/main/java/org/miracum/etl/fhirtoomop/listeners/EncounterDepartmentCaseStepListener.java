@@ -146,7 +146,7 @@ public class EncounterDepartmentCaseStepListener implements StepExecutionListene
       dbMappings.getFindVisitOccIdByLogicalId().clear();
     }
     dbMappings.getFindHardCodeConcept().clear();
-    dbMappings.getFindCareSiteId().clear();
+//    dbMappings.getFindCareSiteId().clear();
 
     return ExitStatus.COMPLETED;
   }

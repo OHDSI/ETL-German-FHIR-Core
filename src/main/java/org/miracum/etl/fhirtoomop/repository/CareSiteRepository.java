@@ -4,7 +4,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.miracum.etl.fhirtoomop.model.omop.CareSite;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * The CareSiteRepository interface represents a repository for the care_site table in OMOP CDM.
@@ -31,4 +34,9 @@ public interface CareSiteRepository extends PagingAndSortingRepository<CareSite,
   default Map<String, CareSite> careSitesMap() {
     return findAll().stream().collect(Collectors.toMap(CareSite::getCareSiteSourceValue, v -> v));
   }
+
+  @Transactional
+  @Modifying
+  @Query(value = "TRUNCATE TABLE care_site CASCADE", nativeQuery = true)
+  void truncateTable();
 }

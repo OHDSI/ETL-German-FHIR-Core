@@ -73,6 +73,7 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
     writeMedicationIdMap(entries);
     writePostProcessMap(entries);
     writePerson(entries);
+    writeOrganization(entries);
     writeVisitDetail(entries);
     writeVisitOcc(entries);
     writeObservation(entries);
@@ -147,6 +148,19 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
     }
   }
 
+  private void writeOrganization(List<? extends OmopModelWrapper> entries) {
+    var organization =
+            entries.stream()
+                    .filter(entry -> entry.getCareSite() != null)
+                    .map(OmopModelWrapper::getCareSite)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+    if(!organization.isEmpty()){
+      log.info("Inserting {} rows into care_site table",organization.size());
+      repository.getCareSiteRepository().saveAll(organization);
+    }
+  }
+
   /**
    * Writes the data from FHIR resources to the visit_detail table in OMOP CDM.
    *
@@ -194,6 +208,7 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
    * @param entries list of elements to be written to OMOP CDM
    */
   private void writeObservation(List<? extends OmopModelWrapper> entries) {
+    log.info("write------------{}",entries.size());
     var observations =
         entries.stream()
             .filter(entry -> entry.getObservation() != null)

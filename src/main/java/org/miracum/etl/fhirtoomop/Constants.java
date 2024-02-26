@@ -45,6 +45,8 @@ public class Constants {
   public static final String VOCABULARY_OPS = "OPS";
   public static final String VOCABULARY_SNOMED = "SNOMED";
   public static final String VOCABULARY_DOMAIN = "Domain";
+  public static final String VOCABULARY_IPRD = "IPRD";
+  public static final String VOCABULARY_WHO = "WHO";
 
   public static final String SOURCE_VOCABULARY_ID_GENDER = "Gender";
   public static final String SOURCE_VOCABULARY_ID_PROCEDURE_BODYSITE = "Procedure Bodysite";
@@ -104,7 +106,7 @@ public class Constants {
   public static final String OMOP_DOMAIN_GENDER = "Gender";
 
   public static final ImmutableList<String> FHIR_RESOURCE_ACCEPTABLE_EVENT_STATUS_LIST =
-      ImmutableList.of("in-progress", "on-hold", "completed", "unknown");
+      ImmutableList.of("in-progress", "on-hold", "completed", "unknown", "not-done");
   public static final ImmutableList<String> FHIR_RESOURCE_CONDITION_ACCEPTABLE_STATUS_LIST =
       ImmutableList.of("provisional", "differential", "confirmed");
   public static final ImmutableList<String> FHIR_RESOURCE_ENCOUNTER_ACCEPTABLE_STATUS_LIST =
@@ -120,7 +122,7 @@ public class Constants {
   public static final ImmutableList<String> FHIR_RESOURCE_CONSENT_ACCEPTABLE_STATUS_LIST =
       ImmutableList.of("active");
   public static final ImmutableList<String> FHIR_RESOURCE_OBSERVATION_ACCEPTABLE_STATUS_LIST =
-      ImmutableList.of("final", "unknown");
+      ImmutableList.of("final", "unknown", "preliminary", "registered");
   public static final ImmutableList<String> FHIR_RESOURCE_GECCO_OBSERVATION_ACCEPTABLE_VALUE_CODE =
       ImmutableList.of("373066001");
   public static final ImmutableList<String>

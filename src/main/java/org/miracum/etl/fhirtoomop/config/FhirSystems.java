@@ -55,8 +55,13 @@ public class FhirSystems {
   private static String geccoSofaScore;
   private static String geccoFrailtyScore;
   private static List<String> diagnosticReportCategory;
+  private static List<String> identifierSystem;
+  private static List<String> iprdSystem;
+  private static List<String> whoSystem;
 
   public enum fhirEnum {
+    IPRDSYSTEM(iprdSystem),
+    WHOSYSTEM(whoSystem),
     LOINC(loinc),
     ADMISSIONREASON(admissionReason),
     DISCHARGEREASON(dischargeReason),
@@ -90,7 +95,8 @@ public class FhirSystems {
     GECCOCOMPONENTS(geccoComponents),
     GECCOSOFASCORE(geccoSofaScore),
     GECCOFRAILTYSCORE(geccoFrailtyScore),
-    DIAGNOSTICREPORTCATEGORY(diagnosticReportCategory);
+    DIAGNOSTICREPORTCATEGORY(diagnosticReportCategory),
+    IDENTIFIERSYSTEM(identifierSystem);
 
     private String singleUrl;
     private List<String> multipleUrls;
@@ -129,6 +135,21 @@ public class FhirSystems {
     }
   }
 
+  public void setIprdSystem(List<String> iprdSystem) {
+    FhirSystems.iprdSystem = iprdSystem;
+  }
+
+  public List<String> getIprdSystem() {
+    return iprdSystem;
+  }
+
+  public void setWhoSystem(List<String> whoSystem) {
+    FhirSystems.whoSystem = whoSystem;
+  }
+
+  public List<String> getWhoSystem() {
+    return whoSystem;
+  }
   public String getLoinc() {
     return loinc;
   }
@@ -439,5 +460,13 @@ public class FhirSystems {
 
   public void setDiagnosticReportCategory(List<String> diagnosticReportCategory) {
     FhirSystems.diagnosticReportCategory = diagnosticReportCategory;
+  }
+
+  public List<String> getIdentifierSystem() {
+    return identifierSystem;
+  }
+
+  public void setIdentifierSystem(List<String> identifierSystem) {
+    FhirSystems.identifierSystem = identifierSystem;
   }
 }

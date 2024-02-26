@@ -56,14 +56,6 @@ public class PatientStepListener implements StepExecutionListener {
   @Override
   public void beforeStep(StepExecution stepExecution) {
 
-    if (bulkload.equals(Boolean.TRUE)) {
-      log.info("========= Preparing OMOP DB for BulkLoad =========");
-      truncateDb();
-    } else {
-      log.info("========= Preparing OMOP DB for IncrementalLoad =========");
-      cleanUpTable();
-    }
-
     dbMappings.setFindHardCodeConcept(
         repositories.getSourceToConceptRepository().sourceToConceptMap());
     dbMappings
