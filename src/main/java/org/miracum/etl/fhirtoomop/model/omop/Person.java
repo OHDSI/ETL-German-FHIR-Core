@@ -114,6 +114,22 @@ public class Person {
   @Column(name = "ethnicity_source_concept_id")
   private Integer ethnicitySourceConceptId;
 
+  /** The source code for the tribe of the person as it appears in the source data. */
+  @Column(name = "tribe_source_value")
+  private String tribeSourceValue;
+
+  /** A foreign key to the tribe concept that refers to the code used in the source. */
+  @Column(name = "tribe_source_concept_id")
+  private Integer tribeSourceConceptId;
+
+  /** The source code for the occupation of the person as it appears in the source data. */
+  @Column(name = "occupation_source_value")
+  private String occupationSourceValue;
+
+  /** A foreign key to the occupation concept that refers to the code used in the source. */
+  @Column(name = "occupation_source_concept_id")
+  private Integer occupationSourceConceptId;
+
   /** The logical id of the FHIR resource. */
   @Column(name = "fhir_logical_id", nullable = true)
   private String fhirLogicalId;
