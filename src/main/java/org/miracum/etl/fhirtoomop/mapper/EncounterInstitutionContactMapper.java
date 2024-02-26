@@ -81,6 +81,8 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
       MapperMetrics.setNoFhirReferenceCounter("EncounterInstitutionContact");
   private static final Counter deletedFhirReferenceCounter =
       MapperMetrics.setDeletedFhirRessourceCounter("EncounterInstitutionContact");
+  private static final Counter statusNotAcceptableCounter =
+          MapperMetrics.setStatusNotAcceptableCounter("EncounterInstitutionContact");
 
   /**
    * Constructor for objects of the class EncounterInstitutionContactMapper.
@@ -142,6 +144,7 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
           "The [status]: {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
           statusValue,
           encounterId);
+      statusNotAcceptableCounter.increment();
       return null;
     }
 

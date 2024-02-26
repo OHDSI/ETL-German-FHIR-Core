@@ -72,6 +72,18 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
       MapperMetrics.setNoFhirReferenceCounter("stepProcessEncounterDepartmentCase");
   private static final Counter deletedFhirReferenceCounter =
       MapperMetrics.setDeletedFhirRessourceCounter("stepProcessEncounterDepartmentCase");
+  private static final Counter statusNotAcceptableCounter =
+          MapperMetrics.setStatusNotAcceptableCounter("stepProcessEncounterDepartmentCase");
+  private static final Counter unableToExtractCounter =
+          MapperMetrics.setUnableToExtractResourceCounter("stepProcessEncounterDepartmentCase");
+  private static final Counter noMatchingVisitOccurenceCounter =
+          MapperMetrics.setNoMatchingVisitOccurenceCounter("stepProcessEncounterDepartmentCase");
+  private static final Counter noStartDateFoundInLocationCounter =
+          MapperMetrics.setNoStartDateFoundInLocationCounter("stepProcessEncounterDepartmentCase");
+  private static final Counter noLocationReferenceFoundCounter =
+          MapperMetrics.setNoLocationReferenceFoundCounter("stepProcessEncounterDepartmentCase");
+  private static final Counter noDepartmentCodeFoundCounter =
+          MapperMetrics.setNoDepartmentCodeFoundCounter("stepProcessEncounterDepartmentCase");
 
   /**
    * Constructor for objects of the class EncounterDepartmentCaseMapper.
@@ -140,6 +152,7 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
           "The [status]: {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
           statusValue,
           departmentCaseId);
+      statusNotAcceptableCounter.increment();
       return null;
     }
 
@@ -156,6 +169,7 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
       log.warn(
           "Unable to extract [encounter reference] from [Encounter]: {}. Skip resource",
           departmentCaseId);
+      unableToExtractCounter.increment();
       return null;
     }
 
@@ -166,6 +180,7 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
       log.error(
           "No matching [VisitOccurrence] found for [Encounter]: {}. Skip resource",
           departmentCaseId);
+      noMatchingVisitOccurenceCounter.increment();
       return null;
     }
 
@@ -405,7 +420,7 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
         log.warn(
             "No [start date] found for [Location] in [Encounter]: {}. Skip the [Location].",
             departmentCaseId);
-
+        noStartDateFoundInLocationCounter.increment();
         continue;
       }
 
@@ -445,6 +460,7 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
       log.warn(
           "No [Location Reference] found. [Encounter]: {} is invalid. Please check.",
           departmentCaseId);
+      noLocationReferenceFoundCounter.increment();
       return Collections.emptyList();
     }
     return srcDepartmentCaseEncounter.getLocation();
@@ -508,6 +524,7 @@ public class EncounterDepartmentCaseMapper implements FhirMapper<Encounter> {
             .findAny();
     if (fabSourceValue.isEmpty()) {
       log.debug("No department [FAB] code found for [Encounter]: {}.", departmentCaseId);
+      noDepartmentCodeFoundCounter.increment();
       return null;
     }
     return fabSourceValue.get().getCode();

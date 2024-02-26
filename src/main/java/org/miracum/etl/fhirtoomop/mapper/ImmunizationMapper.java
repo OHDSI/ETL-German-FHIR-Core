@@ -73,6 +73,10 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
       MapperMetrics.setNoFhirReferenceCounter("stepProcessImmunizations");
   private static final Counter deletedFhirReferenceCounter =
       MapperMetrics.setDeletedFhirRessourceCounter("stepProcessImmunizations");
+  private static final Counter statusNotAcceptableCounter =
+          MapperMetrics.setStatusNotAcceptableCounter("stepProcessImmunizations");
+  private static final Counter noMatchingEncounterCounter =
+          MapperMetrics.setNoMatchingEncounterCount("stepProcessImmunizations");
 
   @Autowired
   public ImmunizationMapper(DbMappings dbMappings, Boolean bulkload) {
@@ -115,6 +119,7 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
           "The [status]: {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
           status,
           immunizationId);
+      statusNotAcceptableCounter.increment();
       return null;
     }
 
@@ -785,6 +790,7 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
             encounterReferenceIdentifier, encounterReferenceLogicalId, personId, immunizationId);
     if (visitOccId == null) {
       log.debug("No matching [Encounter] found for [Immunization]: {}.", immunizationId);
+      noMatchingEncounterCounter.increment();
     }
 
     return visitOccId;

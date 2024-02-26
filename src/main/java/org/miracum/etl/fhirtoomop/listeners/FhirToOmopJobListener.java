@@ -25,6 +25,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -267,6 +268,7 @@ public class FhirToOmopJobListener implements JobExecutionListener {
     var exitStatus = jobExecution.getExitStatus();
     if (exitStatus.equals(ExitStatus.COMPLETED)) {
       logResults(jobExecution);
+      logSkippedReasons(jobExecution);
       //    logSkippedReasons(jobExecution);
       var endJob = "==== Job End ====";
       log.info("=".repeat(endJob.length()));
@@ -359,18 +361,28 @@ public class FhirToOmopJobListener implements JobExecutionListener {
     log.info(sepLine);
     log.info(header);
     log.info(sepLine);
+
+    String previousStep = null; // To keep track of the previous step
+
     for (var counter : getCounters(jobExecution)) {
       if ((int) counter.count() == 0) {
         continue;
       }
-      log.info(
-          String.format(
-              format,
-              counter.getId().getTag("type"),
-              counter.getId().getDescription(),
-              (int) counter.count()));
+
+      String currentStep = counter.getId().getTag("type"); // Current step
+
+      // Print current step only if it's different from the previous one
+      if (!Objects.equals(currentStep, previousStep)) {
+        log.info(String.format(format, currentStep, counter.getId().getDescription(), (int) counter.count()));
+      } else {
+        // If it's the same step, print an empty string for the step column
+        log.info(String.format(format, "", counter.getId().getDescription(), (int) counter.count()));
+      }
+
+      previousStep = currentStep; // Update previous step
     }
   }
+
 
   /**
    * Retrieve all Counters from global Metrics.
@@ -386,6 +398,32 @@ public class FhirToOmopJobListener implements JobExecutionListener {
       counters.add(Metrics.counter("invalid.code", "type", stepExecution.getStepName()));
       counters.add(Metrics.counter("no.source.code", "type", stepExecution.getStepName()));
       counters.add(Metrics.counter("no.fhir.reference", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("resource.status.error", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("no.matching.encounter", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("history.of.travel.result.not.found", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("no.acceptable.history.of.travel.found", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("no.available.info.history.of.travel.found", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("no.value.found", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("no.interpretation.found", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("no.reference.range.found", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("missing.high.range", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("missing.low.range", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("category.not.found", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("verification.status.not.acceptable", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("icd.code.invalid", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("diagnostic.confidence.not.found", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("status.not.acceptable", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("unable.extract.resource", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("no.matching.visitOccurence", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("no.start.date.found.in.location", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("no.location.reference.found", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("no.department.code.found", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("invalid.dose.found", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("invalid.dosage.found", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("invalid.route.counter", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("no.birth.date.found", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("invalid.string.length", "type", stepExecution.getStepName()));
+      counters.add(Metrics.counter("invalid.birth.date", "type", stepExecution.getStepName()));
     }
     return counters;
   }

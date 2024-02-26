@@ -88,6 +88,14 @@ public class ConditionMapper implements FhirMapper<Condition> {
       MapperMetrics.setNoFhirReferenceCounter("stepProcessConditions");
   private static final Counter deletedFhirReferenceCounter =
       MapperMetrics.setDeletedFhirRessourceCounter("stepProcessConditions");
+  private static final Counter verificationStatusNotAcceptableCounter =
+          MapperMetrics.setVerificationStatusNotAcceptableCounter("stepProcessConditions");
+  private static final Counter icdCodeInvalidCounter =
+          MapperMetrics.setICDCodeInvalidCounter("stepProcessConditions");
+  private static final Counter diagnosticConfidenceNotFoundCounter =
+          MapperMetrics.setDiagnosticConfidenceNotFoundCounter("stepProcessConditions");
+  private static final Counter noMatchingEncounterCounter =
+          MapperMetrics.setNoMatchingEncounterCount("stepProcessObservations");
 
   /**
    * Constructor for objects of the class ConditionMapper.
@@ -148,6 +156,7 @@ public class ConditionMapper implements FhirMapper<Condition> {
           "The [verification status]: {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
           verificationStatusValue,
           conditionId);
+      verificationStatusNotAcceptableCounter.increment();
       return null;
     }
 
@@ -649,6 +658,7 @@ public class ConditionMapper implements FhirMapper<Condition> {
             "ICD Code [{}] in [Condition] {} is not valid in OMOP.",
             uncheckedCode.getCode(),
             conditionId);
+        icdCodeInvalidCounter.increment();
         return Collections.emptyList();
       }
 
@@ -747,6 +757,7 @@ public class ConditionMapper implements FhirMapper<Condition> {
             encounterReferenceIdentifier, encounterReferenceLogicalId, personId, conditionId);
     if (visitOccId == null) {
       log.debug("No matching [Encounter] found for [Condition]: {}.", conditionId);
+      noMatchingEncounterCounter.increment();
     }
 
     return visitOccId;
@@ -1030,6 +1041,7 @@ public class ConditionMapper implements FhirMapper<Condition> {
   private Coding getDiagnosticConfidence(Coding icdCoding, String conditionId) {
     if (!icdCoding.hasExtension(fhirSystems.getDiagnosticConfidence())) {
       log.debug("No [Diagnostic confidence] found for [Condition] {}.", conditionId);
+      diagnosticConfidenceNotFoundCounter.increment();
       return null;
     }
 
@@ -1038,6 +1050,7 @@ public class ConditionMapper implements FhirMapper<Condition> {
     var diagnosticConfidence = diagnosticConfidenceType.castToCoding(diagnosticConfidenceType);
     if (!diagnosticConfidence.hasCode() || Strings.isNullOrEmpty(diagnosticConfidence.getCode())) {
       log.debug("No [Diagnostic confidence] found for [Condition] {}.", conditionId);
+      diagnosticConfidenceNotFoundCounter.increment();
       return null;
     }
     return diagnosticConfidence;

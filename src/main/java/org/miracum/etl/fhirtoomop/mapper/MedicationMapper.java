@@ -44,7 +44,8 @@ public class MedicationMapper implements FhirMapper<Medication> {
       MapperMetrics.setNoCodeCounter("stepProcessMedications");
   private static final Counter noFhirReferenceCounter =
       MapperMetrics.setNoFhirReferenceCounter("stepProcessMedications");
-
+  private static final Counter statusNotAcceptableCounter =
+          MapperMetrics.setStatusNotAcceptableCounter("stepProcessMedications");
   /**
    * Constructor for objects of the class MedicationMapper.
    *
@@ -96,6 +97,7 @@ public class MedicationMapper implements FhirMapper<Medication> {
           "The [status]: {} of {} is not acceptable for writing into OMOP CDM. Skip resource.",
           statusValue,
           medicationId);
+      statusNotAcceptableCounter.increment();
       return null;
     }
 
