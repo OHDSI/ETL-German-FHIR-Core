@@ -69,6 +69,7 @@ public class EncounterMainStepListener implements StepExecutionListener {
     }
     dbMappings.setFindHardCodeConcept(
         repositories.getSourceToConceptRepository().sourceToConceptMap());
+    dbMappings.setFindCareSiteId(repositories.getCareSiteRepository().careSitesMap());
   }
 
   /**

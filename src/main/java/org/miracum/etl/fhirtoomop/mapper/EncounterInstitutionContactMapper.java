@@ -72,13 +72,13 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
   @Autowired ResourceCheckDataAbsentReason checkDataAbsentReason;
 
   private static final Counter noStartDateCounter =
-      MapperMetrics.setNoStartDateCounter("EncounterInstitutionContact");
+      MapperMetrics.setNoStartDateCounter("stepProcessEncounterInstitutionContact");
   private static final Counter noPersonIdCounter =
-      MapperMetrics.setNoPersonIdCounter("EncounterInstitutionContact");
+      MapperMetrics.setNoPersonIdCounter("stepProcessEncounterInstitutionContact");
   private static final Counter noCodeCounter =
-      MapperMetrics.setNoCodeCounter("EncounterInstitutionContact");
+      MapperMetrics.setNoCodeCounter("stepProcessEncounterInstitutionContact");
   private static final Counter noFhirReferenceCounter =
-      MapperMetrics.setNoFhirReferenceCounter("EncounterInstitutionContact");
+      MapperMetrics.setNoFhirReferenceCounter("stepProcessEncounterInstitutionContact");
   private static final Counter deletedFhirReferenceCounter =
       MapperMetrics.setDeletedFhirRessourceCounter("EncounterInstitutionContact");
   private static final Counter statusNotAcceptableCounter =
@@ -137,7 +137,7 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
       }
     }
 
-    var statusValue = getStatusValue(srcEncounter);
+    var statusValue = getStatusValue(srcEncounter) == null ? "finished" : getStatusValue(srcEncounter);
     if (Strings.isNullOrEmpty(statusValue)
         || !FHIR_RESOURCE_ENCOUNTER_ACCEPTABLE_STATUS_LIST.contains(statusValue)) {
       log.error(
@@ -171,6 +171,10 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
             personId,
             institutionContactOnset,
             encounterId);
+
+    if (newVisitOccurrence == null){
+      return null;
+    }
 
     wrapper.setVisitOccurrence(newVisitOccurrence);
 
@@ -324,6 +328,11 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
     var visitTypeConceptId = getVisitTypeConceptId(srcEncounter, endDateTime);
     var visitEndDateTime = setVisitEndDateTime(visitTypeConceptId, endDateTime, encounterId);
     var visitSourceValue = cutString(encounterSourceIdentifier);
+    var careSiteId = getCareSiteId(srcEncounter.getServiceProvider().getReferenceElement().getIdPart());
+    if (careSiteId == null){
+      log.debug("No [CareSite] found for the encounter: {}", encounterId);
+      return null;
+    }
     var visitOccurrence =
         VisitOccurrence.builder()
             .visitStartDate(startDateTime.toLocalDate())
@@ -336,6 +345,7 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
             .visitEndDatetime(visitEndDateTime)
             .visitEndDate(visitEndDateTime.toLocalDate())
             .visitSourceValue(visitSourceValue == null ? null : visitSourceValue.substring(4))
+                .careSiteId(Math.toIntExact(careSiteId))
             .build();
     if (bulkload.equals(Boolean.FALSE)) {
       var existingVisitOccId =
@@ -376,6 +386,19 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
     }
 
     return CONCEPT_EHR;
+  }
+
+  private Long getCareSiteId(String fabCode) {
+
+    if (Strings.isNullOrEmpty(fabCode)) {
+      return null;
+    }
+
+    var careSiteMap = dbMappings.getFindCareSiteId();
+    if (!careSiteMap.containsKey(fabCode)) {
+      return null;
+    }
+    return careSiteMap.get(fabCode).getCareSiteId();
   }
 
   /**
