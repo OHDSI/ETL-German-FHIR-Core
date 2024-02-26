@@ -13,6 +13,7 @@ import org.miracum.etl.fhirtoomop.model.omop.Measurement;
 import org.miracum.etl.fhirtoomop.model.omop.OmopObservation;
 import org.miracum.etl.fhirtoomop.model.omop.Person;
 import org.miracum.etl.fhirtoomop.model.omop.ProcedureOccurrence;
+import org.miracum.etl.fhirtoomop.model.omop.Provider;
 import org.miracum.etl.fhirtoomop.model.omop.VisitDetail;
 import org.miracum.etl.fhirtoomop.model.omop.VisitOccurrence;
 
@@ -34,6 +35,7 @@ public class OmopModelWrapper {
   private List<DrugExposure> drugExposure = new ArrayList<>();
   private List<Measurement> measurement = new ArrayList<>();
   private List<OmopObservation> observation = new ArrayList<>();
+  private List<Provider> provider = new ArrayList<>();
   private List<VisitDetail> visitDetail = new ArrayList<>();
   private List<DeviceExposure> deviceExposure = new ArrayList<>();
 
@@ -61,8 +63,8 @@ public class OmopModelWrapper {
     PROCEDUREOCCURRENCE("procedure_occurrence"),
     DEVICEEXPOSURE("device_exposure"),
     DRUGEXPOSURE("drug_exposure"),
-    CARESITE("care_site");
-
+    CARESITE("care_site"),
+    PROVIDER("provider");
     private final String label;
 
     /**

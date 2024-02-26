@@ -41,6 +41,7 @@ import org.miracum.etl.fhirtoomop.listeners.MedicationStepListener;
 import org.miracum.etl.fhirtoomop.listeners.ObservationStepListener;
 import org.miracum.etl.fhirtoomop.listeners.OrganizationStepListener;
 import org.miracum.etl.fhirtoomop.listeners.PatientStepListener;
+import org.miracum.etl.fhirtoomop.listeners.PractitionerStepListener;
 import org.miracum.etl.fhirtoomop.listeners.ProcedureStepListener;
 import org.miracum.etl.fhirtoomop.mapper.ConditionMapper;
 import org.miracum.etl.fhirtoomop.mapper.ConsentMapper;
@@ -53,6 +54,7 @@ import org.miracum.etl.fhirtoomop.mapper.MedicationMapper;
 import org.miracum.etl.fhirtoomop.mapper.MedicationStatementMapper;
 import org.miracum.etl.fhirtoomop.mapper.ObservationMapper;
 import org.miracum.etl.fhirtoomop.mapper.PatientMapper;
+import org.miracum.etl.fhirtoomop.mapper.PractitionerMapper;
 import org.miracum.etl.fhirtoomop.mapper.ProcedureMapper;
 import org.miracum.etl.fhirtoomop.mapper.OrganizationMapper;
 import org.miracum.etl.fhirtoomop.model.FhirPsqlResource;
@@ -69,6 +71,7 @@ import org.miracum.etl.fhirtoomop.processor.MedicationStatementProcessor;
 import org.miracum.etl.fhirtoomop.processor.ObservationProcessor;
 import org.miracum.etl.fhirtoomop.processor.OrganizationProcessor;
 import org.miracum.etl.fhirtoomop.processor.PatientProcessor;
+import org.miracum.etl.fhirtoomop.processor.PractitionerProcessor;
 import org.miracum.etl.fhirtoomop.processor.ProcedureProcessor;
 import org.miracum.etl.fhirtoomop.repository.OmopRepository;
 import org.springframework.batch.core.Job;
@@ -451,6 +454,7 @@ public class TaskConfiguration {
   public Flow fullLoadFlow(
       Step stepProcessPatients,
       Step stepProcessOrganization,
+      Step stepProcessPractitioners,
       Step stepProcessEncounterInstitutionContact,
       Step stepProcessConditions,
       Step stepProcessObservations,
@@ -462,6 +466,7 @@ public class TaskConfiguration {
       Flow medicationStepsFlow) {
     return new FlowBuilder<SimpleFlow>("bulkload")
         .start(stepProcessOrganization)
+            .next(stepProcessPractitioners)
             .next(stepProcessPatients)
         .next(stepProcessEncounterInstitutionContact)
             .next(stepEncounterDepartmentCase)
@@ -665,6 +670,27 @@ public class TaskConfiguration {
   }
 
   /**
+   * Defines the reader for FHIR Practitioner resources.
+   *
+   * @param dataSource the data source to query against
+   * @return reader for FHIR Practitioner resources
+   */
+  @Bean
+  @StepScope
+  public ItemStreamReader<FhirPsqlResource> readerPsqlPractitioner(
+          @Qualifier("readerDataSource") final DataSource dataSource,
+          IGenericClient client,
+          IParser fhirParser) {
+
+    var resourceType = "Practitioner";
+    log.info(FETCH_RESOURCES_LOG, resourceType);
+    if (StringUtils.isBlank(fhirBaseUrl)) {
+      return createResourceReader(resourceType, dataSource);
+    }
+    return fhirServerItemReader(client, fhirParser, ResourceType.PRACTITIONER.getDisplay(), "");
+  }
+
+  /**
    * Create FHIR Server REST API paging reader.
    *
    * @param client FHIR Server Client
@@ -734,6 +760,53 @@ public class TaskConfiguration {
     return new PatientProcessor(patientMapper, parser);
   }
 
+  /**
+   * Defines the step for processing FHIR Practitioner resources. This step loads and processes Practitioner
+   * resources from FHIR Gateway and writes them to OMOP CDM.
+   *
+   * @param practitionerProcessor processor which maps FHIR Practitioner resources to OMOP CDM
+   * @param writer the writer which writes the data to OMOP CDM
+   * @return step for processing FHIR Practitioner resources
+   */
+  @Bean
+  public Step stepProcessPractitioners(
+          PractitionerProcessor practitionerProcessor,
+          PractitionerStepListener listener,
+          ItemStreamReader<FhirPsqlResource> readerPsqlPractitioner,
+          ItemWriter<OmopModelWrapper> writer) {
+
+    var stepProcessPractitionersBuilder =
+            stepBuilderFactory
+                    .get("stepProcessPractitioners")
+                    .listener(listener)
+                    .<FhirPsqlResource, OmopModelWrapper>chunk(batchChunkSize)
+                    .reader(readerPsqlPractitioner)
+                    .processor(practitionerProcessor)
+                    .listener(new FhirResourceProcessListener())
+                    .writer(writer);
+    if (StringUtils.isBlank(fhirBaseUrl)) {
+
+      stepProcessPractitionersBuilder.throttleLimit(throttleLimit).taskExecutor(taskExecutor());
+    }
+    return stepProcessPractitionersBuilder.build();
+  }
+
+  /**
+   * Defines the processor for FHIR Practitioner resources. The PractitionerProcessor contains the business
+   * logic to map FHIR Practitioner resources to OMOP CDM.
+   *
+   * @param parser parser which converts between the HAPI FHIR model/structure objects and their
+   *     respective String wire format (JSON)
+   * @param fhirSystems reference to naming and coding systems used in FHIR resources
+   * @param fhirPath FhirPath engine to evaluate path expressions over FHIR resources
+   * @param idMappings reference to internal id mappings
+   * @return processor for FHIR Practitioner resources
+   */
+  @Bean
+  public PractitionerProcessor practitionerProcessor(IParser parser, PractitionerMapper practitionerMapper) {
+
+    return new PractitionerProcessor(practitionerMapper, parser);
+  }
   /**
    * Defines the reader for FHIR Encounter (administrative case/supply case) resources.
    *

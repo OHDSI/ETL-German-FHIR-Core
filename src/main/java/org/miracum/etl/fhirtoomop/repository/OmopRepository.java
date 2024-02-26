@@ -21,6 +21,7 @@ public class OmopRepository {
   @Autowired private ConditionOccRepository conditionOccRepository;
   @Autowired private MeasurementRepository measurementRepository;
   @Autowired private ObservationRepository observationRepository;
+  @Autowired private ProviderRepository providerRepository;
   @Autowired private ProcedureOccRepository procedureOccRepository;
   @Autowired private SourceToConceptRepository sourceToConceptRepository;
   @Autowired private IcdSnomedRepository icdSnomedRepository;
