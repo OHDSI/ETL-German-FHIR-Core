@@ -27,52 +27,17 @@ import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.Enumerations.ResourceType;
-import org.miracum.etl.fhirtoomop.listeners.ConditionStepListener;
-import org.miracum.etl.fhirtoomop.listeners.ConsentStepListener;
-import org.miracum.etl.fhirtoomop.listeners.DiagnosticReportStepListener;
-import org.miracum.etl.fhirtoomop.listeners.EncounterDepartmentCaseStepListener;
-import org.miracum.etl.fhirtoomop.listeners.EncounterMainStepListener;
-import org.miracum.etl.fhirtoomop.listeners.FhirResourceProcessListener;
-import org.miracum.etl.fhirtoomop.listeners.FhirToOmopJobListener;
-import org.miracum.etl.fhirtoomop.listeners.ImmunizationStepListener;
-import org.miracum.etl.fhirtoomop.listeners.MedicationAdministrationStepListener;
-import org.miracum.etl.fhirtoomop.listeners.MedicationStatementStepListener;
-import org.miracum.etl.fhirtoomop.listeners.MedicationStepListener;
-import org.miracum.etl.fhirtoomop.listeners.ObservationStepListener;
+import org.miracum.etl.fhirtoomop.listeners.*;
 import org.miracum.etl.fhirtoomop.listeners.OrganizationStepListener;
-import org.miracum.etl.fhirtoomop.listeners.PatientStepListener;
 import org.miracum.etl.fhirtoomop.listeners.PractitionerStepListener;
-import org.miracum.etl.fhirtoomop.listeners.ProcedureStepListener;
-import org.miracum.etl.fhirtoomop.mapper.ConditionMapper;
-import org.miracum.etl.fhirtoomop.mapper.ConsentMapper;
-import org.miracum.etl.fhirtoomop.mapper.DiagnosticReportMapper;
-import org.miracum.etl.fhirtoomop.mapper.EncounterDepartmentCaseMapper;
-import org.miracum.etl.fhirtoomop.mapper.EncounterInstitutionContactMapper;
-import org.miracum.etl.fhirtoomop.mapper.ImmunizationMapper;
-import org.miracum.etl.fhirtoomop.mapper.MedicationAdministrationMapper;
-import org.miracum.etl.fhirtoomop.mapper.MedicationMapper;
-import org.miracum.etl.fhirtoomop.mapper.MedicationStatementMapper;
-import org.miracum.etl.fhirtoomop.mapper.ObservationMapper;
-import org.miracum.etl.fhirtoomop.mapper.PatientMapper;
+import org.miracum.etl.fhirtoomop.mapper.*;
 import org.miracum.etl.fhirtoomop.mapper.PractitionerMapper;
-import org.miracum.etl.fhirtoomop.mapper.ProcedureMapper;
 import org.miracum.etl.fhirtoomop.mapper.OrganizationMapper;
 import org.miracum.etl.fhirtoomop.model.FhirPsqlResource;
 import org.miracum.etl.fhirtoomop.model.OmopModelWrapper;
-import org.miracum.etl.fhirtoomop.processor.ConditionProcessor;
-import org.miracum.etl.fhirtoomop.processor.ConsentProcessor;
-import org.miracum.etl.fhirtoomop.processor.DiagnosticReportProcessor;
-import org.miracum.etl.fhirtoomop.processor.EncounterDepartmentCaseProcessor;
-import org.miracum.etl.fhirtoomop.processor.EncounterInstitutionContactProcessor;
-import org.miracum.etl.fhirtoomop.processor.ImmunizationStatusProcessor;
-import org.miracum.etl.fhirtoomop.processor.MedicationAdministrationProcessor;
-import org.miracum.etl.fhirtoomop.processor.MedicationProcessor;
-import org.miracum.etl.fhirtoomop.processor.MedicationStatementProcessor;
-import org.miracum.etl.fhirtoomop.processor.ObservationProcessor;
+import org.miracum.etl.fhirtoomop.processor.*;
 import org.miracum.etl.fhirtoomop.processor.OrganizationProcessor;
-import org.miracum.etl.fhirtoomop.processor.PatientProcessor;
 import org.miracum.etl.fhirtoomop.processor.PractitionerProcessor;
-import org.miracum.etl.fhirtoomop.processor.ProcedureProcessor;
 import org.miracum.etl.fhirtoomop.repository.OmopRepository;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -463,9 +428,11 @@ public class TaskConfiguration {
       Step stepProcessImmunization,
       Step stepProcessConsent,
       Step stepProcessDiagnosticReport,
-      Flow medicationStepsFlow) {
+      Flow medicationStepsFlow,
+      Step stepProcessPractitionerRole) {
     return new FlowBuilder<SimpleFlow>("bulkload")
         .start(stepProcessOrganization)
+            .next(stepProcessPractitionerRole)
             .next(stepProcessPractitioners)
             .next(stepProcessPatients)
         .next(stepProcessEncounterInstitutionContact)
@@ -758,6 +725,51 @@ public class TaskConfiguration {
   public PatientProcessor patientProcessor(IParser parser, PatientMapper patientMapper) {
 
     return new PatientProcessor(patientMapper, parser);
+  }
+
+  @Bean
+  public Step stepProcessPractitionerRole(
+          PractitionerRoleProcessor practitionerRoleProcessor,
+          PractitionerRoleStepListener practitionerRoleStepListener,
+          ItemStreamReader<FhirPsqlResource> readerPsqlPractitionerRole,
+          ItemWriter<OmopModelWrapper> writer) {
+
+    var stepProcessPractitionerRoleBuilder =
+            stepBuilderFactory
+                    .get("stepProcessPractitionerRoles")
+                    .listener(practitionerRoleStepListener)
+                    .<FhirPsqlResource, OmopModelWrapper>chunk(batchChunkSize)
+                    .reader(readerPsqlPractitionerRole)
+                    .processor(practitionerRoleProcessor)
+                    .listener(new FhirResourceProcessListener())
+                    .writer(writer);
+    if (StringUtils.isBlank(fhirBaseUrl)) {
+      stepProcessPractitionerRoleBuilder.throttleLimit(throttleLimit).taskExecutor(taskExecutor());
+    }
+    return stepProcessPractitionerRoleBuilder.build();
+  }
+
+  @Bean
+  public PractitionerRoleProcessor practitionerRoleProcessor(IParser parser, PractitionerRoleMapper practitionerRoleMapper) {
+    return new PractitionerRoleProcessor(practitionerRoleMapper, parser);
+  }
+
+  @Bean
+  @StepScope
+  public ItemStreamReader<FhirPsqlResource> readerPsqlPractitionerRole(
+          @Qualifier("readerDataSource") final DataSource dataSource,
+          IGenericClient client,
+          IParser fhirParser) {
+    var resourceType = ResourceType.PRACTITIONERROLE.name();
+    log.info(FETCH_RESOURCES_LOG, resourceType);
+    if (StringUtils.isBlank(fhirBaseUrl)) {
+      return createResourceReader(resourceType, dataSource);
+    }
+    return fhirServerItemReader(
+            client,
+            fhirParser,
+            ResourceType.PRACTITIONERROLE.getDisplay(),
+            STEP_ENCOUNTER_INSTITUTION_KONTAKT);
   }
 
   /**

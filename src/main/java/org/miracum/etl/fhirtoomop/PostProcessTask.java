@@ -90,6 +90,7 @@ public class PostProcessTask implements Tasklet {
     Resource conditionEra = new ClassPathResource("post_processing/post_process_condition_era.sql");
     Resource drugEra = new ClassPathResource("post_processing/post_process_drug_era.sql");
     Resource endLoad = new ClassPathResource("post_processing/post_process_drug_era.sql");
+    Resource practOrgRef = new ClassPathResource("post_processing/post_process_practitioner_organization_reference.sql");
 
     if (ifBulkLoad.equals(Boolean.FALSE)) {
       executeSqlScripts.executeSQLScript(observationPeriod);
@@ -163,6 +164,7 @@ public class PostProcessTask implements Tasklet {
           executeSqlScripts.executeSQLScript(datesOfHistoryOfTravel);
           executeSqlScripts.executeSQLScript(conditionEra);
           executeSqlScripts.executeSQLScript(drugEra);
+          executeSqlScripts.executeSQLScript(practOrgRef);
 //          executeSqlScripts.executeSQLScript(endLoad);
           break;
         default:

@@ -181,6 +181,14 @@ public class ResourceFhirReferenceUtils {
     return null;
   }
 
+  public String extractId(String fhirType, String resourceId) {
+    var prefix = getResourceTypePrefix(fhirType);
+    if (prefix != null) {
+      return prefix + resourceId;
+    }
+    return null;
+  }
+
   private String getResourceTypePrefix(IBaseResource resource) {
     var resourceTypeName = resource.fhirType().split("(?=\\p{Upper})");
     switch (resourceTypeName.length) {
@@ -198,6 +206,26 @@ public class ResourceFhirReferenceUtils {
         return null;
     }
   }
+
+  private String getResourceTypePrefix(String fhirType) {
+    var resourceTypeName = fhirType.split("(?=\\p{Upper})");
+    switch (resourceTypeName.length) {
+      case 1:
+        if (resourceTypeName[0].equals(FHIR_RESOURCE_CONSENT)) {
+          return resourceTypeName[0].substring(0, 4).toLowerCase() + "-";
+        }
+        return resourceTypeName[0].substring(0, 3).toLowerCase() + "-";
+      case 2:
+        return (resourceTypeName[0].substring(0, 2) + resourceTypeName[1].substring(0, 1))
+                .toLowerCase()
+                + "-";
+      default:
+        log.error("No [Resource Type] found, invalid resource. Please check!");
+        return null;
+    }
+  }
+
+
   /**
    * Extracts the first found identifier from the FHIR resource.
    *
