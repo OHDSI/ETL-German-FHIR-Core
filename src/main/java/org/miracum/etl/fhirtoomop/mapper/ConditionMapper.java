@@ -9,6 +9,8 @@ import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_CONDITION;
 import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_MEASUREMENT;
 import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_OBSERVATION;
 import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_PROCEDURE;
+import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_SPECIMEN_ANATOMIC_SITE;
+import static org.miracum.etl.fhirtoomop.Constants.OMOP_DOMAIN_SPECIMEN;
 import static org.miracum.etl.fhirtoomop.Constants.SOURCE_VOCABULARY_ID_DIAGNOSTIC_CONFIDENCE;
 import static org.miracum.etl.fhirtoomop.Constants.SOURCE_VOCABULARY_ID_ICD_LOCALIZATION;
 import static org.miracum.etl.fhirtoomop.Constants.VOCABULARY_ICD10GM;
@@ -48,6 +50,7 @@ import org.miracum.etl.fhirtoomop.model.omop.Measurement;
 import org.miracum.etl.fhirtoomop.model.omop.OmopObservation;
 import org.miracum.etl.fhirtoomop.model.omop.ProcedureOccurrence;
 import org.miracum.etl.fhirtoomop.model.omop.SourceToConceptMap;
+import org.miracum.etl.fhirtoomop.model.omop.Specimen;
 import org.miracum.etl.fhirtoomop.repository.service.ConditionMapperServiceImpl;
 import org.miracum.etl.fhirtoomop.repository.service.OmopConceptServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -976,6 +979,7 @@ public class ConditionMapper implements FhirMapper<Condition> {
 
         break;
       case OMOP_DOMAIN_OBSERVATION:
+      case OMOP_DOMAIN_SPECIMEN_ANATOMIC_SITE:
         var observation =
             setUpObservation(
                 diagnoseOnset.getStartDateTime(),
@@ -1023,8 +1027,16 @@ public class ConditionMapper implements FhirMapper<Condition> {
         wrapper.getMeasurement().add(measurement);
 
         break;
-      case "Spec Anatomic Site":
-        log.warn("fhirId = {}={}",conditionLogicId,domain);
+      case OMOP_DOMAIN_SPECIMEN:
+        var specimen =
+                setupSpecimen(
+                        personId,
+                        diagnoseOnset,
+                        diagnoseConceptId,
+                        diagnoseSourceConceptId);
+
+        wrapper.getSpecimen().add(specimen);
+
         break;
       default:
         throw new UnsupportedOperationException(String.format("Unsupported domain %s", domain));
@@ -1101,6 +1113,22 @@ public class ConditionMapper implements FhirMapper<Condition> {
     } else {
       conditionService.updateExistingPpmEntriesByFhirIdentifier(conditionSourceIdentifier);
     }
+  }
+
+  private Specimen setupSpecimen(
+          Long personId,
+          ResourceOnset diagnoseOnset,
+          Integer diagnoseConceptId,
+          Integer diagnoseSourceConceptId
+          ) {
+
+    return Specimen.builder()
+            .personId(personId)
+            .specimenDate(diagnoseOnset.getStartDateTime().toLocalDate())
+            .specimenDateTime(diagnoseOnset.getStartDateTime())
+            .specimenConceptId(diagnoseConceptId)
+            .specimenTypeConceptId(diagnoseSourceConceptId)
+            .build();
   }
 
   /**

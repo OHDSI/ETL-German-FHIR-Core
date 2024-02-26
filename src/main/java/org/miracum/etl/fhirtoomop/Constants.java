@@ -104,6 +104,8 @@ public class Constants {
   public static final String OMOP_DOMAIN_PROCEDURE = "Procedure";
   public static final String OMOP_DOMAIN_DRUG = "Drug";
   public static final String OMOP_DOMAIN_GENDER = "Gender";
+  public static final String OMOP_DOMAIN_SPECIMEN_ANATOMIC_SITE = "Spec Anatomic Site";
+  public static final String OMOP_DOMAIN_SPECIMEN = "Specimen";
 
   public static final ImmutableList<String> FHIR_RESOURCE_ACCEPTABLE_EVENT_STATUS_LIST =
       ImmutableList.of("in-progress", "on-hold", "completed", "unknown", "not-done");

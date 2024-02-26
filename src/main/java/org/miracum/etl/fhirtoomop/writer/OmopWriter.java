@@ -83,6 +83,7 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
     writeMeasurement(entries);
     writeDeviceExposure(entries);
     writeProvider(entries);
+    writeSpecimen(entries);
 
     return Optional.empty();
   }
@@ -341,6 +342,21 @@ public class OmopWriter implements ItemWriter<OmopModelWrapper> {
       log.info("Inserting {} rows into device_exposure table", deviceExposure.size());
 
       repository.getDeviceExposureRepository().saveAll(deviceExposure);
+    }
+  }
+
+  private void writeSpecimen(List<? extends OmopModelWrapper> entries) {
+    var specimenList =
+            entries.stream()
+                    .filter(entry -> entry.getSpecimen() != null)
+                    .map(OmopModelWrapper::getSpecimen)
+                    .flatMap(List::stream)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+    if (!specimenList.isEmpty()) {
+      log.info("Inserting {} rows into specimen table", specimenList.size());
+
+      repository.getSpecimenRepository().saveAll(specimenList);
     }
   }
 

@@ -137,7 +137,9 @@ public class EncounterInstitutionContactMapper implements FhirMapper<Encounter> 
       }
     }
 
-    var statusValue = getStatusValue(srcEncounter) == null ? "finished" : getStatusValue(srcEncounter);
+    var statusValue = getStatusValue(srcEncounter);
+    if(statusValue == null)
+      statusValue = "finished";
     if (Strings.isNullOrEmpty(statusValue)
         || !FHIR_RESOURCE_ENCOUNTER_ACCEPTABLE_STATUS_LIST.contains(statusValue)) {
       log.error(
