@@ -122,6 +122,9 @@ public class TaskConfiguration {
   @Value("${data.fhirServer.baseUrl}")
   private String fhirBaseUrl;
 
+  @Value("${data.fhirServer.httpsEnabled}")
+  private Boolean fhirHttpsEnabled;
+
   @Bean
   public Boolean bulkload() {
     return this.bulkload;
@@ -673,6 +676,7 @@ public class TaskConfiguration {
     fhirServerItemReader.setPageSize(pagingSize);
     fhirServerItemReader.setResourceTypeClass(resourceTypeName);
     fhirServerItemReader.setBeginDate(beginDateStr);
+    fhirServerItemReader.setFhirHttpsEnabled(fhirHttpsEnabled);
     fhirServerItemReader.setEndDate(endDateStr);
     fhirServerItemReader.setFhirParser(parser);
     fhirServerItemReader.setStepName(stepName);

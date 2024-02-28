@@ -41,6 +41,12 @@ public class FhirServerItemReader extends AbstractPagingItemReader<FhirPsqlResou
   private Bundle firstBundle;
   private Bundle nextBundle;
 
+  private boolean fhirHttpsEnabled;
+
+  private static final String HTTP = "http://";
+  private static final String HTTPS = "https://";
+
+
   public void setFhirClient(IGenericClient client) {
     this.client = client;
   }
@@ -63,6 +69,10 @@ public class FhirServerItemReader extends AbstractPagingItemReader<FhirPsqlResou
 
   public void setResourceTypeClass(String resourceTypeName) {
     this.resourceTypeName = resourceTypeName;
+  }
+
+  public void setFhirHttpsEnabled(boolean fhirHttpsEnabled) {
+    this.fhirHttpsEnabled = fhirHttpsEnabled;
   }
 
   private DateRangeParam generateDateRange() {
@@ -119,7 +129,11 @@ public class FhirServerItemReader extends AbstractPagingItemReader<FhirPsqlResou
     } else if (startAfterValues != null) {
       previousStartAfterValues = startAfterValues;
       if (nextBundle.getLink(IBaseBundle.LINK_NEXT) != null) {
-        var partialBundle = client.loadPage().next(nextBundle).execute();
+        var nextLink = nextBundle.getLink(IBaseBundle.LINK_NEXT).getUrl();
+        if(fhirHttpsEnabled){
+          nextLink = nextLink.replace(HTTP, HTTPS);
+        }
+        var partialBundle = client.search().byUrl(nextLink).returnBundle(Bundle.class).execute();
         newResources = resourceTransform(partialBundle);
         this.nextBundle = partialBundle;
 
