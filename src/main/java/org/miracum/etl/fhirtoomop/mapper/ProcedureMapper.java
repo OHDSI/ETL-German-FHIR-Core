@@ -30,6 +30,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Procedure;
+import org.hl7.fhir.r4.model.ResourceType;
 import org.miracum.etl.fhirtoomop.DbMappings;
 import org.miracum.etl.fhirtoomop.config.FhirSystems;
 import org.miracum.etl.fhirtoomop.mapper.helpers.FindOmopConcepts;
@@ -49,6 +50,7 @@ import org.miracum.etl.fhirtoomop.model.omop.OmopObservation;
 import org.miracum.etl.fhirtoomop.model.omop.ProcedureOccurrence;
 import org.miracum.etl.fhirtoomop.model.omop.SourceToConceptMap;
 import org.miracum.etl.fhirtoomop.repository.service.DeviceExposureMapperServiceImpl;
+import org.miracum.etl.fhirtoomop.repository.service.EncounterDepartmentCaseMapperServiceImpl;
 import org.miracum.etl.fhirtoomop.repository.service.OmopConceptServiceImpl;
 import org.miracum.etl.fhirtoomop.repository.service.ProcedureMapperServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,6 +98,8 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
   @Autowired ResourceFhirReferenceUtils fhirReferenceUtils;
   @Autowired ResourceCheckDataAbsentReason checkDataAbsentReason;
   @Autowired FindOmopConcepts findOmopConcepts;
+  @Autowired
+  EncounterDepartmentCaseMapperServiceImpl departmentCaseMapperService;
 
   /**
    * Constructor for objects of the class ProcedureMapper.
@@ -1060,6 +1064,12 @@ public class ProcedureMapper implements FhirMapper<Procedure> {
         resourceOnset.setEndDateTime(
             new Timestamp(performedPeriod.getEndElement().getValue().getTime()).toLocalDateTime());
       }
+    }
+    var fhirLogicalId = fhirReferenceUtils.extractId(ResourceType.Encounter.name(), srcProcedure.getEncounter().getReferenceElement().getIdPart());
+    var visitDetail = departmentCaseMapperService.getVisitStartDateTimeByFhirLogicId(fhirLogicalId);
+    if(visitDetail != null){
+      resourceOnset.setStartDateTime(visitDetail.getVisitDetailStartDatetime());
+      resourceOnset.setEndDateTime(visitDetail.getVisitDetailEndDatetime());
     }
     return resourceOnset;
   }

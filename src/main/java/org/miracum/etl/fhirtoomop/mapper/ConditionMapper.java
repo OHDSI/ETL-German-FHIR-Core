@@ -30,7 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Condition;
-import org.hl7.fhir.r4.model.Enumerations.ResourceType;
+import org.hl7.fhir.r4.model.Enumerations;
+import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.StringType;
 import org.miracum.etl.fhirtoomop.DbMappings;
 import org.miracum.etl.fhirtoomop.config.FhirSystems;
@@ -52,6 +53,7 @@ import org.miracum.etl.fhirtoomop.model.omop.ProcedureOccurrence;
 import org.miracum.etl.fhirtoomop.model.omop.SourceToConceptMap;
 import org.miracum.etl.fhirtoomop.model.omop.Specimen;
 import org.miracum.etl.fhirtoomop.repository.service.ConditionMapperServiceImpl;
+import org.miracum.etl.fhirtoomop.repository.service.EncounterDepartmentCaseMapperServiceImpl;
 import org.miracum.etl.fhirtoomop.repository.service.OmopConceptServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
@@ -78,7 +80,8 @@ public class ConditionMapper implements FhirMapper<Condition> {
   @Autowired ConditionMapperServiceImpl conditionService;
   @Autowired ResourceCheckDataAbsentReason checkDataAbsentReason;
   @Autowired FindOmopConcepts findOmopConcepts;
-
+  @Autowired
+  EncounterDepartmentCaseMapperServiceImpl departmentCaseMapperService;
   private static final Counter noStartDateCounter =
       MapperMetrics.setNoStartDateCounter("stepProcessConditions");
   private static final Counter noPersonIdCounter =
@@ -807,6 +810,12 @@ public class ConditionMapper implements FhirMapper<Condition> {
         return resourceOnset;
       }
     }
+    var fhirLogicalId = fhirReferenceUtils.extractId(ResourceType.Encounter.name(), srcCondition.getEncounter().getReferenceElement().getIdPart());
+    var visitDetail = departmentCaseMapperService.getVisitStartDateTimeByFhirLogicId(fhirLogicalId);
+    if(visitDetail != null){
+      resourceOnset.setStartDateTime(visitDetail.getVisitDetailStartDatetime());
+      resourceOnset.setEndDateTime(visitDetail.getVisitDetailEndDatetime());
+    }
     return resourceOnset;
   }
 
@@ -1390,7 +1399,7 @@ public class ConditionMapper implements FhirMapper<Condition> {
       for (var sec : secondaryIcdSnomedMap) {
         var ppmIcdPairs =
             PostProcessMap.builder()
-                .type(ResourceType.CONDITION.name())
+                .type(Enumerations.ResourceType.CONDITION.name())
                 .dataOne(primaryIcdCode + ":" + pri.getSnomedDomainId())
                 .dataTwo(secondaryIcdCode + ":" + sec.getSnomedDomainId())
                 .omopId(0L)
@@ -1434,7 +1443,7 @@ public class ConditionMapper implements FhirMapper<Condition> {
     }
 
     return PostProcessMap.builder()
-        .type(ResourceType.CONDITION.name())
+        .type(Enumerations.ResourceType.CONDITION.name())
         .dataOne(siteLocalization.getObservationSourceValue() + ":27")
         .dataTwo(Integer.toString(siteLocalization.getObservationConceptId()))
         .omopId(personId)
@@ -1473,7 +1482,7 @@ public class ConditionMapper implements FhirMapper<Condition> {
     }
 
     return PostProcessMap.builder()
-        .type(ResourceType.CONDITION.name())
+        .type(Enumerations.ResourceType.CONDITION.name())
         .dataOne(diagnoseMetaInfo.getObservationSourceValue() + ":27")
         .dataTwo(Integer.toString(diagnoseMetaInfo.getObservationConceptId()))
         .omopId(personId)

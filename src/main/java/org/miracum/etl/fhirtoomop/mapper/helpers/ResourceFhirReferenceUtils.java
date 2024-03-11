@@ -9,8 +9,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.Resource;
+import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.StringType;
 import org.miracum.etl.fhirtoomop.config.FhirSystems;
+import org.miracum.etl.fhirtoomop.model.omop.VisitDetail;
+import org.miracum.etl.fhirtoomop.repository.service.EncounterDepartmentCaseMapperServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * The ResourceFhirReferenceUtils class is used to extract references to other FHIR resources from
@@ -24,6 +28,9 @@ public class ResourceFhirReferenceUtils {
 
   private final IFhirPath fhirPath;
   private final FhirSystems fhirSystems;
+
+  @Autowired
+  EncounterDepartmentCaseMapperServiceImpl departmentCaseMapperService;
 
   /**
    * Constructor for objects of the class ResourceFhirReferenceUtils.

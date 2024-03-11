@@ -44,4 +44,9 @@ public interface VisitDetailRepository
    * @param fhirIdentifier identifier of the FHIR resource
    */
   void deleteByFhirIdentifier(String fhirIdentifier);
+
+  @Query(value = "SELECT * FROM visit_detail where fhir_logical_id = :fhirLogicalId limit 1",
+          nativeQuery = true)
+  VisitDetail getStartDateOfVisitByFhirLogicalId(@Param("fhirLogicalId") String fhirLogicalId);
+
 }

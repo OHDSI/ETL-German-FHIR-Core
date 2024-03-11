@@ -45,7 +45,7 @@ import org.hl7.fhir.r4.model.BooleanType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
-import org.hl7.fhir.r4.model.Enumerations.ResourceType;
+import org.hl7.fhir.r4.model.Enumerations;
 import org.hl7.fhir.r4.model.IntegerType;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Observation.ObservationComponentComponent;
@@ -71,11 +71,14 @@ import org.miracum.etl.fhirtoomop.model.omop.Measurement;
 import org.miracum.etl.fhirtoomop.model.omop.OmopObservation;
 import org.miracum.etl.fhirtoomop.model.omop.ProcedureOccurrence;
 import org.miracum.etl.fhirtoomop.model.omop.SourceToConceptMap;
+import org.miracum.etl.fhirtoomop.repository.service.EncounterDepartmentCaseMapperServiceImpl;
 import org.miracum.etl.fhirtoomop.repository.service.ObservationMapperServiceImpl;
 import org.miracum.etl.fhirtoomop.repository.service.OmopConceptServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
+import org.hl7.fhir.r4.model.ResourceType;
+
 
 /**
  * The ObservationMapper class describes the business logic of transforming a FHIR Observation
@@ -99,6 +102,8 @@ public class ObservationMapper implements FhirMapper<Observation> {
   @Autowired ResourceFhirReferenceUtils fhirReferenceUtils;
   @Autowired ResourceCheckDataAbsentReason checkDataAbsentReason;
   @Autowired FindOmopConcepts findOmopConcepts;
+  @Autowired
+  EncounterDepartmentCaseMapperServiceImpl departmentCaseMapperService;
 
   private static final Counter noStartDateCounter =
       MapperMetrics.setNoStartDateCounter("stepProcessObservations");
@@ -331,7 +336,12 @@ public class ObservationMapper implements FhirMapper<Observation> {
       }
       return resourceOnset;
     }
-
+    var fhirLogicalId = fhirReferenceUtils.extractId(ResourceType.Encounter.name(), srcObservation.getEncounter().getReferenceElement().getIdPart());
+    var visitDetail = departmentCaseMapperService.getVisitStartDateTimeByFhirLogicId(fhirLogicalId);
+    if(visitDetail != null){
+      resourceOnset.setStartDateTime(visitDetail.getVisitDetailStartDatetime());
+      resourceOnset.setEndDateTime(visitDetail.getVisitDetailEndDatetime());
+    }
     return resourceOnset;
   }
 
@@ -443,7 +453,7 @@ public class ObservationMapper implements FhirMapper<Observation> {
 
     var ppm =
         PostProcessMap.builder()
-            .type(ResourceType.OBSERVATION.name())
+            .type(Enumerations.ResourceType.OBSERVATION.name())
             .omopTable(OmopModelWrapper.Tablename.LOCATION.name())
             .fhirIdentifier(observationSourceIdentifier)
             .fhirLogicalId(observationLogicId)

@@ -24,6 +24,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.Quantity;
+import org.hl7.fhir.r4.model.ResourceType;
 import org.miracum.etl.fhirtoomop.DbMappings;
 import org.miracum.etl.fhirtoomop.config.FhirSystems;
 import org.miracum.etl.fhirtoomop.mapper.helpers.FindOmopConcepts;
@@ -38,6 +39,7 @@ import org.miracum.etl.fhirtoomop.model.SnomedVaccineStandardLookup;
 import org.miracum.etl.fhirtoomop.model.omop.DrugExposure;
 import org.miracum.etl.fhirtoomop.model.omop.OmopObservation;
 import org.miracum.etl.fhirtoomop.repository.service.DrugExposureMapperServiceImpl;
+import org.miracum.etl.fhirtoomop.repository.service.EncounterDepartmentCaseMapperServiceImpl;
 import org.miracum.etl.fhirtoomop.repository.service.ImmunizationMapperServiceImpl;
 import org.miracum.etl.fhirtoomop.repository.service.OmopConceptServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,7 +62,8 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
   @Autowired ResourceCheckDataAbsentReason checkDataAbsentReason;
   @Autowired FindOmopConcepts findOmopConcepts;
   @Autowired DrugExposureMapperServiceImpl drugExposureService;
-
+  @Autowired
+  EncounterDepartmentCaseMapperServiceImpl departmentCaseMapperService;
   private static final Counter noStartDateCounter =
       MapperMetrics.setNoStartDateCounter("stepProcessImmunizations");
   private static final Counter noPersonIdCounter =
@@ -776,7 +779,12 @@ public class ImmunizationMapper implements FhirMapper<Immunization> {
         resourceOnset.setEndDateTime(immunizationOccurrenceDateTime);
       }
     }
-
+    var fhirLogicalId = fhirReferenceUtils.extractId(ResourceType.Encounter.name(), srcImmunization.getEncounter().getReferenceElement().getIdPart());
+    var visitDetail = departmentCaseMapperService.getVisitStartDateTimeByFhirLogicId(fhirLogicalId);
+    if(visitDetail != null){
+      resourceOnset.setStartDateTime(visitDetail.getVisitDetailStartDatetime());
+      resourceOnset.setEndDateTime(visitDetail.getVisitDetailEndDatetime());
+    }
     return resourceOnset;
   }
 

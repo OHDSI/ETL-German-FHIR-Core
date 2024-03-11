@@ -1,6 +1,8 @@
 package org.miracum.etl.fhirtoomop.repository.service;
 
 import java.util.List;
+
+import org.miracum.etl.fhirtoomop.model.omop.VisitDetail;
 import org.miracum.etl.fhirtoomop.repository.ConditionOccRepository;
 import org.miracum.etl.fhirtoomop.repository.DrugExposureRepository;
 import org.miracum.etl.fhirtoomop.repository.MeasurementRepository;
@@ -59,5 +61,8 @@ public class EncounterDepartmentCaseMapperServiceImpl {
    */
   public void deleteExistingDepartmentcaseByIdentifier(String fhirIdentifier) {
     visitDetailRepository.deleteByFhirIdentifier(fhirIdentifier);
+  }
+  public VisitDetail getVisitStartDateTimeByFhirLogicId(String fhirLogicalId){
+    return visitDetailRepository.getStartDateOfVisitByFhirLogicalId(fhirLogicalId);
   }
 }
